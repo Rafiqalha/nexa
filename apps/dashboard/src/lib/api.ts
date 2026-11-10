@@ -56,10 +56,15 @@ export function apiPost<T extends z.ZodType>(
 
 /** Cek token tanpa mengubah state (dipakai form masuk & deteksi proxy dev). */
 export async function probe(headers: Record<string, string>): Promise<boolean> {
+  return (await probeStatus(headers)) === 200;
+}
+
+/** Status HTTP pemeriksaan token; null bila sensor tidak terjangkau. */
+export async function probeStatus(headers: Record<string, string>): Promise<number | null> {
   try {
     const res = await fetch('/api/overview', { headers });
-    return res.ok;
+    return res.status;
   } catch {
-    return false;
+    return null;
   }
 }

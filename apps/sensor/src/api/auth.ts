@@ -20,7 +20,9 @@ export function bearerOf(header: string | undefined): string | null {
 
 /**
  * Middleware auth API dashboard: wajib `Authorization: Bearer <DASHBOARD_TOKEN>`.
- * Gagal berulang dari satu klien dibatasi (429) untuk mempersulit tebak token.
+ * Token SALAH yang berulang dari satu klien dibatasi (429) untuk mempersulit tebak token.
+ * Request tanpa token (mis. layar login memeriksa mode proxy dev) bukan tebakan, jadi
+ * tidak ikut dihitung dan tidak bisa mengunci operator yang sah.
  */
 export function requireToken(
   expected: string,
@@ -35,7 +37,8 @@ export function requireToken(
       return c.json({ error: 'too_many_attempts' }, 429);
     }
     const token = bearerOf(c.req.header('authorization'));
-    if (!token || !tokenMatches(token, expected)) {
+    if (!token) return c.json({ error: 'unauthorized' }, 401);
+    if (!tokenMatches(token, expected)) {
       const entry = f && now - f.since < WINDOW_MS ? f : { count: 0, since: now };
       entry.count += 1;
       failures.set(key, entry);

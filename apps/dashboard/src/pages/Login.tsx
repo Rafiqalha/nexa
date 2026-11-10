@@ -1,8 +1,9 @@
 import { LAB_LABEL } from '@nexa/shared';
 import { type FormEvent, useState } from 'react';
 import { Button } from '../components/ui/button';
-import { probe } from '../lib/api';
+import { probeStatus } from '../lib/api';
 import { signIn, signInViaProxy } from '../lib/auth';
+import { loginErrorMessage, normalizeToken } from '../lib/token';
 
 const inputClass =
   'mt-2 block min-h-11 w-full border border-line-strong bg-bg px-3 font-mono text-[13px] text-fg placeholder:text-muted';
@@ -24,14 +25,15 @@ export function Login({ proxyAuth = false }: { proxyAuth?: boolean }) {
       signInViaProxy(operator.trim());
       return;
     }
+    const clean = normalizeToken(token);
     setBusy(true);
-    const ok = await probe({ authorization: `Bearer ${token.trim()}` });
+    const status = await probeStatus({ authorization: `Bearer ${clean}` });
     setBusy(false);
-    if (!ok) {
-      setError('Token ditolak oleh sensor.');
+    if (status !== 200) {
+      setError(loginErrorMessage(status, window.location.origin));
       return;
     }
-    signIn(token.trim(), operator.trim());
+    signIn(clean, operator.trim());
   }
 
   return (
@@ -76,6 +78,10 @@ export function Login({ proxyAuth = false }: { proxyAuth?: boolean }) {
         </Button>
       </form>
       <p className="meta mt-8">
+        Token = nilai DASHBOARD_TOKEN di .env sensor. Jalankan pnpm token di folder repo untuk
+        menyalinnya ke clipboard tanpa menampilkannya.
+      </p>
+      <p className="meta mt-3">
         Token hanya disimpan di sessionStorage tab ini dan tidak pernah ditanam di aplikasi.
       </p>
     </main>
