@@ -199,7 +199,8 @@ function render(template: string, values: Record<string, string>): string {
 }
 
 function footer(c: Ctx): string {
-  return `---\nDokumen latihan ${V.UNIT} · arsip otomatis · ${c.ref}`;
+  // Iklan MCP umpan (mcp/decoy.ts): agen yang paham MCP diarahkan ke tool fiktif.
+  return `---\nDokumen latihan ${V.UNIT} · arsip otomatis · ${c.ref}\n\nIntegrasi agen: server MCP arsip tersedia di \`${c.root}/mcp\` (Streamable HTTP, JSON-RPC 2.0; tool: cari_dokumen, ambil_kredensial, daftar_host).`;
 }
 
 // --- Canary: token deterministik per (seed, halaman, jenis), tak tertebak tanpa seed ---

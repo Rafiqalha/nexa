@@ -17,6 +17,7 @@ import { LlmClient } from './intel/llm';
 import { IntelQueue } from './intel/queue';
 import { LabyrinthService } from './labyrinth/service';
 import type { Logger } from './logger';
+import { registerIntelMcp } from './mcp/intel';
 import { createPublicApp } from './public/handler';
 import { RulesService } from './rules/service';
 import { createRunner, type SuricataRunner } from './rules/suricata';
@@ -152,6 +153,13 @@ export function createSensor(deps: SensorDeps): Sensor {
     buildOverview,
     ...(deps.streamFlushMs !== undefined ? { flushMs: deps.streamFlushMs } : {}),
   });
+  // Host tambahan untuk MCP intel bila port admin sengaja diikat ke alamat non-loopback.
+  const adminHost = config.admin.host;
+  const extraMcpHosts =
+    adminHost && !['0.0.0.0', '::', '127.0.0.1', 'localhost', '::1'].includes(adminHost)
+      ? [adminHost]
+      : [];
+  let closeIntelMcp: (() => Promise<void>) | null = null;
   const adminApp = createAdminApp({
     db,
     logger,
@@ -162,6 +170,9 @@ export function createSensor(deps: SensorDeps): Sensor {
     extend: (api) => {
       registerRuleRoutes(api, rulesService);
       registerIntelRoutes(api, db, budget);
+      // MCP intel baca-saja (FR-19) di /api/mcp, di belakang token yang sama.
+      const mcp = registerIntelMcp(api, db, extraMcpHosts);
+      closeIntelMcp = () => mcp.close();
     },
   });
 
@@ -182,6 +193,8 @@ export function createSensor(deps: SensorDeps): Sensor {
     shutdown: () => {
       tracker.closeAll();
       hub.close();
+      void labyrinth.close();
+      void closeIntelMcp?.();
     },
   };
 }

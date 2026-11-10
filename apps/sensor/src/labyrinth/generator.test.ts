@@ -38,6 +38,8 @@ describe('generator labirin: determinisme per seed', () => {
       expect(p.links.some((l) => pathDepth(l) > p.depth)).toBe(true);
       expect(p.body.length).toBeGreaterThan(800);
       expect(p.contentType).toMatch(/text\/markdown/);
+      // Footer mengiklankan MCP umpan (mcp/decoy.ts).
+      expect(p.body).toContain('`/arsip-internal/mcp`');
     });
   }
 

@@ -41,6 +41,13 @@ export function SessionTimeline({ events }: { events: readonly TimelineEvent[] }
               </p>
               <p className="mt-1 text-[12px]">
                 <span className={cn(kindClass(e.kind))}>{EVENT_KIND[e.kind]}</span>
+                {typeof e.meta.mcp === 'string' ? (
+                  <span className="text-muted">
+                    {' '}
+                    · MCP umpan {e.meta.mcp}
+                    {typeof e.meta.tool === 'string' ? ` ${e.meta.tool}` : ''}
+                  </span>
+                ) : null}
                 {arm ? <span className="text-muted"> · {arm}</span> : null}
                 {typeof e.meta.depth === 'number' ? (
                   <span className="text-muted"> · kedalaman {e.meta.depth}</span>

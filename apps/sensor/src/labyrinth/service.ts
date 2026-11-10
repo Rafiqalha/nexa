@@ -4,6 +4,7 @@ import type { Bus } from '../bus';
 import type { Db } from '../db/client';
 import type { SessionTracker, TrackedSession } from '../detect/tracker';
 import type { Logger } from '../logger';
+import { type DecoyHttpInput, DecoyMcp, peekRpc } from '../mcp/decoy';
 import { type ArmStats, EpsilonGreedy, loadArmStats, saveArmStats } from './bandit';
 import {
   ARMS,
@@ -17,6 +18,8 @@ import {
 } from './generator';
 
 const STATIC_ASSET = /\.(css|js|mjs|map|png|jpe?g|gif|svg|ico|webp|woff2?|ttf)$/i;
+/** Batas body JSON-RPC untuk MCP umpan (byte). */
+const MAX_MCP_BODY = 64 * 1024;
 
 export interface LabyrinthConfig {
   /** Akar namespace labirin, mis. "/arsip-internal". */
@@ -52,6 +55,17 @@ export interface ServedPage {
   page: LabyrinthPage;
 }
 
+export interface ServeMcpInput extends ServeInput {
+  /** Request MCP: header asli + body hasil inspeksi canary. */
+  http: DecoyHttpInput;
+}
+
+export interface ServedMcp {
+  response: Response;
+  /** Konten umpan yang disajikan tool (0 untuk handshake/daftar tool). */
+  pages: LabyrinthPage[];
+}
+
 export function estimateTokens(chars: number, charsPerToken: number): number {
   return Math.ceil(chars / charsPerToken);
 }
@@ -66,6 +80,7 @@ export class LabyrinthService {
   private readonly memo = new Map<string, Map<string, ArmId>>();
   /** sessionId -> umpan terakhir yang menunggu reward. */
   private readonly pending = new Map<string, { arm: ArmId; servedAt: number }>();
+  private readonly decoy: DecoyMcp;
 
   constructor(private readonly deps: LabyrinthDeps) {
     this.bandit = new EpsilonGreedy(
@@ -73,7 +88,16 @@ export class LabyrinthService {
       { epsilon: deps.config.epsilon, ...(deps.random ? { random: deps.random } : {}) },
       loadArmStats(deps.db),
     );
+    this.decoy = new DecoyMcp({
+      maxBodyBytes: MAX_MCP_BODY,
+      onError: (err) => deps.logger.debug('decoy mcp rejected', { reason: err.message }),
+    });
     deps.bus.on('session:closed', (row) => this.finalize(row.id));
+  }
+
+  /** Tutup handler MCP umpan (stream yang masih terbuka dihentikan). */
+  close(): Promise<void> {
+    return this.decoy.close();
   }
 
   armStats(): ArmStats[] {
@@ -129,6 +153,62 @@ export class LabyrinthService {
       headers: { 'content-type': page.contentType, 'cache-control': 'no-store' },
     });
     return { response, page };
+  }
+
+  /**
+   * Endpoint MCP umpan (bagian labirin). Tool memakai arm tetap, jadi tidak ikut reward
+   * bandit; reward umpan sebelumnya tetap diselesaikan. Respons JSON dihitung karakternya
+   * untuk estimasi token penyerang, sama seperti halaman labirin.
+   */
+  async serveMcp(input: ServeMcpInput): Promise<ServedMcp> {
+    const started = performance.now();
+    const { session, ts } = input;
+    const { config, tracker } = this.deps;
+    this.settle(session.id, ts);
+
+    const pages: LabyrinthPage[] = [];
+    const raw = await this.decoy.handle(input.http, {
+      session,
+      root: config.root,
+      ...(input.decorate ? { decorate: input.decorate } : {}),
+      onServe: (_tool, page) => {
+        pages.push(page);
+      },
+    });
+
+    // Respons dibaca utuh untuk dihitung (JSON, atau SSE legacy yang langsung ditutup);
+    // hanya stream langganan (subscriptions/listen) yang dibiarkan mengalir.
+    const { rpc, tool } = peekRpc(input.http.body);
+    let response = raw;
+    let chars = 0;
+    if (raw.body && rpc !== 'subscriptions/listen') {
+      const text = await raw.text();
+      chars = text.length;
+      const headers = new Headers(raw.headers);
+      headers.set('cache-control', 'no-store');
+      response = new Response(text, { status: raw.status, headers });
+    }
+    const ok = response.status >= 200 && response.status < 300;
+    const first = pages[0];
+    tracker.recordEvent(session.id, {
+      kind: input.honeylinkHit ? 'honeylink_hit' : first ? 'bait_served' : 'request',
+      ts,
+      method: input.method,
+      path: input.pathAndQuery,
+      status: response.status,
+      charsServed: ok ? chars : 0,
+      estTokens: ok ? estimateTokens(chars, config.charsPerToken) : 0,
+      latencyMs: performance.now() - started,
+      meta: {
+        channel: 'mcp',
+        mcp: rpc,
+        tool,
+        ...(first ? { arm: first.kind, depth: first.depth } : {}),
+        canaries: pages.flatMap((p) => p.canaries.map((c) => c.kind)),
+      },
+    });
+    for (const p of pages) tracker.noteDepth(session.id, p.depth);
+    return { response, pages };
   }
 
   private render(session: TrackedSession, pathAndQuery: string): LabyrinthPage {

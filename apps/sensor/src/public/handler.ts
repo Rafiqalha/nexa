@@ -9,10 +9,11 @@ import type { CanaryRegistry, CanaryUse } from '../canary/registry';
 import type { Config } from '../config';
 import type { HeaderBag } from '../detect/signals';
 import type { SessionTracker, TrackedSession } from '../detect/tracker';
-import type { LabyrinthPage } from '../labyrinth/generator';
+import { type LabyrinthPage, pageKey } from '../labyrinth/generator';
 import { Rng } from '../labyrinth/prng';
 import type { LabyrinthService, ServeInput } from '../labyrinth/service';
 import type { Logger } from '../logger';
+import { decoyMcpPath } from '../mcp/decoy';
 import { forwardRequest } from '../proxy/forward';
 
 export interface PublicDeps {
@@ -79,6 +80,7 @@ export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings
   const { config, logger, tracker, labyrinth, now } = deps;
   const app = new Hono<{ Bindings: HttpBindings }>();
   const root = (config.detect.honeylinkPaths[0] ?? '/arsip-internal/').replace(/\/+$/, '');
+  const mcpPath = decoyMcpPath(root);
 
   app.all('*', async (c) => {
     const started = performance.now();
@@ -127,6 +129,25 @@ export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings
         honeylinkHit: obs.isHoneylink && obs.newlyTrapped,
         decorate,
       };
+      if (pageKey(url.pathname) === mcpPath) {
+        // MCP umpan (bagian labirin): body yang sudah diinspeksi dipakai ulang.
+        const served = await labyrinth.serveMcp({
+          ...input,
+          http: {
+            url: c.req.url,
+            method: c.req.method,
+            headers: c.req.raw.headers,
+            body: bodyText,
+            signal: c.req.raw.signal,
+          },
+        });
+        for (const page of served.pages) {
+          if (page.canaries.length > 0) {
+            deps.canaries?.recordIssued(obs.session.id, page.key, page.canaries, ts);
+          }
+        }
+        return served.response;
+      }
       const served = labyrinth.serve(input);
       if (served.page.canaries.length > 0) {
         deps.canaries?.recordIssued(obs.session.id, pathAndQuery, served.page.canaries, ts);
