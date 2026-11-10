@@ -16,6 +16,8 @@ export interface Logger {
 
 const ORDER: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 const SECRET_KEY = /(token|secret|passw(or)?d|api[-_]?key|authorization|cookie|credential)/i;
+/** Kunci yang mengandung kata di atas tetapi berisi angka/petunjuk, bukan secret. */
+const SAFE_KEY = /^(tokens|tokensUsed|estTokens|maxTokens|tokenHint)$/;
 
 export function redactFields(value: unknown, depth = 0): unknown {
   if (depth > 4 || value === null || typeof value !== 'object') return value;
@@ -23,7 +25,7 @@ export function redactFields(value: unknown, depth = 0): unknown {
   if (value instanceof Error) return { name: value.name, message: value.message };
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value)) {
-    out[k] = SECRET_KEY.test(k) ? '[REDACTED]' : redactFields(v, depth + 1);
+    out[k] = SECRET_KEY.test(k) && !SAFE_KEY.test(k) ? '[REDACTED]' : redactFields(v, depth + 1);
   }
   return out;
 }

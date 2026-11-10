@@ -160,6 +160,48 @@ export class RulesService {
     return this.deps.db.select().from(rules).where(eq(rules.id, ruleId)).get();
   }
 
+  /**
+   * Draf tambahan usulan intel LLM. Dinormalisasi ketat (satu baris, aksi alert/drop,
+   * sid diganti rentang NEXA), lalu tetap wajib lolos suricata -T DAN persetujuan operator.
+   */
+  async addLlmDraft(sessionId: string, title: string, rawRule: string): Promise<RuleRow | null> {
+    const template = normalizeLlmRule(rawRule);
+    if (!template) {
+      this.deps.logger.warn('llm rule suggestion rejected (format)', { sessionId });
+      return null;
+    }
+    return this.enqueue(async () => {
+      const signature = ruleSignature(template);
+      const exists = this.deps.db
+        .select({ body: rules.body })
+        .from(rules)
+        .where(ne(rules.status, 'rejected'))
+        .all()
+        .some((r) => ruleSignature(r.body) === signature);
+      if (exists) return null;
+      const row = this.deps.db
+        .insert(rules)
+        .values({
+          sessionId,
+          kind: 'llm',
+          source: 'llm',
+          title: `[Usulan LLM] ${title.replace(/[\r\n]+/g, ' ').slice(0, 140)}`,
+          body: template,
+          status: 'draft',
+          createdAt: this.now(),
+        })
+        .returning()
+        .get();
+      this.deps.db
+        .update(rules)
+        .set({ body: renderRule(template, row.id) })
+        .where(eq(rules.id, row.id))
+        .run();
+      this.deps.bus.emit('rule:changed', { ruleId: row.id });
+      return (await this.validate(row.id)) ?? null;
+    });
+  }
+
   /** Operator menyetujui: catat approval (siapa & kapan), lalu deploy. */
   async approve(ruleId: number, operator: string): Promise<RuleRow> {
     return this.enqueue(async () => {
@@ -234,4 +276,24 @@ export class RulesService {
     this.queue = next.catch(() => undefined);
     return next;
   }
+}
+
+/**
+ * Normalisasi usulan rule dari LLM. Mengembalikan template ber-`{{SID}}` atau null bila
+ * formatnya tidak bisa dipercaya (multi-baris, aksi selain alert/drop, tanpa msg, dll.).
+ */
+export function normalizeLlmRule(raw: string): string | null {
+  const one = raw
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (one.length < 20 || one.length > 800) return null;
+  if (!/^(alert|drop) (http|tcp|udp|ip|dns|tls) /.test(one)) return null;
+  if (!one.endsWith(')') || !/msg:"[^"]+";/.test(one)) return null;
+  if ((one.match(/\(/g) ?? []).length !== 1) return null;
+  const withoutIds = one
+    .replace(/\s*sid:\s*\d+;/g, '')
+    .replace(/\s*rev:\s*\d+;/g, '')
+    .replace(/msg:"(?!NEXA)/, 'msg:"NEXA LLM ');
+  return withoutIds.replace(/\)$/, ' metadata:nexa_kind llm; sid:{{SID}}; rev:1;)');
 }

@@ -1,6 +1,7 @@
 // Composition root sensor: merangkai tracker, labirin, jalur publik, dan API admin.
 import type { HttpBindings } from '@hono/node-server';
 import type { Hono } from 'hono';
+import { registerIntelRoutes } from './api/intel-routes';
 import { loadPricing, type Pricing } from './api/pricing';
 import { computeOverview } from './api/queries';
 import { createAdminApp } from './api/router';
@@ -11,6 +12,9 @@ import { CanaryRegistry } from './canary/registry';
 import type { Config } from './config';
 import type { Db } from './db/client';
 import { SessionTracker } from './detect/tracker';
+import { DailyBudget } from './intel/budget';
+import { LlmClient } from './intel/llm';
+import { IntelQueue } from './intel/queue';
 import { LabyrinthService } from './labyrinth/service';
 import type { Logger } from './logger';
 import { createPublicApp } from './public/handler';
@@ -29,6 +33,8 @@ export interface SensorDeps {
   streamFlushMs?: number;
   /** Runner Suricata (default dari config); test menyuntikkan runner palsu. */
   suricata?: SuricataRunner;
+  /** fetch untuk klien LLM (test memeriksa payload keluar tanpa jaringan). */
+  llmFetch?: typeof fetch;
 }
 
 export interface Sensor {
@@ -40,6 +46,8 @@ export interface Sensor {
   hub: StreamHub;
   canaries: CanaryRegistry;
   rules: RulesService;
+  intel: IntelQueue;
+  budget: DailyBudget;
   /** Tutup sesi idle; dipanggil berkala oleh index.ts. */
   tick: (now: number) => void;
   shutdown: () => void;
@@ -98,6 +106,32 @@ export function createSensor(deps: SensorDeps): Sensor {
     now,
   });
 
+  // Intel LLM PASCA-SESI: antrean + redaksi + budget harian. Tidak pernah di jalur request.
+  const budget = new DailyBudget(db, config.llm.dailyTokenBudget, now);
+  const llm = new LlmClient(
+    { baseUrl: config.llm.baseUrl, model: config.llm.model, apiKey: config.llm.apiKey },
+    { budget, logger, ...(deps.llmFetch ? { fetch: deps.llmFetch } : {}) },
+  );
+  logger.info('intel llm', { enabled: llm.enabled, model: llm.model || null });
+  const intelQueue = new IntelQueue({
+    db,
+    bus,
+    logger,
+    llm,
+    budget,
+    rules: rulesService,
+    internalHosts: [
+      'localhost',
+      'target-app',
+      'sensor',
+      'suricata',
+      config.sensor.upstreamUrl.hostname,
+    ],
+    now,
+  });
+  const backfilled = intelQueue.backfill(5);
+  if (backfilled > 0) logger.info('intel backfill queued', { sessions: backfilled });
+
   // Port admin: API dashboard + SSE. Tidak pernah dibuka di port jebakan.
   const pricing = deps.pricing ?? loadPricing();
   const startedAt = now();
@@ -125,7 +159,10 @@ export function createSensor(deps: SensorDeps): Sensor {
     hub,
     buildOverview,
     ...(deps.dashboardDist ? { dashboardDist: deps.dashboardDist } : {}),
-    extend: (api) => registerRuleRoutes(api, rulesService),
+    extend: (api) => {
+      registerRuleRoutes(api, rulesService);
+      registerIntelRoutes(api, db, budget);
+    },
   });
 
   return {
@@ -137,6 +174,8 @@ export function createSensor(deps: SensorDeps): Sensor {
     hub,
     canaries,
     rules: rulesService,
+    intel: intelQueue,
+    budget,
     tick: (t) => {
       tracker.sweep(t);
     },

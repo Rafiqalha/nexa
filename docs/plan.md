@@ -120,7 +120,7 @@ Dokumen kontrak: `PRD.md`, `AGENTS.md`, `DESIGN.md`, `CLAUDE.md` (tidak diubah).
 | better-sqlite3 / @types/better-sqlite3 | 13.0.3 / 9.6.0 |
 | drizzle-orm / drizzle-kit | 0.45.4 / 0.31.11 (bukan 1.0 beta) |
 | zod | 4.6.7 |
-| openai | 7.55.0 (hanya di `intel/llm.ts`) |
+| openai | 7.54.0 (hanya di `intel/llm.ts`; 7.55.0 dirilis < 24 jam) |
 | @modelcontextprotocol/server / client | 2.4.0 / 2.4.0 (≥ 2.2.0, NFR-6) |
 | react / react-dom | 19.3.1 |
 | vite / @vitejs/plugin-react | 8.3.7 / 6.3.0 |

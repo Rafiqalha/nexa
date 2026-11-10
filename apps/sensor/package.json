@@ -13,14 +13,17 @@
   },
   "dependencies": {
     "@hono/node-server": "2.1.6",
+    "@modelcontextprotocol/server": "2.4.0",
     "@nexa/shared": "workspace:*",
     "better-sqlite3": "13.0.3",
     "drizzle-orm": "0.45.4",
     "hono": "4.13.17",
+    "openai": "7.54.0",
     "tsx": "4.23.15",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0",
     "@types/better-sqlite3": "9.6.0",
     "drizzle-kit": "0.31.11",
     "target-app": "workspace:*"

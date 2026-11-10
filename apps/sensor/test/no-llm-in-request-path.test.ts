@@ -96,3 +96,31 @@ describe('regresi: tidak ada LLM di jalur request penyerang', () => {
     expect(imports).toContain('../proxy/forward');
   });
 });
+
+describe('regresi: satu pintu ke model (AGENTS.md §2.4)', () => {
+  const all = [...readdirSync(SRC, { recursive: true }).map((n) => join(SRC, String(n)))].filter(
+    (f) => f.endsWith('.ts') && !f.endsWith('.test.ts') && statSync(f).isFile(),
+  );
+
+  it('SDK model hanya di-import oleh intel/llm.ts', () => {
+    const importers = all
+      .filter((f) =>
+        importsOf(f).some((spec) =>
+          FORBIDDEN_BARE.some((b) => spec === b || spec.startsWith(`${b}/`)),
+        ),
+      )
+      .map((f) => relative(SRC, f).replaceAll('\\', '/'));
+    expect(importers).toEqual(['intel/llm.ts']);
+  });
+
+  it('hanya intel/queue.ts (pasca-sesi) yang memakai intel/llm.ts', () => {
+    const users = all
+      .filter((f) => !f.endsWith(join('intel', 'llm.ts')))
+      .filter((f) =>
+        importsOf(f).some((spec) => /(^|\/)llm$/.test(spec) || spec.endsWith('/intel/llm')),
+      )
+      .map((f) => relative(SRC, f).replaceAll('\\', '/'))
+      .filter((f) => f !== 'app.ts');
+    expect(users).toEqual(['intel/queue.ts', 'intel/summarize.ts']);
+  });
+});
