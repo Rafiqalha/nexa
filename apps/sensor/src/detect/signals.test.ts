@@ -32,13 +32,22 @@ describe('isAutomationUserAgent', () => {
 });
 
 describe('lacksBrowserHeaders', () => {
-  it('browser mengirim Accept-Language/Sec-Fetch-Mode', () => {
-    expect(lacksBrowserHeaders({ 'accept-language': 'id-ID', 'sec-fetch-mode': 'navigate' })).toBe(
-      false,
-    );
+  it('browser mengirim Accept-Language bertag bahasa + Sec-Fetch-Site', () => {
+    expect(
+      lacksBrowserHeaders({
+        'accept-language': 'id-ID,id;q=0.9',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'none',
+      }),
+    ).toBe(false);
   });
   it('library HTTP tidak', () => {
     expect(lacksBrowserHeaders({ accept: '*/*' })).toBe(true);
+  });
+  it('fetch bawaan Node (accept-language: *, sec-fetch-mode: cors) tetap terdeteksi', () => {
+    expect(
+      lacksBrowserHeaders({ accept: '*/*', 'accept-language': '*', 'sec-fetch-mode': 'cors' }),
+    ).toBe(true);
   });
 });
 

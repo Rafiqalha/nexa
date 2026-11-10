@@ -46,6 +46,15 @@ const EnvSchema = z
     SESSION_IDLE_TIMEOUT_MS: opt(z.coerce.number().int().min(1000).default(60_000)),
 
     CHARS_PER_TOKEN: opt(z.coerce.number().positive().default(4)),
+    BANDIT_EPSILON: opt(ratio.default(0.1)),
+    /** Hanya untuk debugging/replay: semua sesi memakai seed labirin ini. */
+    LABYRINTH_FIXED_SEED: opt(
+      z
+        .string()
+        .regex(/^[0-9a-zA-Z_-]{4,64}$/)
+        .optional(),
+    ),
+    BANDIT_MAX_HOLD_MS: opt(z.coerce.number().int().positive().default(120_000)),
 
     SURICATA_RULES_DIR: opt(z.string().min(1).default('./deploy/suricata/rules')),
     SURICATA_CONTAINER: opt(z.string().min(1).default('suricata')),
@@ -73,7 +82,12 @@ export interface Config {
     honeylinkPaths: string[];
     sessionIdleTimeoutMs: number;
   };
-  labyrinth: { charsPerToken: number };
+  labyrinth: {
+    charsPerToken: number;
+    banditEpsilon: number;
+    banditMaxHoldMs: number;
+    fixedSeed?: string;
+  };
   rules: { dir: string; suricataContainer: string };
 }
 
@@ -137,7 +151,12 @@ export function loadConfig(
       honeylinkPaths: e.HONEYLINK_PATHS,
       sessionIdleTimeoutMs: e.SESSION_IDLE_TIMEOUT_MS,
     },
-    labyrinth: { charsPerToken: e.CHARS_PER_TOKEN },
+    labyrinth: {
+      charsPerToken: e.CHARS_PER_TOKEN,
+      banditEpsilon: e.BANDIT_EPSILON,
+      banditMaxHoldMs: e.BANDIT_MAX_HOLD_MS,
+      ...(e.LABYRINTH_FIXED_SEED ? { fixedSeed: e.LABYRINTH_FIXED_SEED } : {}),
+    },
     rules: {
       dir: resolveFromRoot(e.SURICATA_RULES_DIR, baseDir),
       suricataContainer: e.SURICATA_CONTAINER,

@@ -59,10 +59,37 @@ services:
       timeout: 3s
       retries: 20
 
+  # Agen penyerang uji: hanya dijalankan lewat `pnpm lab:attack` (profile attack).
+  attacker-agent:
+    profiles: [attack]
+    build:
+      context: ..
+      dockerfile: lab/attacker-agent/Dockerfile
+    depends_on:
+      sensor:
+        condition: service_healthy
+    # SENGAJA tanpa env_file: secret sensor (DEEPSEEK_API_KEY, DASHBOARD_TOKEN) tidak masuk ke sini.
+    environment:
+      LAB_TARGET_ALLOWLIST: sensor:8080,target-app:3000
+      ATTACKER_TARGET_URL: http://sensor:8080/
+      ATTACKER_BASELINE_URL: http://target-app:3000/
+      ATTACKER_LLM_BASE_URL: ${ATTACKER_LLM_BASE_URL:-https://api.deepseek.com}
+      ATTACKER_LLM_MODEL: ${ATTACKER_LLM_MODEL:-deepseek-flash}
+      ATTACKER_LLM_API_KEY: ${ATTACKER_LLM_API_KEY:-}
+      ATTACKER_MAX_STEPS: ${ATTACKER_MAX_STEPS:-15}
+      ATTACKER_MAX_TOKENS: ${ATTACKER_MAX_TOKENS:-250000}
+      ATTACKER_STEP_DELAY_MS: ${ATTACKER_STEP_DELAY_MS:-1500}
+      ATTACKER_REPORT_DIR: /app/lab/output
+    volumes:
+      - ../lab/output:/app/lab/output
+    # `lab` (internal) untuk target; `egress` hanya agar agen bisa memanggil API model.
+    networks: [lab, egress]
+
 networks:
   lab:
     internal: true
   edge: {}
+  egress: {}
 
 volumes:
   nexa-data: {}

@@ -22,7 +22,8 @@
     "lab:down": "node scripts/lab.mjs down",
     "lab:logs": "docker compose -f deploy/docker-compose.yml logs -f",
     "lab:local": "node scripts/ensure-env.mjs && pnpm --parallel --filter target-app --filter sensor dev",
-    "lab:status": "node scripts/lab.mjs status"
+    "lab:status": "node scripts/lab.mjs status",
+    "lab:attack": "node scripts/lab.mjs attack"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.6",

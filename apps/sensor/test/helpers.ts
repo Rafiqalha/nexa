@@ -10,6 +10,7 @@ export const BROWSER_HEADERS = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
   'accept-language': 'id-ID,id;q=0.9',
   'sec-fetch-mode': 'navigate',
+  'sec-fetch-site': 'none',
   'sec-fetch-dest': 'document',
   accept: 'text/html,application/xhtml+xml',
 } as const;

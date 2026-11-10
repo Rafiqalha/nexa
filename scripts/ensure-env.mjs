@@ -35,7 +35,7 @@ for (const line of current.split(/\r?\n/)) {
 const added = [];
 let tokenFilled = false;
 if (present.has('DASHBOARD_TOKEN') && present.get('DASHBOARD_TOKEN') === '') {
-  current = current.replace(/^\s*DASHBOARD_TOKEN\s*=.*$/m, `DASHBOARD_TOKEN=${newToken()}`);
+  current = current.replace(/^[ \t]*DASHBOARD_TOKEN[ \t]*=.*$/m, `DASHBOARD_TOKEN=${newToken()}`);
   tokenFilled = true;
 }
 for (const line of example.split(/\r?\n/)) {

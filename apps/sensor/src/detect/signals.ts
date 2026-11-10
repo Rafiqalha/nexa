@@ -21,11 +21,14 @@ export function isAutomationUserAgent(userAgent: string): boolean {
 }
 
 /**
- * Browser modern selalu mengirim Accept-Language dan header Sec-Fetch-*.
- * Library HTTP yang dipakai agen umumnya tidak mengirim keduanya.
+ * Browser modern selalu mengirim Accept-Language bertag bahasa nyata dan Sec-Fetch-Site.
+ * Library HTTP yang dipakai agen tidak mengirimnya, atau mengirim nilai generik
+ * (fetch bawaan Node/undici: `accept-language: *`, `sec-fetch-mode: cors`, tanpa Sec-Fetch-Site).
  */
 export function lacksBrowserHeaders(headers: HeaderBag): boolean {
-  return !headers['accept-language'] && !headers['sec-fetch-mode'];
+  const lang = headers['accept-language']?.trim();
+  const realLanguage = Boolean(lang) && lang !== '*';
+  return !realLanguage || !headers['sec-fetch-site'];
 }
 
 const STATIC_EXT =

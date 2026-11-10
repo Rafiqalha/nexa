@@ -1,0 +1,15 @@
+{
+  "name": "attacker-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agen penyerang uji MINIMAL untuk lab NEXA. Hanya menyasar target lab di LAB_TARGET_ALLOWLIST. Tidak ikut build produksi.",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "tsx": "4.23.15",
+    "zod": "4.6.7"
+  }
+}

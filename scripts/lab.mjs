@@ -132,11 +132,44 @@ function status() {
   console.log(`[lab] docker ${dockerAvailable() ? 'tersedia' : 'tidak tersedia'}`);
 }
 
+/** Menjalankan agen uji ke lab yang sedang hidup (lokal atau Docker). */
+function attack(args) {
+  if (existsSync(pidFile)) {
+    console.log('[lab] menjalankan attacker-agent (mode local)');
+    const r = spawnSync(process.execPath, ['--import', 'tsx', 'src/main.ts', ...args], {
+      cwd: join(root, 'lab', 'attacker-agent'),
+      stdio: 'inherit',
+    });
+    process.exit(r.status ?? 1);
+  }
+  if (dockerAvailable()) {
+    console.log('[lab] menjalankan attacker-agent (mode docker)');
+    const envFile = join(root, '.env');
+    run('docker', [
+      'compose',
+      ...(existsSync(envFile) ? ['--env-file', envFile] : []),
+      '-f',
+      join(root, 'deploy', 'docker-compose.yml'),
+      '--profile',
+      'attack',
+      'run',
+      '--rm',
+      '--build',
+      'attacker-agent',
+      ...args,
+    ]);
+    return;
+  }
+  console.error('[lab] lab belum berjalan. Jalankan `pnpm lab:up` dulu.');
+  process.exit(1);
+}
+
 const cmd = process.argv[2];
 if (cmd === 'up') await up();
 else if (cmd === 'down') down();
 else if (cmd === 'status') status();
+else if (cmd === 'attack') attack(process.argv.slice(3).filter((a) => a !== '--'));
 else {
-  console.error('pakai: node scripts/lab.mjs up|down|status');
+  console.error('pakai: node scripts/lab.mjs up|down|status|attack [-- --baseline --scripted]');
   process.exit(2);
 }

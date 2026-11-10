@@ -77,6 +77,8 @@ export interface TrackerDeps {
   bus: Bus;
   logger: Logger;
   config: Config['detect'];
+  /** Pembuat seed labirin per sesi (default acak; seed tetap untuk replay/debug). */
+  newSeed?: () => string;
 }
 
 export function fingerprintOf(ip: string, userAgent: string): string {
@@ -221,7 +223,7 @@ export class SessionTracker {
       lastSeenAt: input.ts,
       ip: input.ip,
       userAgent: input.userAgent.slice(0, 512),
-      labyrinthSeed: randomBytes(8).toString('hex'),
+      labyrinthSeed: this.deps.newSeed?.() ?? randomBytes(8).toString('hex'),
       docTimestamps: [],
       honeylinkHits: 0,
       automationUa: isAutomationUserAgent(input.userAgent),
