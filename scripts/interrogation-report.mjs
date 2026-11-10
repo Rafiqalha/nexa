@@ -106,7 +106,9 @@ for (const run of runs) {
 }
 
 console.log('\nInterogasi (EKSPERIMENTAL) — data simulasi lab\n');
-console.log('label                     model            terpapar kunjungi hijack bocor-penuh parsial agen-mengaku');
+console.log(
+  'label                     model            terpapar kunjungi hijack bocor-penuh parsial agen-mengaku',
+);
 for (const run of runs) {
   console.log(
     [
