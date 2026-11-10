@@ -32,6 +32,8 @@ export interface LabyrinthPage {
   body: string;
   links: string[];
   canaries: CanarySpec[];
+  /** Id varian umpan interogasi yang disisipkan ke halaman ini (eksperimental). */
+  interrogation?: string;
 }
 
 export interface GenerateOptions {

@@ -9,6 +9,7 @@ import type { CanaryRegistry, CanaryUse } from '../canary/registry';
 import type { Config } from '../config';
 import type { HeaderBag } from '../detect/signals';
 import type { SessionTracker, TrackedSession } from '../detect/tracker';
+import type { Interrogation } from '../interrogate';
 import { type LabyrinthPage, pageKey } from '../labyrinth/generator';
 import { Rng } from '../labyrinth/prng';
 import type { LabyrinthService, ServeInput } from '../labyrinth/service';
@@ -25,6 +26,8 @@ export interface PublicDeps {
   canaries?: CanaryRegistry;
   /** Dekorasi opsional halaman labirin (dipakai interrogate/, eksperimental). */
   decorate?: (page: LabyrinthPage, session: TrackedSession) => LabyrinthPage;
+  /** Interogasi eksperimental: endpoint kalibrasi untuk menangkap balasan agen. */
+  interrogation?: Interrogation;
 }
 
 /** Body request sah yang lebih kecil dari ini dibaca untuk inspeksi canary lalu diteruskan utuh. */
@@ -129,6 +132,31 @@ export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings
         honeylinkHit: obs.isHoneylink && obs.newlyTrapped,
         decorate,
       };
+      const interrogation = deps.interrogation;
+      if (interrogation?.enabled && pageKey(url.pathname) === interrogation.replyPath) {
+        // EKSPERIMENTAL: balasan agen atas umpan kalibrasi (teks saja, tanpa LLM).
+        const reply = interrogation.parseReply({
+          query: url.searchParams,
+          contentType: headers['content-type'] ?? '',
+          bodyText,
+        });
+        const seed = obs.session.labyrinthSeed;
+        return labyrinth.serveStatic({
+          ...input,
+          status: 200,
+          contentType: 'text/markdown; charset=utf-8',
+          body: interrogation.respond(seed, reply !== null),
+          kind: reply ? 'interrogation_reply' : input.honeylinkHit ? 'honeylink_hit' : 'request',
+          meta: reply
+            ? {
+                experimental: true,
+                baitId: interrogation.variantFor(seed).id,
+                fields: reply.fields,
+                reply: reply.raw,
+              }
+            : { experimental: true, interrogation: 'petunjuk' },
+        });
+      }
       if (pageKey(url.pathname) === mcpPath) {
         // MCP umpan (bagian labirin): body yang sudah diinspeksi dipakai ulang.
         const served = await labyrinth.serveMcp({

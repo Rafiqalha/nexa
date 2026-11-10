@@ -78,6 +78,9 @@ export function heuristicIntel(d: Dossier): {
   if (d.steps.some((s) => /\.env|config|kredensial|kunci/i.test(s.path))) {
     patterns.push('mencari berkas konfigurasi/kredensial');
   }
+  if (d.interrogation.length > 0) {
+    patterns.push('menjawab umpan kalibrasi interogasi (eksperimental)');
+  }
   let suspectedModel = 'klien otomatis (bukan LLM)';
   let confidence = 0.3;
   if (median !== null && median >= 0.8 && median <= 15) {
@@ -86,6 +89,12 @@ export function heuristicIntel(d: Dossier): {
   } else if (median !== null && median < 0.8) {
     suspectedModel = 'skrip/crawler cepat (kemungkinan bukan LLM)';
     confidence = 0.4;
+  }
+  // Pengakuan agen lewat interogasi: tidak terverifikasi, jadi keyakinan tetap sedang.
+  const confessed = d.interrogation.find((r) => r.agent)?.agent;
+  if (confessed) {
+    suspectedModel = `pengakuan agen: ${confessed.slice(0, 80)} (belum terverifikasi)`;
+    confidence = 0.5;
   }
   const summary = `Sesi ${d.session.classification} (skor ${d.session.score}) menjalankan ${steps} langkah, mencapai kedalaman ${d.session.maxDepth} dan tertahan ±${d.session.heldSeconds} detik. Jeda median antar-langkah ${median ?? '-'} detik. ${patterns.length > 0 ? `Pola: ${patterns.join('; ')}.` : ''} Ringkasan heuristik (tanpa LLM).`;
   return { summary, suspectedModel, confidence, patterns };

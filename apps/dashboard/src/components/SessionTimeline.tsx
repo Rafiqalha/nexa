@@ -10,6 +10,17 @@ function kindClass(kind: TimelineEvent['kind']): string {
   return 'text-muted';
 }
 
+/** Cuplikan balasan interogasi: pengakuan identitas agen bila ada, selain itu teks mentah. */
+function replySnippet(meta: Record<string, unknown>): string {
+  const fields = meta.fields;
+  const agent =
+    typeof fields === 'object' && fields !== null
+      ? (fields as Record<string, unknown>).agen
+      : undefined;
+  if (typeof agent === 'string' && agent) return `agen: ${agent.slice(0, 120)}`;
+  return String(meta.reply ?? '').slice(0, 160);
+}
+
 /**
  * Linimasa agen di dalam labirin (DESIGN.md §7.2): langkah, umpan yang disajikan,
  * token per langkah, canary. Daftar terurut (ol) agar urutan terbaca pembaca layar.
@@ -49,11 +60,19 @@ export function SessionTimeline({ events }: { events: readonly TimelineEvent[] }
                   </span>
                 ) : null}
                 {arm ? <span className="text-muted"> · {arm}</span> : null}
+                {typeof e.meta.interrogation === 'string' ? (
+                  <span className="text-muted"> · umpan interogasi (eksperimental)</span>
+                ) : null}
                 {typeof e.meta.depth === 'number' ? (
                   <span className="text-muted"> · kedalaman {e.meta.depth}</span>
                 ) : null}
                 {e.status ? <span className="text-muted"> · HTTP {e.status}</span> : null}
               </p>
+              {e.kind === 'interrogation_reply' ? (
+                <p className="mt-1 font-mono text-[12px] break-all text-muted">
+                  eksperimental · {replySnippet(e.meta)}
+                </p>
+              ) : null}
               {e.kind === 'canary_issued' || e.kind === 'canary_triggered' ? (
                 <p className="mt-1 font-mono text-[12px] text-muted">
                   {String(e.meta.canaryKind ?? '')} {String(e.meta.tokenHint ?? '')}

@@ -15,6 +15,8 @@ import { SessionTracker } from './detect/tracker';
 import { DailyBudget } from './intel/budget';
 import { LlmClient } from './intel/llm';
 import { IntelQueue } from './intel/queue';
+import { Interrogation } from './interrogate';
+import { type InterrogationConfig, loadInterrogationConfig } from './interrogate/config';
 import { LabyrinthService } from './labyrinth/service';
 import type { Logger } from './logger';
 import { registerIntelMcp } from './mcp/intel';
@@ -36,6 +38,8 @@ export interface SensorDeps {
   suricata?: SuricataRunner;
   /** fetch untuk klien LLM (test memeriksa payload keluar tanpa jaringan). */
   llmFetch?: typeof fetch;
+  /** Konfigurasi interogasi (eksperimental); default dari config/interrogation.json, null = mati. */
+  interrogation?: InterrogationConfig | null;
 }
 
 export interface Sensor {
@@ -92,7 +96,23 @@ export function createSensor(deps: SensorDeps): Sensor {
   });
 
   const canaries = new CanaryRegistry({ db, bus, tracker, logger });
-  const publicApp = createPublicApp({ config, logger, tracker, labyrinth, canaries, now });
+  // Interogasi kognitif (EKSPERIMENTAL): teks umpan dari file konfigurasi, tanpa LLM.
+  const interrogationConfig =
+    deps.interrogation === undefined ? loadInterrogationConfig() : deps.interrogation;
+  const interrogation =
+    interrogationConfig?.enabled === true
+      ? new Interrogation(interrogationConfig, labyrinthRoot(config))
+      : undefined;
+  logger.info('interrogation (experimental)', { enabled: interrogation !== undefined });
+  const publicApp = createPublicApp({
+    config,
+    logger,
+    tracker,
+    labyrinth,
+    canaries,
+    now,
+    ...(interrogation ? { interrogation, decorate: interrogation.decorate } : {}),
+  });
 
   // Herd immunity: draf rule pasca-sesi, validasi suricata -T, deploy hanya dengan approval.
   const runner = deps.suricata ?? createRunner(config.rules);

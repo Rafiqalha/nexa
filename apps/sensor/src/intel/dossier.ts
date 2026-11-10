@@ -7,6 +7,32 @@ import { analyzeTiming } from '../detect/timing';
 import { type RedactedText, Redactor } from './redact';
 
 const MAX_STEPS = 80;
+/** Batas panjang tangkapan interogasi yang disimpan di intel.capturedPrompt. */
+const MAX_CAPTURED = 6_000;
+
+/** Pengakuan identitas agen dari balasan interogasi (field kanonis "agen"), bila ada. */
+function agentOf(meta: Record<string, unknown>): string | null {
+  const fields = meta.fields;
+  if (typeof fields !== 'object' || fields === null) return null;
+  const agent = (fields as Record<string, unknown>).agen;
+  return typeof agent === 'string' && agent.trim() ? agent.trim().slice(0, 120) : null;
+}
+
+/**
+ * Tangkapan interogasi (EKSPERIMENTAL) untuk intel.capturedPrompt: balasan mentah agen
+ * atas umpan kalibrasi, berurutan, dipotong. Deterministik; tidak memanggil model.
+ */
+export function capturedPromptOf(db: Db, sessionId: string): string | null {
+  const parts = db
+    .select()
+    .from(events)
+    .where(and(eq(events.sessionId, sessionId), eq(events.kind, 'interrogation_reply')))
+    .orderBy(asc(events.ts), asc(events.id))
+    .all()
+    .map((e) => String(e.meta.reply ?? '').trim())
+    .filter((r) => r.length > 0);
+  return parts.length > 0 ? parts.join('\n---\n').slice(0, MAX_CAPTURED) : null;
+}
 
 export interface Dossier {
   session: {
@@ -29,7 +55,7 @@ export interface Dossier {
     status?: number | null;
   }>;
   canaries: Array<{ kind: string; used: boolean; crossSession: boolean; triggerIp: string | null }>;
-  interrogation: Array<{ baitId: string; reply: string }>;
+  interrogation: Array<{ baitId: string; agent: string | null; reply: string }>;
   truncatedSteps: number;
 }
 
@@ -73,6 +99,7 @@ export function buildDossier(db: Db, sessionId: string): Dossier | null {
     .all()
     .map((e) => ({
       baitId: String(e.meta.baitId ?? ''),
+      agent: agentOf(e.meta),
       reply: String(e.meta.reply ?? '').slice(0, 600),
     }));
   return {

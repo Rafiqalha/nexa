@@ -1,5 +1,6 @@
 // Menyajikan labirin untuk sesi yang dibelokkan + mencatat event & reward bandit.
 // Jalur ini deterministik/prosedural; TIDAK BOLEH meng-import intel/ (AGENTS.md §2.2).
+import type { EventKind } from '@nexa/shared';
 import type { Bus } from '../bus';
 import type { Db } from '../db/client';
 import type { SessionTracker, TrackedSession } from '../detect/tracker';
@@ -53,6 +54,15 @@ export interface ServeInput {
 export interface ServedPage {
   response: Response;
   page: LabyrinthPage;
+}
+
+export interface ServeStaticInput extends ServeInput {
+  /** Halaman non-generator (mis. endpoint kalibrasi interogasi). */
+  body: string;
+  contentType: string;
+  status: number;
+  kind: EventKind;
+  meta: Record<string, unknown>;
 }
 
 export interface ServeMcpInput extends ServeInput {
@@ -143,6 +153,7 @@ export class LabyrinthService {
         depth: page.depth,
         links: page.links.length,
         canaries: page.canaries.map((c) => c.kind),
+        ...(page.interrogation ? { interrogation: page.interrogation } : {}),
       },
     });
     if (page.status === 200) tracker.noteDepth(session.id, page.depth);
@@ -205,10 +216,36 @@ export class LabyrinthService {
         tool,
         ...(first ? { arm: first.kind, depth: first.depth } : {}),
         canaries: pages.flatMap((p) => p.canaries.map((c) => c.kind)),
+        ...(first?.interrogation ? { interrogation: first.interrogation } : {}),
       },
     });
     for (const p of pages) tracker.noteDepth(session.id, p.depth);
     return { response, pages };
+  }
+
+  /** Respons non-generator di dalam labirin, dicatat seperti umpan (estimasi token). */
+  serveStatic(input: ServeStaticInput): Response {
+    const started = performance.now();
+    const { session, ts } = input;
+    const { config, tracker } = this.deps;
+    this.settle(session.id, ts);
+    const ok = input.status >= 200 && input.status < 300;
+    const chars = ok ? input.body.length : 0;
+    tracker.recordEvent(session.id, {
+      kind: input.kind,
+      ts,
+      method: input.method,
+      path: input.pathAndQuery,
+      status: input.status,
+      charsServed: chars,
+      estTokens: estimateTokens(chars, config.charsPerToken),
+      latencyMs: performance.now() - started,
+      meta: input.meta,
+    });
+    return new Response(input.method === 'HEAD' ? null : input.body, {
+      status: input.status,
+      headers: { 'content-type': input.contentType, 'cache-control': 'no-store' },
+    });
   }
 
   private render(session: TrackedSession, pathAndQuery: string): LabyrinthPage {

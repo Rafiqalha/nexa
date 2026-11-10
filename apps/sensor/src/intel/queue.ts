@@ -8,7 +8,7 @@ import { type IntelRow, intel, sessions } from '../db/schema';
 import type { Logger } from '../logger';
 import type { RulesService } from '../rules/service';
 import { BudgetExceededError, type DailyBudget } from './budget';
-import { buildDossier, redactDossier } from './dossier';
+import { buildDossier, capturedPromptOf, redactDossier } from './dossier';
 import { estimateRequestTokens, type LlmClient } from './llm';
 import { heuristicIntel, SYSTEM_PROMPT, summarizeWithLlm } from './summarize';
 
@@ -112,8 +112,10 @@ export class IntelQueue {
       patterns: heuristic.patterns,
     };
     const existing = db.select().from(intel).where(eq(intel.sessionId, sessionId)).get();
-    // Tangkapan interogasi (eksperimental) tidak boleh tertimpa.
-    const keep = existing?.capturedPrompt ? { capturedPrompt: existing.capturedPrompt } : {};
+    // Tangkapan interogasi (eksperimental): dari event interrogation_reply sesi ini;
+    // tangkapan lama tidak boleh tertimpa kosong.
+    const captured = capturedPromptOf(db, sessionId) ?? existing?.capturedPrompt ?? null;
+    const keep = captured ? { capturedPrompt: captured } : {};
 
     if (!llm.enabled) {
       return this.upsert(sessionId, {
