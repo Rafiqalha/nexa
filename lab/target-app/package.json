@@ -1,0 +1,20 @@
+{
+  "name": "target-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portal satuan fiktif untuk lab NEXA. Hanya untuk pengujian; tidak ikut build produksi.",
+  "type": "module",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.6",
+    "hono": "4.13.17",
+    "tsx": "4.23.15"
+  }
+}

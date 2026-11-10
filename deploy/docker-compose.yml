@@ -1,0 +1,68 @@
+# Lab NEXA: sensor (reverse proxy + deception) di depan target-app fiktif.
+# Jaringan `lab` bersifat internal (tanpa akses keluar). Hanya sensor yang punya
+# kaki di jaringan `edge` untuk port yang dipublikasikan ke 127.0.0.1 host.
+name: nexa-lab
+
+services:
+  target-app:
+    build:
+      context: ..
+      dockerfile: lab/target-app/Dockerfile
+    init: true
+    environment:
+      PORT: "3000"
+    networks: [lab]
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  sensor:
+    build:
+      context: ..
+      dockerfile: apps/sensor/Dockerfile
+    init: true
+    depends_on:
+      target-app:
+        condition: service_healthy
+    # Secret (DASHBOARD_TOKEN, DEEPSEEK_API_KEY) hanya masuk ke container sensor.
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      NODE_ENV: production
+      SENSOR_HOST: 0.0.0.0
+      SENSOR_PORT: "8080"
+      ADMIN_HOST: 0.0.0.0
+      ADMIN_PORT: "8081"
+      UPSTREAM_URL: http://target-app:3000
+      DATABASE_PATH: /data/nexa.db
+      SURICATA_RULES_DIR: /rules
+    volumes:
+      - nexa-data:/data
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
+    networks: [lab, edge]
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8081/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+networks:
+  lab:
+    internal: true
+  edge: {}
+
+volumes:
+  nexa-data: {}

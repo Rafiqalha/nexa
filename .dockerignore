@@ -1,0 +1,11 @@
+**/node_modules
+**/dist
+**/out
+**/coverage
+.git
+.env
+.env.*
+data
+**/*.db
+lab/output
+deploy/suricata/rules/*.rules

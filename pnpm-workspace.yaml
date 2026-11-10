@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+  - lab/*
+
+# pnpm >= 10 tidak menjalankan build script dependensi tanpa izin eksplisit.
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+  electron: true

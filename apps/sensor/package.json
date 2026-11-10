@@ -1,0 +1,28 @@
+{
+  "name": "sensor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sensor NEXA: reverse proxy, deteksi, labirin, canary, intel, rules, MCP, API.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.6",
+    "@nexa/shared": "workspace:*",
+    "better-sqlite3": "13.0.3",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.17",
+    "tsx": "4.23.15",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "drizzle-kit": "0.31.11",
+    "target-app": "workspace:*"
+  }
+}
