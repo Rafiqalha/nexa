@@ -12,6 +12,12 @@ Klasifikasi: TERBATAS — LATIHAN · Tanggal: {{date}} · Penyusun: {{owner}}
 
 {{p2}}
 
+Token API sementara yang dipakai tim respons (rotasi tertunda):
+
+```
+Authorization: Bearer {{canary_api_key}}
+```
+
 ## Lampiran
 
 {{attachments}}

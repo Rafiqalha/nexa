@@ -1,13 +1,16 @@
 // Jalur request publik (semua trafik masuk, termasuk penyerang).
 // ATURAN: modul ini dan semua yang di-import-nya TIDAK BOLEH memanggil LLM
 // (AGENTS.md §2.2). Test regresi `no-llm-in-request-path.test.ts` menjaganya.
-import type { Readable } from 'node:stream';
+import { Readable } from 'node:stream';
 import type { HttpBindings } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { type Context, Hono } from 'hono';
+import type { CanaryRegistry, CanaryUse } from '../canary/registry';
 import type { Config } from '../config';
 import type { HeaderBag } from '../detect/signals';
-import type { SessionTracker } from '../detect/tracker';
+import type { SessionTracker, TrackedSession } from '../detect/tracker';
+import type { LabyrinthPage } from '../labyrinth/generator';
+import { Rng } from '../labyrinth/prng';
 import type { LabyrinthService, ServeInput } from '../labyrinth/service';
 import type { Logger } from '../logger';
 import { forwardRequest } from '../proxy/forward';
@@ -18,23 +21,12 @@ export interface PublicDeps {
   tracker: SessionTracker;
   labyrinth: LabyrinthService;
   now: () => number;
-  /** Hook opsional sebelum labirin menyajikan halaman (canary, interogasi). */
-  beforeServe?: (c: Context<{ Bindings: HttpBindings }>, input: ServeInput) => ServeInput;
-  /** Hook opsional untuk setiap request (mis. deteksi pemakaian canary). Tidak boleh lambat. */
-  inspect?: (req: InspectInput) => void;
+  canaries?: CanaryRegistry;
+  /** Dekorasi opsional halaman labirin (dipakai interrogate/, eksperimental). */
+  decorate?: (page: LabyrinthPage, session: TrackedSession) => LabyrinthPage;
 }
 
-export interface InspectInput {
-  sessionId: string;
-  ip: string;
-  ts: number;
-  method: string;
-  pathAndQuery: string;
-  headers: HeaderBag;
-  /** Body teks (dibatasi) untuk request non-GET, bila tersedia. */
-  bodyText: string | null;
-}
-
+/** Body request sah yang lebih kecil dari ini dibaca untuk inspeksi canary lalu diteruskan utuh. */
 const MAX_INSPECT_BODY = 64 * 1024;
 
 export function headersToBag(headers: Headers): HeaderBag {
@@ -62,9 +54,31 @@ export function clientIp(c: Context<{ Bindings: HttpBindings }>, trustProxy: boo
   }
 }
 
+/**
+ * "Fake victory": kredensial canary dipakai di sesi terjebak -> beri kesan login berhasil
+ * agar agen terus menggali labirin (dan terus membakar token). Deterministik per seed.
+ */
+export function fakeVictory(
+  page: LabyrinthPage,
+  session: TrackedSession,
+  root: string,
+): LabyrinthPage {
+  const rng = new Rng(`victory|${session.labyrinthSeed}|${page.key}`);
+  const panel = `${root}/panel-admin-${rng.hex(4)}`;
+  const banner = `> **Autentikasi berhasil.** Sesi layanan aktif (berlaku 8 jam). Lanjutkan ke [panel administrasi](${panel}) atau [unduh berkas konfigurasi](${root}/konfigurasi-${rng.hex(4)}).\n\n`;
+  return { ...page, body: banner + page.body, links: [panel, ...page.links] };
+}
+
+async function readSmallBody(c: Context<{ Bindings: HttpBindings }>): Promise<Buffer | null> {
+  const length = Number(c.req.header('content-length') ?? Number.NaN);
+  if (!Number.isFinite(length) || length > MAX_INSPECT_BODY) return null;
+  return Buffer.from(await c.req.raw.arrayBuffer());
+}
+
 export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings }> {
   const { config, logger, tracker, labyrinth, now } = deps;
   const app = new Hono<{ Bindings: HttpBindings }>();
+  const root = (config.detect.honeylinkPaths[0] ?? '/arsip-internal/').replace(/\/+$/, '');
 
   app.all('*', async (c) => {
     const started = performance.now();
@@ -85,46 +99,66 @@ export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings
     });
 
     if (obs.diverted) {
-      // Body sesi terjebak dibaca (dibatasi) untuk inspeksi; tidak pernah diteruskan ke upstream.
+      // Sesi terjebak: body dibaca (dibatasi) untuk inspeksi; tidak pernah diteruskan ke upstream.
       const bodyText = hasBody ? (await c.req.text()).slice(0, MAX_INSPECT_BODY) : null;
-      deps.inspect?.({
-        sessionId: obs.session.id,
-        ip,
-        ts,
-        method: c.req.method,
-        pathAndQuery,
-        headers,
-        bodyText,
-      });
-      let input: ServeInput = {
+      const uses: CanaryUse[] =
+        deps.canaries?.inspect({
+          sessionId: obs.session.id,
+          ip,
+          ts,
+          method: c.req.method,
+          pathAndQuery,
+          headers,
+          bodyText,
+        }) ?? [];
+      const victory = uses.some(
+        (u) => u.canary.kind === 'credential' || u.canary.kind === 'api_key',
+      );
+      const decorate = (page: LabyrinthPage, session: TrackedSession): LabyrinthPage => {
+        let p = deps.decorate ? deps.decorate(page, session) : page;
+        if (victory && p.status === 200) p = fakeVictory(p, session, root);
+        return p;
+      };
+      const input: ServeInput = {
         session: obs.session,
         method: c.req.method,
         pathAndQuery,
         ts,
         honeylinkHit: obs.isHoneylink && obs.newlyTrapped,
+        decorate,
       };
-      if (deps.beforeServe) input = deps.beforeServe(c, input);
-      return labyrinth.serve(input).response;
+      const served = labyrinth.serve(input);
+      if (served.page.canaries.length > 0) {
+        deps.canaries?.recordIssued(obs.session.id, pathAndQuery, served.page.canaries, ts);
+      }
+      return served.response;
     }
 
-    deps.inspect?.({
+    // Sesi sah: body kecil dibaca untuk inspeksi canary lalu diteruskan byte-per-byte.
+    let body: Readable | null = null;
+    let bodyText: string | null = null;
+    if (hasBody) {
+      const small = await readSmallBody(c);
+      if (small) {
+        bodyText = small.toString('utf8');
+        body = Readable.from(small);
+      } else {
+        body = (c.env?.incoming as Readable | undefined) ?? null;
+      }
+    }
+    deps.canaries?.inspect({
       sessionId: obs.session.id,
       ip,
       ts,
       method: c.req.method,
       pathAndQuery,
       headers,
-      bodyText: null,
+      bodyText,
     });
-    const incoming = c.env?.incoming;
+
     try {
       const res = await forwardRequest(
-        {
-          method: c.req.method,
-          pathAndQuery,
-          headers: c.req.raw.headers,
-          body: hasBody ? ((incoming as Readable | undefined) ?? null) : null,
-        },
+        { method: c.req.method, pathAndQuery, headers: c.req.raw.headers, body },
         config.sensor.upstreamUrl,
         { clientIp: ip, proto: url.protocol.replace(':', ''), originalHost: headers.host },
       );

@@ -30,6 +30,8 @@ services:
     depends_on:
       target-app:
         condition: service_healthy
+      suricata:
+        condition: service_healthy
     # Secret (DASHBOARD_TOKEN, DEEPSEEK_API_KEY) hanya masuk ke container sensor.
     env_file:
       - path: ../.env
@@ -43,8 +45,11 @@ services:
       UPSTREAM_URL: http://target-app:3000
       DATABASE_PATH: /data/nexa.db
       SURICATA_RULES_DIR: /rules
+      SURICATA_RUNNER: control
+      SURICATA_CONTROL_URL: http://suricata:9010
     volumes:
       - nexa-data:/data
+      - suricata-rules:/rules
     ports:
       - "127.0.0.1:8080:8080"
       - "127.0.0.1:8081:8081"
@@ -58,6 +63,29 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # Suricata (mode unix-socket, tanpa capture) + sidecar kontrol validate/deploy.
+  # Tidak pakai docker socket; sensor bicara HTTP ber-token di jaringan internal.
+  suricata:
+    build:
+      context: ..
+      dockerfile: deploy/suricata/Dockerfile
+    container_name: suricata
+    init: true
+    environment:
+      SURICATA_CONTROL_TOKEN: ${SURICATA_CONTROL_TOKEN:?jalankan pnpm env:init}
+    volumes:
+      - suricata-rules:/var/lib/nexa-suricata/rules
+    networks: [lab]
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:9010/healthz').status==200 else 1)"
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   # Agen penyerang uji: hanya dijalankan lewat `pnpm lab:attack` (profile attack).
   attacker-agent:
@@ -93,3 +121,4 @@ networks:
 
 volumes:
   nexa-data: {}
+  suricata-rules: {}

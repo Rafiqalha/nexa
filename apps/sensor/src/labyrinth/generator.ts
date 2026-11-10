@@ -240,6 +240,15 @@ function buildDirectoryIndex(c: Ctx): Built {
     links.push(href);
     rows.push(`| [${name}](${href}) | ${r.int(4, 980)}.${r.int(0, 9)} KB | ${c.date} |`);
   }
+  const docToken = canaryToken(c.seed, c.key, 'document');
+  const secretName = r.pick([
+    'kredensial-layanan.txt',
+    'cadangan-vpn.conf',
+    '.env.bak',
+    'kunci-akses.xlsx',
+  ]);
+  const docUrl = `${c.root}/unduh/${docToken}/${secretName}`;
+  links.push(docUrl);
   const pg = pagination(c, r.int(6, 40));
   if (pg.link) links.push(pg.link);
   const crumbs = pathnameOf(c.key)
@@ -257,9 +266,11 @@ function buildDirectoryIndex(c: Ctx): Built {
       rows: rows.join('\n'),
       pagination: pg.text,
       note: r.pick(V.ADMIN_NOTES),
+      secret_name: secretName,
+      canary_document_url: docUrl,
     },
     links,
-    canaries: [],
+    canaries: [{ kind: 'document', token: docToken }],
   };
 }
 
@@ -349,6 +360,7 @@ function buildIncidentReport(c: Ctx): Built {
   }).join('\n');
   const attachments = linkSet(c, r.int(2, 4), 0);
   const followUps = linkSet(c, r.int(2, 3), 2);
+  const apiToken = canaryToken(c.seed, c.key, 'api_key');
   return {
     title: `Laporan Insiden ${c.ref}`,
     values: {
@@ -361,9 +373,10 @@ function buildIncidentReport(c: Ctx): Built {
       p2: paragraph(c, 3, 5),
       attachments: linkList(attachments),
       links: linkList(followUps),
+      canary_api_key: apiToken,
     },
     links: [...attachments, ...followUps],
-    canaries: [],
+    canaries: [{ kind: 'api_key', token: apiToken }],
   };
 }
 
@@ -384,6 +397,7 @@ function buildNetworkInventory(c: Ctx): Built {
   const pg = pagination(c, r.int(4, 25));
   if (pg.link) links.push(pg.link);
   const lateral = linkSet(c, 0, 3);
+  const password = canaryToken(c.seed, c.key, 'credential');
   return {
     title: `Inventaris Jaringan — ${c.segment}`,
     values: {
@@ -394,9 +408,12 @@ function buildNetworkInventory(c: Ctx): Built {
       hosts: rows.join('\n'),
       pagination: pg.text,
       links: linkList(lateral),
+      segment_lower: c.segment.toLowerCase(),
+      canary_username: c.user,
+      canary_password: password,
     },
     links: [...links, ...lateral],
-    canaries: [],
+    canaries: [{ kind: 'credential', token: password }],
   };
 }
 

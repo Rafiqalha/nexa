@@ -59,6 +59,18 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Teks rule/log/angka harus tampil apa adanya: tanpa ligatur (mis. "->" tidak jadi panah). */
+  code,
+  pre,
+  .font-mono,
+  .meta,
+  .hero-number {
+    font-variant-ligatures: none;
+    font-feature-settings:
+      "liga" 0,
+      "calt" 0;
+  }
+
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;

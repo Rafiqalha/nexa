@@ -47,6 +47,14 @@ export function SessionTimeline({ events }: { events: readonly TimelineEvent[] }
                 ) : null}
                 {e.status ? <span className="text-muted"> · HTTP {e.status}</span> : null}
               </p>
+              {e.kind === 'canary_issued' || e.kind === 'canary_triggered' ? (
+                <p className="mt-1 font-mono text-[12px] text-muted">
+                  {String(e.meta.canaryKind ?? '')} {String(e.meta.tokenHint ?? '')}
+                  {e.kind === 'canary_triggered'
+                    ? ` · dipakai dari ${String(e.meta.triggerIp ?? '?')}${e.meta.crossSession ? ' (sesi lain)' : ''} · infrastruktur yang dipakai penyerang`
+                    : ''}
+                </p>
+              ) : null}
             </div>
             <div className="col-start-2 row-start-1 text-right font-mono text-[13px] sm:col-start-3">
               <span className="text-fg">{formatInt(e.estTokens)}</span>

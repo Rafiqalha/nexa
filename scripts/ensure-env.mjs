@@ -12,16 +12,16 @@ const envPath = resolve(root, '.env');
 const example = readFileSync(resolve(root, '.env.example'), 'utf8');
 const newToken = () => randomBytes(24).toString('base64url');
 const KEY_LINE = /^\s*([A-Z0-9_]+)\s*=(.*)$/;
+/** Kunci secret yang diisi acak bila kosong. */
+const GENERATED = ['DASHBOARD_TOKEN', 'SURICATA_CONTROL_TOKEN'];
 
 if (!existsSync(envPath)) {
-  writeFileSync(
-    envPath,
-    example.replace(/^DASHBOARD_TOKEN=.*$/m, `DASHBOARD_TOKEN=${newToken()}`),
-    {
-      mode: 0o600,
-    },
-  );
-  console.log('[env] .env dibuat dari .env.example (DASHBOARD_TOKEN acak).');
+  let content = example;
+  for (const key of GENERATED) {
+    content = content.replace(new RegExp(`^${key}=.*$`, 'm'), `${key}=${newToken()}`);
+  }
+  writeFileSync(envPath, content, { mode: 0o600 });
+  console.log('[env] .env dibuat dari .env.example (token acak dibuat).');
   process.exit(0);
 }
 
@@ -34,14 +34,16 @@ for (const line of current.split(/\r?\n/)) {
 
 const added = [];
 let tokenFilled = false;
-if (present.has('DASHBOARD_TOKEN') && present.get('DASHBOARD_TOKEN') === '') {
-  current = current.replace(/^[ \t]*DASHBOARD_TOKEN[ \t]*=.*$/m, `DASHBOARD_TOKEN=${newToken()}`);
-  tokenFilled = true;
+for (const key of GENERATED) {
+  if (present.has(key) && present.get(key) === '') {
+    current = current.replace(new RegExp(`^[ \\t]*${key}[ \\t]*=.*$`, 'm'), `${key}=${newToken()}`);
+    tokenFilled = true;
+  }
 }
 for (const line of example.split(/\r?\n/)) {
   const m = line.match(KEY_LINE);
   if (!m || present.has(m[1])) continue;
-  const value = m[1] === 'DASHBOARD_TOKEN' ? newToken() : m[2];
+  const value = GENERATED.includes(m[1]) ? newToken() : m[2];
   added.push(`${m[1]}=${value}`);
 }
 
@@ -53,5 +55,5 @@ if (added.length > 0) {
 writeFileSync(envPath, current, { mode: 0o600 });
 const names = added.map((l) => l.split('=')[0]);
 console.log(
-  `[env] .env dilengkapi: ${names.length} kunci ditambahkan${tokenFilled ? ', DASHBOARD_TOKEN diisi' : ''}.`,
+  `[env] .env dilengkapi: ${names.length} kunci ditambahkan${tokenFilled ? ', token kosong diisi' : ''}.`,
 );

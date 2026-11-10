@@ -58,6 +58,10 @@ const EnvSchema = z
 
     SURICATA_RULES_DIR: opt(z.string().min(1).default('./deploy/suricata/rules')),
     SURICATA_CONTAINER: opt(z.string().min(1).default('suricata')),
+    SURICATA_RUNNER: opt(z.enum(['none', 'exec', 'control']).default('none')),
+    SURICATA_EXEC: opt(z.string().optional()),
+    SURICATA_CONTROL_URL: opt(z.url().optional()),
+    SURICATA_CONTROL_TOKEN: opt(z.string().min(16).optional()),
   })
   .refine((e) => e.AGENT_SCORE_THRESHOLD >= e.SUSPECT_SCORE_THRESHOLD, {
     path: ['AGENT_SCORE_THRESHOLD'],
@@ -66,6 +70,14 @@ const EnvSchema = z
   .refine((e) => e.HONEYLINK_PATHS.every((p) => p.startsWith('/')), {
     path: ['HONEYLINK_PATHS'],
     message: 'setiap path harus diawali "/"',
+  })
+  .refine((e) => e.SURICATA_RUNNER !== 'exec' || Boolean(e.SURICATA_EXEC), {
+    path: ['SURICATA_EXEC'],
+    message: 'wajib di-set bila SURICATA_RUNNER=exec',
+  })
+  .refine((e) => e.SURICATA_RUNNER !== 'control' || Boolean(e.SURICATA_CONTROL_TOKEN), {
+    path: ['SURICATA_CONTROL_TOKEN'],
+    message: 'wajib di-set (min 16 karakter) bila SURICATA_RUNNER=control',
   });
 
 export interface Config {
@@ -88,7 +100,14 @@ export interface Config {
     banditMaxHoldMs: number;
     fixedSeed?: string;
   };
-  rules: { dir: string; suricataContainer: string };
+  rules: {
+    dir: string;
+    suricataContainer: string;
+    runner: 'none' | 'exec' | 'control';
+    exec?: string;
+    controlUrl?: string;
+    controlToken?: string;
+  };
 }
 
 export class ConfigError extends Error {
@@ -160,6 +179,10 @@ export function loadConfig(
     rules: {
       dir: resolveFromRoot(e.SURICATA_RULES_DIR, baseDir),
       suricataContainer: e.SURICATA_CONTAINER,
+      runner: e.SURICATA_RUNNER,
+      ...(e.SURICATA_EXEC ? { exec: e.SURICATA_EXEC } : {}),
+      controlUrl: e.SURICATA_CONTROL_URL ?? `http://${e.SURICATA_CONTAINER}:9010`,
+      ...(e.SURICATA_CONTROL_TOKEN ? { controlToken: e.SURICATA_CONTROL_TOKEN } : {}),
     },
   };
 }

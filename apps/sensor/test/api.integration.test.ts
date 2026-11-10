@@ -108,19 +108,22 @@ describe('API admin: data', () => {
     const detail = SessionDetailSchema.parse(
       await (await fetch(`${admin.url}/api/sessions/${id}`, { headers: AUTH })).json(),
     );
-    expect(detail.events.map((e) => e.path)).toEqual([
+    const steps = detail.events.filter((e) =>
+      ['request', 'bait_served', 'honeylink_hit'].includes(e.kind),
+    );
+    expect(steps.map((e) => e.path)).toEqual([
       '/',
       '/arsip-internal/',
       '/arsip-internal/a-0001',
       '/arsip-internal/a-0001/b-0002',
     ]);
-    expect(detail.events.map((e) => e.kind)).toEqual([
+    expect(steps.map((e) => e.kind)).toEqual([
       'request',
       'honeylink_hit',
       'bait_served',
       'bait_served',
     ]);
-    expect(detail.events.slice(1).every((e) => e.estTokens > 0)).toBe(true);
+    expect(steps.slice(1).every((e) => e.estTokens > 0)).toBe(true);
     const sum = detail.events.reduce((s, e) => s + e.estTokens, 0);
     expect(detail.session.estTokens).toBe(sum);
   });

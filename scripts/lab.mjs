@@ -91,7 +91,16 @@ async function up() {
   const mode = pickMode();
   if (mode === 'docker') {
     console.log('[lab] mode docker: docker compose up');
-    run('docker', [...compose, 'up', '-d', '--build', '--wait']);
+    run('docker', [
+      'compose',
+      '--env-file',
+      join(root, '.env'),
+      ...compose.slice(1),
+      'up',
+      '-d',
+      '--build',
+      '--wait',
+    ]);
     console.log('[lab] sensor publik http://127.0.0.1:8080  admin http://127.0.0.1:8081');
     return;
   }

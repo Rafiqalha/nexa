@@ -4,14 +4,18 @@ import type { Hono } from 'hono';
 import { loadPricing, type Pricing } from './api/pricing';
 import { computeOverview } from './api/queries';
 import { createAdminApp } from './api/router';
+import { registerRuleRoutes } from './api/rules-routes';
 import { StreamHub } from './api/stream';
 import { Bus } from './bus';
+import { CanaryRegistry } from './canary/registry';
 import type { Config } from './config';
 import type { Db } from './db/client';
 import { SessionTracker } from './detect/tracker';
 import { LabyrinthService } from './labyrinth/service';
 import type { Logger } from './logger';
 import { createPublicApp } from './public/handler';
+import { RulesService } from './rules/service';
+import { createRunner, type SuricataRunner } from './rules/suricata';
 
 export interface SensorDeps {
   config: Config;
@@ -23,6 +27,8 @@ export interface SensorDeps {
   /** Folder build dashboard yang disajikan port admin (opsional). */
   dashboardDist?: string;
   streamFlushMs?: number;
+  /** Runner Suricata (default dari config); test menyuntikkan runner palsu. */
+  suricata?: SuricataRunner;
 }
 
 export interface Sensor {
@@ -32,6 +38,8 @@ export interface Sensor {
   labyrinth: LabyrinthService;
   bus: Bus;
   hub: StreamHub;
+  canaries: CanaryRegistry;
+  rules: RulesService;
   /** Tutup sesi idle; dipanggil berkala oleh index.ts. */
   tick: (now: number) => void;
   shutdown: () => void;
@@ -74,7 +82,21 @@ export function createSensor(deps: SensorDeps): Sensor {
     ...(deps.random ? { random: deps.random } : {}),
   });
 
-  const publicApp = createPublicApp({ config, logger, tracker, labyrinth, now });
+  const canaries = new CanaryRegistry({ db, bus, tracker, logger });
+  const publicApp = createPublicApp({ config, logger, tracker, labyrinth, canaries, now });
+
+  // Herd immunity: draf rule pasca-sesi, validasi suricata -T, deploy hanya dengan approval.
+  const runner = deps.suricata ?? createRunner(config.rules);
+  logger.info('suricata runner', { runner: runner.kind });
+  const rulesService = new RulesService({
+    db,
+    bus,
+    logger,
+    runner,
+    rulesDir: config.rules.dir,
+    honeylinkPaths: config.detect.honeylinkPaths,
+    now,
+  });
 
   // Port admin: API dashboard + SSE. Tidak pernah dibuka di port jebakan.
   const pricing = deps.pricing ?? loadPricing();
@@ -103,6 +125,7 @@ export function createSensor(deps: SensorDeps): Sensor {
     hub,
     buildOverview,
     ...(deps.dashboardDist ? { dashboardDist: deps.dashboardDist } : {}),
+    extend: (api) => registerRuleRoutes(api, rulesService),
   });
 
   return {
@@ -112,6 +135,8 @@ export function createSensor(deps: SensorDeps): Sensor {
     labyrinth,
     bus,
     hub,
+    canaries,
+    rules: rulesService,
     tick: (t) => {
       tracker.sweep(t);
     },
