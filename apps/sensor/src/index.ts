@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { serve } from '@hono/node-server';
 import { createSensor } from './app';
 import { type Config, ConfigError, loadConfig } from './config';
@@ -28,7 +29,9 @@ const logger = createLogger(config.logLevel, { svc: 'sensor' });
 const handle = openDb(config.db.path);
 runMigrations(handle.db);
 
-const sensor = createSensor({ config, logger, db: handle.db });
+const dashboardDist =
+  config.admin.dashboardDist ?? join(findRepoRoot(), 'apps', 'dashboard', 'dist');
+const sensor = createSensor({ config, logger, db: handle.db, dashboardDist });
 
 const publicServer = serve(
   { fetch: sensor.publicApp.fetch, port: config.sensor.port, hostname: config.sensor.host },

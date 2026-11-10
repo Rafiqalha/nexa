@@ -1,6 +1,10 @@
 // Composition root sensor: merangkai tracker, labirin, jalur publik, dan API admin.
 import type { HttpBindings } from '@hono/node-server';
-import { Hono } from 'hono';
+import type { Hono } from 'hono';
+import { loadPricing, type Pricing } from './api/pricing';
+import { computeOverview } from './api/queries';
+import { createAdminApp } from './api/router';
+import { StreamHub } from './api/stream';
 import { Bus } from './bus';
 import type { Config } from './config';
 import type { Db } from './db/client';
@@ -15,6 +19,10 @@ export interface SensorDeps {
   db: Db;
   now?: () => number;
   random?: () => number;
+  pricing?: Pricing;
+  /** Folder build dashboard yang disajikan port admin (opsional). */
+  dashboardDist?: string;
+  streamFlushMs?: number;
 }
 
 export interface Sensor {
@@ -23,6 +31,7 @@ export interface Sensor {
   tracker: SessionTracker;
   labyrinth: LabyrinthService;
   bus: Bus;
+  hub: StreamHub;
   /** Tutup sesi idle; dipanggil berkala oleh index.ts. */
   tick: (now: number) => void;
   shutdown: () => void;
@@ -67,12 +76,33 @@ export function createSensor(deps: SensorDeps): Sensor {
 
   const publicApp = createPublicApp({ config, logger, tracker, labyrinth, now });
 
-  // Port admin: API dashboard (Fase 3). Tidak pernah dibuka di port jebakan.
-  const adminApp = new Hono<{ Bindings: HttpBindings }>();
-  adminApp.get('/healthz', (c) => c.json({ ok: true }));
-  adminApp.onError((err, c) => {
-    logger.error('admin handler error', { err });
-    return c.json({ error: 'internal_error' }, 500);
+  // Port admin: API dashboard + SSE. Tidak pernah dibuka di port jebakan.
+  const pricing = deps.pricing ?? loadPricing();
+  const startedAt = now();
+  const buildOverview = () =>
+    computeOverview(db, {
+      pricing,
+      charsPerToken: config.labyrinth.charsPerToken,
+      llmBaseUrl: config.llm.baseUrl,
+      llmModel: config.llm.model,
+      startedAt,
+      upstreamHost: config.sensor.upstreamUrl.host,
+      now: now(),
+    });
+  const hub = new StreamHub({
+    bus,
+    db,
+    logger,
+    buildOverview,
+    ...(deps.streamFlushMs !== undefined ? { flushMs: deps.streamFlushMs } : {}),
+  });
+  const adminApp = createAdminApp({
+    db,
+    logger,
+    token: config.admin.dashboardToken,
+    hub,
+    buildOverview,
+    ...(deps.dashboardDist ? { dashboardDist: deps.dashboardDist } : {}),
   });
 
   return {
@@ -81,9 +111,13 @@ export function createSensor(deps: SensorDeps): Sensor {
     tracker,
     labyrinth,
     bus,
+    hub,
     tick: (t) => {
       tracker.sweep(t);
     },
-    shutdown: () => tracker.closeAll(),
+    shutdown: () => {
+      tracker.closeAll();
+      hub.close();
+    },
   };
 }

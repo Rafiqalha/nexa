@@ -24,3 +24,6 @@ deploy/suricata/run/
 Thumbs.db
 .vscode/
 .idea/
+
+# Konfigurasi lokal Claude Code
+.claude/

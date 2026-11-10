@@ -1,0 +1,13 @@
+{
+  "source": "https://api-docs.deepseek.com/quick_start/pricing",
+  "retrievedAt": "2026-11-10",
+  "basis": "harga input cache-miss jam sibuk (peak) per 1 juta token",
+  "usdToIdr": 16500,
+  "usdToIdrNote": "kurs asumsi, bukan kurs resmi; sesuaikan sebelum presentasi",
+  "attackerAssumedModel": "deepseek-flash",
+  "models": {
+    "deepseek-flash": { "inputUsdPerMTok": 0.3, "outputUsdPerMTok": 1.2 },
+    "deepseek-v4-pro": { "inputUsdPerMTok": 1.32, "outputUsdPerMTok": 3.96 },
+    "local": { "inputUsdPerMTok": 0, "outputUsdPerMTok": 0 }
+  }
+}

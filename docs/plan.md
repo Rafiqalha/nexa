@@ -125,7 +125,7 @@ Dokumen kontrak: `PRD.md`, `AGENTS.md`, `DESIGN.md`, `CLAUDE.md` (tidak diubah).
 | react / react-dom | 19.3.1 |
 | vite / @vitejs/plugin-react | 8.3.7 / 6.3.0 |
 | tailwindcss / @tailwindcss/vite | 4.3.5 |
-| lucide-react | 1.71.0 |
+| lucide-react | 1.70.0 (1.71.0 dirilis < 24 jam, ditahan kebijakan umur rilis pnpm) |
 | clsx / tailwind-merge / class-variance-authority / @radix-ui/react-slot | 2.1.1 / 3.7.0 / 0.7.1 / 1.5.0 |
 | @fontsource-variable/geist / jetbrains-mono | 5.3.0 / 5.3.0 (self-hosted, aman air-gapped) |
 | recharts | 3.10.1 (hanya bila dipakai) |

@@ -1,0 +1,23 @@
+/* Design tokens NEXA — salinan persis DESIGN.md §2. Jangan menambah warna di luar daftar ini. */
+:root {
+  --bg: #0c0f0d;
+  --surface: #0f130f;
+  --line: #232a24;
+  --line-subtle: #1a201b;
+  --line-strong: #343d35;
+  --text: #e8e6dc;
+  --text-2: #b9bdb0;
+  --text-muted: #8e9686;
+  --accent: #a3b18a;
+  --on-accent: #0c0f0d;
+  --status-trapped: #e07a62;
+  --status-suspect: #d9a441;
+  --status-neutral: #8e9686;
+
+  /* Loreng digital (hanya tekstur dasar sidebar) */
+  --camo-1: #161c17;
+  --camo-2: #1d251d;
+  --camo-3: #232b22;
+  --camo-4: #26251e;
+  --camo-5: #2c3529;
+}
