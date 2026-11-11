@@ -1,5 +1,5 @@
 // Salin token dari .env ke clipboard TANPA menampilkannya di terminal.
-//   pnpm token              -> SETUP_TOKEN (layar "Penyiapan awal"; lab: jatuh ke DASHBOARD_TOKEN)
+//   pnpm token              -> SETUP_TOKEN (hanya bila di-set; kosong = akun pertama tanpa token)
 //   pnpm token -- service   -> DASHBOARD_TOKEN (token layanan untuk skrip/klien API lab)
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -19,12 +19,14 @@ const envValue = (key) => {
 };
 
 const service = process.argv.slice(2).includes('service');
-const key = service
-  ? 'DASHBOARD_TOKEN'
-  : envValue('SETUP_TOKEN')
-    ? 'SETUP_TOKEN'
-    : 'DASHBOARD_TOKEN';
+const key = service ? 'DASHBOARD_TOKEN' : 'SETUP_TOKEN';
 const token = envValue(key);
+if (!token && !service) {
+  console.log(
+    '[token] SETUP_TOKEN kosong: tidak perlu token. Buka dashboard lalu buat akun; pendaftar pertama menjadi pemilik.',
+  );
+  process.exit(0);
+}
 if (!token) {
   console.error(`[token] ${key} kosong. Jalankan: pnpm env:init`);
   process.exit(1);
@@ -46,7 +48,7 @@ for (const [cmd, args] of candidates) {
     console.log(
       service
         ? `[token] DASHBOARD_TOKEN (${token.length} karakter) disalin. Kirim sebagai header Authorization: Bearer.`
-        : `[token] ${key} (${token.length} karakter) disalin. Tempel di kolom "Token penyiapan" saat membuat akun pemilik.`,
+        : `[token] ${key} (${token.length} karakter) disalin. Tempel di kolom "Token penyiapan" saat membuat akun pertama.`,
     );
     process.exit(0);
   }

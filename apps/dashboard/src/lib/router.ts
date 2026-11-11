@@ -1,6 +1,7 @@
 // Router hash kecil (tanpa dependensi).
 // Rute: #/, #/sesi, #/sesi/<id>, #/intel, #/aturan, #/pengguna, #/tagihan, #/pengaturan,
-// #/audit, #/akun, dan rute publik #/undangan/<token>, #/reset/<token>.
+// #/audit, #/akun, dan rute publik #/undangan/<token>, #/reset/<token>. Tanpa login,
+// #/daftar membuka tab Daftar di layar masuk (setelah masuk diperlakukan sebagai Dashboard).
 // `#/kontak` lama tetap diterima sebagai alias `#/sesi` agar tautan lama tidak putus.
 import { useSyncExternalStore } from 'react';
 
@@ -61,7 +62,13 @@ function subscribe(cb: () => void): () => void {
   return () => window.removeEventListener('hashchange', cb);
 }
 
+/** Tautan langsung ke tab Daftar di layar masuk. */
+export const REGISTER_HASH = '#/daftar';
+
+export function useHash(): string {
+  return useSyncExternalStore(subscribe, () => window.location.hash);
+}
+
 export function useRoute(): Route {
-  const hash = useSyncExternalStore(subscribe, () => window.location.hash);
-  return parseHash(hash);
+  return parseHash(useHash());
 }

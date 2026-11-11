@@ -24,7 +24,7 @@ export interface SettingsDeps {
   now?: () => number;
 }
 
-const SECTIONS = ['org', 'security', 'detection', 'intel'] as const;
+const SECTIONS = ['org', 'security', 'detection', 'intel', 'registration'] as const;
 type Section = (typeof SECTIONS)[number];
 
 export class SettingsService {
@@ -45,6 +45,8 @@ export class SettingsService {
         agentThreshold: config.detect.agentThreshold,
       },
       intel: { dailyTokenBudget: config.llm.dailyTokenBudget },
+      // Terbuka secara bawaan: siapa pun bisa daftar dan langsung masuk sebagai Pemantau.
+      registration: { enabled: true },
     };
   }
 
@@ -77,6 +79,7 @@ export class SettingsService {
       security: { ...current.security, ...input.security },
       detection: { ...current.detection, ...input.detection },
       intel: { ...current.intel, ...input.intel },
+      registration: { ...current.registration, ...input.registration },
     };
     const parsed = SettingsSchema.safeParse(next);
     if (!parsed.success)

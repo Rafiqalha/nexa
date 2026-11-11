@@ -1,4 +1,5 @@
-// Pengaturan (Admin): organisasi, kebijakan keamanan login, ambang deteksi, budget intel.
+// Pengaturan (Admin): organisasi, pendaftaran mandiri, kebijakan keamanan login, ambang
+// deteksi, budget intel.
 // Disimpan di sensor dan langsung berlaku tanpa restart. Info sensor baca-saja, tanpa secret.
 import { type Settings, type SettingsResponse, SettingsResponseSchema } from '@nexa/shared';
 import { Save } from 'lucide-react';
@@ -90,6 +91,28 @@ export function Pengaturan() {
             maxLength={80}
           />
         </Field>
+      </Section>
+
+      <Section
+        id="pendaftaran"
+        title="Pendaftaran akun"
+        description="Siapa pun yang membuka dashboard bisa mendaftar dan langsung masuk sebagai Pemantau (baca-saja, tidak memakai kursi paket). Peran lain tetap lewat undangan atau dinaikkan Admin di Pengguna."
+      >
+        <label className="flex max-w-[720px] items-start gap-3 text-[14px] text-fg-2">
+          <input
+            type="checkbox"
+            className="mt-1 size-4"
+            checked={form.registration.enabled}
+            onChange={(e) => patch('registration', { enabled: e.target.checked })}
+          />
+          <span>
+            Izinkan pendaftaran mandiri
+            <span className="meta mt-1 block">
+              Tautan daftar: {window.location.origin}/#/daftar. Bila dimatikan, akun baru hanya
+              lewat undangan.
+            </span>
+          </span>
+        </label>
       </Section>
 
       <Section
@@ -210,6 +233,7 @@ export function Pengaturan() {
             },
             { label: 'Versi sensor', value: s.version },
             { label: 'Aplikasi dilindungi', value: s.upstreamHost },
+            ...(s.publicSiteUrl ? [{ label: 'Alamat publik situs', value: s.publicSiteUrl }] : []),
             { label: 'Honeylink', value: s.honeylinkPaths.join(', ') },
             {
               label: 'Validasi Suricata',

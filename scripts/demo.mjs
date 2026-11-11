@@ -5,8 +5,8 @@
 //
 // --desktop : buka aplikasi desktop NEXA Dashboard (Electron) sebelum serangan
 // --wait N  : jeda (detik) sebelum serangan agar presenter sempat membuka dashboard
-// Argumen lain diteruskan ke lab:attack. Token dashboard tidak pernah dicetak;
-// pakai `pnpm token` untuk menyalinnya ke clipboard.
+// Argumen lain diteruskan ke lab:attack. Dashboard tanpa penyiapan: pendaftar pertama
+// menjadi pemilik (bila SETUP_TOKEN di-set, salin dengan `pnpm token`; tidak pernah dicetak).
 import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -82,7 +82,7 @@ if (!(await waitHealthy(120_000))) {
   process.exit(1);
 }
 const before = await overview();
-console.log(`[demo] dashboard: ${ADMIN}  (token: jalankan "pnpm token" lalu tempel)`);
+console.log(`[demo] dashboard: ${ADMIN}  (buka lalu buat akun atau masuk)`);
 console.log(`[demo] aplikasi lab lewat sensor: ${PUBLIC}`);
 if (desktop) {
   const child = spawn(pnpm, ['--filter', 'desktop', 'start'], {

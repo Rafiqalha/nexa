@@ -27,10 +27,15 @@ const EnvSchema = z
     ORG_NAME: opt(z.string().trim().min(2).max(80).default('Organisasi NEXA')),
     /** Kunci turunan auth (enkripsi rahasia 2FA, tanda tangan tantangan login). */
     AUTH_SECRET: opt(z.string().min(32, 'minimal 32 karakter').optional()),
-    /** Token sekali pakai untuk membuat akun pemilik pertama lewat layar penyiapan. */
+    /**
+     * Opsional. Bila di-set, pendaftaran akun pertama (pemilik) meminta token ini; bila kosong,
+     * pendaftar pertama langsung menjadi pemilik.
+     */
     SETUP_TOKEN: opt(z.string().min(16, 'minimal 16 karakter').optional()),
     /** Origin publik dashboard di produksi, mis. https://nexa.example.org (CSRF & MCP). */
     DASHBOARD_ORIGIN: opt(z.url({ protocol: /^https?$/ }).optional()),
+    /** URL publik situs yang dilindungi (ditampilkan di dashboard); bukan secret. */
+    PUBLIC_SITE_URL: opt(z.url({ protocol: /^https?$/ }).optional()),
 
     SENSOR_HOST: opt(z.string().default('0.0.0.0')),
     SENSOR_PORT: opt(port.default(8080)),
@@ -119,6 +124,8 @@ export interface Config {
     upstreamUrl: URL;
     trustProxy: boolean;
     clientIpHeader: string;
+    /** URL publik situs yang dilindungi (tanpa slash akhir); null = tidak ditampilkan. */
+    publicSiteUrl: string | null;
   };
   admin: {
     host: string;
@@ -195,7 +202,8 @@ export function loadConfig(
     (e.NEXA_MODE === 'lab' && e.DASHBOARD_TOKEN
       ? createHash('sha256').update(`nexa-auth:${e.DASHBOARD_TOKEN}`).digest('base64url')
       : null);
-  const setupToken = e.SETUP_TOKEN ?? (e.NEXA_MODE === 'lab' ? (e.DASHBOARD_TOKEN ?? null) : null);
+  // Token penyiapan hanya bila di-set eksplisit: tanpa itu pendaftar pertama menjadi pemilik.
+  const setupToken = e.SETUP_TOKEN ?? null;
   return {
     env: e.NODE_ENV,
     logLevel: e.LOG_LEVEL,
@@ -207,6 +215,7 @@ export function loadConfig(
       upstreamUrl: new URL(e.UPSTREAM_URL),
       trustProxy: e.TRUST_PROXY,
       clientIpHeader: e.CLIENT_IP_HEADER,
+      publicSiteUrl: e.PUBLIC_SITE_URL ? e.PUBLIC_SITE_URL.replace(/\/+$/, '') : null,
     },
     admin: {
       host: e.ADMIN_HOST,

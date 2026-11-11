@@ -95,16 +95,48 @@ async function invite(t: T, admin: string, email: string, role: string): Promise
 }
 
 describe('penyiapan pemilik', () => {
-  it('butuh SETUP_TOKEN, hanya sekali, cookie HttpOnly + SameSite=Strict', async () => {
+  it('tanpa SETUP_TOKEN: pendaftar pertama langsung jadi pemilik (nol penyiapan)', async () => {
     const t = makeSensor();
     const status = await (await t.call('/auth/status')).json();
     expect(status).toMatchObject({
       needsSetup: true,
-      setupAvailable: true,
+      setupTokenRequired: false,
+      registrationOpen: false,
+      principal: null,
+      label: LAB_LABEL,
+    });
+    // DASHBOARD_TOKEN (token layanan) tidak lagi menjadi token penyiapan diam-diam.
+    expect(t.config.auth.setupToken).toBeNull();
+
+    const ok = await t.call('/auth/setup', { body: { ...OWNER, password: PASSWORD } });
+    expect(ok.status).toBe(200);
+    const cookie = cookieOf(ok) as string;
+    const me = await (await t.call('/auth/me', { cookie })).json();
+    expect(me).toMatchObject({ role: 'admin', isOwner: true, email: OWNER.email });
+    // Nama organisasi opsional: tetap nilai bawaan sampai diubah di Pengaturan.
+    const after = await (await t.call('/auth/status', { cookie })).json();
+    expect(after).toMatchObject({ needsSetup: false, orgName: t.config.orgName });
+
+    const again = await t.call('/auth/setup', {
+      body: { name: 'Lain', email: 'lain@uji.test', password: PASSWORD },
+    });
+    expect(again.status).toBe(409);
+    expect(t.db.select().from(users).all()).toHaveLength(1);
+    t.close();
+  });
+
+  it('dengan SETUP_TOKEN: wajib token, hanya sekali, cookie HttpOnly + SameSite=Strict', async () => {
+    const t = makeSensor({ SETUP_TOKEN: TEST_TOKEN });
+    const status = await (await t.call('/auth/status')).json();
+    expect(status).toMatchObject({
+      needsSetup: true,
+      setupTokenRequired: true,
       principal: null,
       label: LAB_LABEL,
     });
 
+    const missing = await t.call('/auth/setup', { body: { ...OWNER, password: PASSWORD } });
+    expect(missing.status).toBe(400);
     const wrong = await t.call('/auth/setup', {
       body: { setupToken: 'token-salah-0123456789', orgName: 'Unit', ...OWNER, password: PASSWORD },
     });
@@ -140,6 +172,126 @@ describe('penyiapan pemilik', () => {
     const row = t.db.select().from(users).get();
     expect(row?.passwordHash.startsWith('scrypt$')).toBe(true);
     expect(row?.passwordHash).not.toContain(PASSWORD);
+    t.close();
+  });
+});
+
+describe('pendaftaran mandiri', () => {
+  const register = (t: T, email: string, name = 'Tamu Uji') =>
+    t.call('/auth/register', { body: { name, email, password: PASSWORD } });
+
+  it('langsung masuk sebagai Pemantau baca-saja; tidak memakai kursi paket', async () => {
+    const t = makeSensor();
+    const admin = await setupOwner(t);
+    expect(await (await t.call('/auth/status')).json()).toMatchObject({
+      needsSetup: false,
+      registrationOpen: true,
+    });
+
+    const res = await register(t, 'tamu@uji.test');
+    expect(res.status).toBe(200);
+    const cookie = cookieOf(res) as string;
+    expect(cookie).toMatch(/^nexa_session=/);
+    expect(await (await t.call('/auth/me', { cookie })).json()).toMatchObject({
+      kind: 'user',
+      role: 'viewer',
+      isOwner: false,
+      email: 'tamu@uji.test',
+    });
+    // Langsung ke Dashboard (baca), tapi tanpa akses admin, keputusan aturan, atau token API.
+    expect((await t.call('/overview', { cookie })).status).toBe(200);
+    expect((await t.call('/users', { cookie })).status).toBe(403);
+    expect((await t.call('/rules/999/approve', { cookie, body: {} })).status).toBe(403);
+    expect(
+      (
+        await t.call('/settings', {
+          cookie,
+          method: 'PATCH',
+          body: { registration: { enabled: false } },
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await t.call('/account/tokens', {
+          cookie,
+          body: { name: 'uji', scope: 'read', expiresInDays: 30 },
+        })
+      ).status,
+    ).toBe(403);
+
+    expect((await register(t, 'TAMU@uji.test', 'Ganda')).status).toBe(409);
+
+    // Paket Lab = 3 kursi, tapi Pemantau gratis: banyak pendaftar tetap diterima.
+    for (const n of [2, 3, 4, 5]) expect((await register(t, `tamu${n}@uji.test`)).status).toBe(200);
+    const list = (await (await t.call('/users', { cookie: admin })).json()) as {
+      users: { role: string }[];
+      seats: { used: number; limit: number | null };
+    };
+    expect(list.users.filter((u) => u.role === 'viewer')).toHaveLength(5);
+    expect(list.seats).toEqual({ used: 1, limit: 3 });
+
+    const audit = (await (await t.call('/audit', { cookie: admin })).json()) as {
+      entries: { action: string; target: string | null }[];
+    };
+    expect(audit.entries.filter((e) => e.action === 'user.registered')).toHaveLength(5);
+    expect(JSON.stringify(audit)).not.toContain(PASSWORD);
+    t.close();
+  });
+
+  it('ditolak sebelum ada pemilik dan saat admin menutupnya', async () => {
+    const t = makeSensor();
+    const early = await register(t, 'cepat@uji.test');
+    expect(early.status).toBe(409);
+    expect(((await early.json()) as { error: string }).error).toBe('setup_required');
+
+    const admin = await setupOwner(t);
+    const closed = await t.call('/settings', {
+      cookie: admin,
+      method: 'PATCH',
+      body: { registration: { enabled: false } },
+    });
+    expect(closed.status).toBe(200);
+    expect(await (await t.call('/auth/status')).json()).toMatchObject({ registrationOpen: false });
+    const res = await register(t, 'tamu@uji.test');
+    expect(res.status).toBe(403);
+    expect(((await res.json()) as { error: string }).error).toBe('registration_closed');
+    expect(t.db.select().from(users).all()).toHaveLength(1);
+    t.close();
+  });
+
+  it('menaikkan Pemantau ke peran berkursi butuh kursi kosong', async () => {
+    const t = makeSensor();
+    const admin = await setupOwner(t);
+    for (const n of [1, 2, 3]) await register(t, `tamu${n}@uji.test`);
+    const list = (await (await t.call('/users', { cookie: admin })).json()) as {
+      users: { id: string; email: string }[];
+    };
+    const id = (n: number) => list.users.find((u) => u.email === `tamu${n}@uji.test`)?.id;
+    const promote = (n: number, role: string) =>
+      t.call(`/users/${id(n)}`, { cookie: admin, method: 'PATCH', body: { role } });
+    // Paket Lab = 3 kursi: pemilik + 2 peran berkursi.
+    expect((await promote(1, 'analyst')).status).toBe(200);
+    expect((await promote(2, 'operator')).status).toBe(200);
+    const full = await promote(3, 'analyst');
+    expect(full.status).toBe(409);
+    expect(((await full.json()) as { error: string }).error).toBe('seats_exceeded');
+    // Menurunkan kembali ke Pemantau membebaskan kursi.
+    expect((await promote(2, 'viewer')).status).toBe(200);
+    expect((await promote(3, 'analyst')).status).toBe(200);
+    t.close();
+  });
+
+  it('percobaan daftar dibatasi per IP (30 per jam)', async () => {
+    const t = makeSensor();
+    await setupOwner(t);
+    for (let i = 0; i < 30; i++) {
+      // Body tidak valid tetap dihitung: pendaftaran massal tidak bisa lewat jalur galat.
+      expect((await t.call('/auth/register', { body: { email: 'x' } })).status).toBe(400);
+    }
+    expect((await register(t, 'tamu@uji.test')).status).toBe(429);
+    t.advance(60 * 60_000 + 1);
+    expect((await register(t, 'tamu@uji.test')).status).toBe(200);
     t.close();
   });
 });
@@ -212,17 +364,28 @@ describe('peran & kursi paket', () => {
     const admin = await setupOwner(t);
     const viewer = await invite(t, admin, 'pemantau@uji.test', 'viewer');
     const operator = await invite(t, admin, 'operator@uji.test', 'operator');
+    const analyst = await invite(t, admin, 'analis@uji.test', 'analyst');
 
-    // Paket Lab = 3 kursi (pemilik + 2): undangan ke-3 ditolak.
+    // Paket Lab = 3 kursi: pemilik + operator + analis. Pemantau tidak memakai kursi, jadi
+    // undangan peran berkursi berikutnya ditolak, sedangkan undangan Pemantau tetap boleh.
     const full = await t.call('/invites', {
       cookie: admin,
-      body: { email: 'analis@uji.test', role: 'analyst' },
+      body: { email: 'operator2@uji.test', role: 'operator' },
     });
     expect(full.status).toBe(409);
+    const freeViewer = await t.call('/invites', {
+      cookie: admin,
+      body: { email: 'pemantau2@uji.test', role: 'viewer' },
+    });
+    expect(freeViewer.status).toBe(201);
     expect((await t.call('/billing/plan', { cookie: admin, body: { planId: 'pro' } })).status).toBe(
       200,
     );
-    const analyst = await invite(t, admin, 'analis@uji.test', 'analyst');
+    const more = await t.call('/invites', {
+      cookie: admin,
+      body: { email: 'operator2@uji.test', role: 'operator' },
+    });
+    expect(more.status).toBe(201);
 
     for (const path of ['/overview', '/sessions', '/rules', '/intel']) {
       expect((await t.call(path, { cookie: viewer })).status, path).toBe(200);

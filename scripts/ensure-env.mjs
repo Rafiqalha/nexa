@@ -13,8 +13,11 @@ const example = readFileSync(resolve(root, '.env.example'), 'utf8');
 /** AUTH_SECRET lebih panjang (min 32 karakter); token lain 24 byte acak. */
 const newToken = (key) => randomBytes(key === 'AUTH_SECRET' ? 48 : 24).toString('base64url');
 const KEY_LINE = /^\s*([A-Z0-9_]+)\s*=(.*)$/;
-/** Kunci secret yang diisi acak bila kosong. */
-const GENERATED = ['DASHBOARD_TOKEN', 'SURICATA_CONTROL_TOKEN', 'SETUP_TOKEN', 'AUTH_SECRET'];
+/**
+ * Kunci secret yang diisi acak bila kosong. SETUP_TOKEN sengaja tidak diisi: tanpa token,
+ * pendaftar pertama di dashboard langsung menjadi pemilik (nol penyiapan).
+ */
+const GENERATED = ['DASHBOARD_TOKEN', 'SURICATA_CONTROL_TOKEN', 'AUTH_SECRET'];
 
 if (!existsSync(envPath)) {
   let content = example;

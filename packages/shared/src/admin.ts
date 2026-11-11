@@ -90,6 +90,8 @@ export const SettingsSchema = z.object({
     agentThreshold: z.number().min(0.1).max(1),
   }),
   intel: z.object({ dailyTokenBudget: z.number().int().min(0).max(10_000_000) }),
+  /** Pendaftaran mandiri di layar masuk; akun baru berperan Pemantau. */
+  registration: z.object({ enabled: z.boolean() }),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 
@@ -99,6 +101,7 @@ export const SettingsUpdateInputSchema = z
     security: SettingsSchema.shape.security.partial(),
     detection: SettingsSchema.shape.detection.partial(),
     intel: SettingsSchema.shape.intel.partial(),
+    registration: SettingsSchema.shape.registration.partial(),
   })
   .partial();
 export type SettingsUpdateInput = z.infer<typeof SettingsUpdateInputSchema>;
@@ -108,6 +111,7 @@ export const SensorInfoSchema = z.object({
   mode: NexaModeSchema,
   version: z.string(),
   upstreamHost: z.string(),
+  publicSiteUrl: z.string().nullable(),
   honeylinkPaths: z.array(z.string()),
   suricataRunner: z.enum(['none', 'exec', 'control']),
   llmModel: z.string(),

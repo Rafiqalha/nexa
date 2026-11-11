@@ -130,7 +130,12 @@ export type Intel = z.infer<typeof IntelSchema>;
 export const OverviewSchema = z.object({
   label: DataLabelSchema,
   generatedAt: z.number(),
-  sensor: z.object({ startedAt: z.number(), upstreamHost: z.string() }),
+  sensor: z.object({
+    startedAt: z.number(),
+    upstreamHost: z.string(),
+    /** URL publik situs yang dilindungi (PUBLIC_SITE_URL); null bila tidak di-set. */
+    publicSiteUrl: z.string().nullable(),
+  }),
   cost: CostSchema,
   summary: SummarySchema,
   contacts: z.array(SessionSummarySchema),

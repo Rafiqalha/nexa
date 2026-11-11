@@ -1,5 +1,5 @@
-// Rute auth publik (status, penyiapan, login, 2FA, undangan, reset, logout) dan rute akun
-// pribadi (profil, kata sandi, 2FA, sesi, token API).
+// Rute auth publik (status, penyiapan, daftar, login, 2FA, undangan, reset, logout) dan rute
+// akun pribadi (profil, kata sandi, 2FA, sesi, token API).
 import {
   AcceptInviteInputSchema,
   ApiTokenCreatedSchema,
@@ -15,6 +15,7 @@ import {
   OkSchema,
   PrincipalSchema,
   ProfileUpdateInputSchema,
+  RegisterInputSchema,
   ResetPasswordInputSchema,
   SetupInputSchema,
   TotpDisableInputSchema,
@@ -39,6 +40,8 @@ import { type AdminEnv, actorOf, authErrorResponse, readJson } from './http';
 
 export interface AuthRouteDeps extends AuthHttpDeps {
   orgName: () => string;
+  /** Jam untuk pembatas laju (bawaan Date.now; test memajukannya). */
+  now?: () => number;
 }
 
 const TOO_MANY = {
@@ -50,9 +53,13 @@ const TOO_MANY = {
 export function registerPublicAuthRoutes(api: Hono<AdminEnv>, deps: AuthRouteDeps): void {
   const { auth } = deps;
   // Kegagalan login/2FA per IP (selain kunci per akun di AuthService).
-  const loginFailures = new RateLimiter(20, 10 * 60_000);
-  const setupFailures = new RateLimiter(10, 15 * 60_000);
-  const linkLookups = new RateLimiter(60, 10 * 60_000);
+  const clock = deps.now ?? Date.now;
+  const loginFailures = new RateLimiter(20, 10 * 60_000, clock);
+  const setupFailures = new RateLimiter(10, 15 * 60_000, clock);
+  const linkLookups = new RateLimiter(60, 10 * 60_000, clock);
+  // Setiap percobaan daftar dihitung (berhasil atau tidak) agar akun tidak dibuat massal;
+  // cukup longgar untuk banyak orang di balik satu IP (mis. Wi-Fi acara).
+  const registrations = new RateLimiter(30, 60 * 60_000, clock);
 
   api.get('/auth/status', (c) => {
     const r = resolvePrincipal(c, deps);
@@ -63,7 +70,8 @@ export function registerPublicAuthRoutes(api: Hono<AdminEnv>, deps: AuthRouteDep
         label: dataLabel(deps.mode),
         orgName: deps.orgName(),
         needsSetup: auth.needsSetup(),
-        setupAvailable: auth.setupAvailable(),
+        setupTokenRequired: auth.setupTokenRequired(),
+        registrationOpen: auth.registrationOpen(),
         principal,
         mustEnable2fa: principal ? auth.mustEnable2fa(principal) : false,
       }),
@@ -81,6 +89,21 @@ export function registerPublicAuthRoutes(api: Hono<AdminEnv>, deps: AuthRouteDep
       return c.json(LoginResultSchema.parse({ status: 'ok', principal: auth.principalOf(user) }));
     } catch (err) {
       if (err instanceof AuthError && err.code === 'invalid_token') setupFailures.hit(ip);
+      return authErrorResponse(c, err);
+    }
+  });
+
+  api.post('/auth/register', async (c) => {
+    const ip = requestIp(c, deps);
+    if (registrations.blocked(ip)) return c.json(TOO_MANY, 429);
+    registrations.hit(ip);
+    const body = await readJson(c, RegisterInputSchema);
+    if (!body.ok) return body.res;
+    try {
+      const { token, user } = await auth.register(body.data, requestContext(c, deps));
+      setSessionCookie(c, deps, token);
+      return c.json(LoginResultSchema.parse({ status: 'ok', principal: auth.principalOf(user) }));
+    } catch (err) {
       return authErrorResponse(c, err);
     }
   });

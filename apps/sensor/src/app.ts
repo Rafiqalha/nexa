@@ -163,7 +163,8 @@ export function createSensor(deps: SensorDeps): Sensor {
     db,
     audit,
     plans,
-    seatsUsed: () => authService?.activeUserCount() ?? 0,
+    // Pemantau (baca-saja) tidak memakai kursi paket.
+    seatsUsed: () => authService?.seatUserCount() ?? 0,
     orgName: () => settingsService?.get().org.name ?? config.orgName,
     now,
   });
@@ -185,6 +186,7 @@ export function createSensor(deps: SensorDeps): Sensor {
     issuer: 'NEXA',
     security: () => settings.get().security,
     seatLimit: () => billing.currentPlan().limits.seats,
+    registrationEnabled: () => settings.get().registration.enabled,
     onSetup: (orgName, actor) => settings.update({ org: { name: orgName } }, actor),
     now,
   });
@@ -230,6 +232,7 @@ export function createSensor(deps: SensorDeps): Sensor {
       llmModel: config.llm.model,
       startedAt,
       upstreamHost: config.sensor.upstreamUrl.host,
+      publicSiteUrl: config.sensor.publicSiteUrl,
       now: now(),
     });
   const hub = new StreamHub({
@@ -263,7 +266,7 @@ export function createSensor(deps: SensorDeps): Sensor {
     hub,
     buildOverview,
     ...(deps.dashboardDist ? { dashboardDist: deps.dashboardDist } : {}),
-    registerPublic: (api) => registerPublicAuthRoutes(api, { ...http, orgName }),
+    registerPublic: (api) => registerPublicAuthRoutes(api, { ...http, orgName, now }),
     extend: (api) => {
       registerAccountRoutes(api, { ...http, orgName });
       registerRuleRoutes(api, rulesService, { db, audit, ip: (c) => requestIp(c, http) });
@@ -277,6 +280,7 @@ export function createSensor(deps: SensorDeps): Sensor {
           mode: config.mode,
           version: SENSOR_VERSION,
           upstreamHost: config.sensor.upstreamUrl.host,
+          publicSiteUrl: config.sensor.publicSiteUrl,
           honeylinkPaths: config.detect.honeylinkPaths,
           suricataRunner: config.rules.runner,
           llmModel: config.llm.model || '(bawaan penyedia)',

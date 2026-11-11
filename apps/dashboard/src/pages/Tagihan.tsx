@@ -215,6 +215,7 @@ export function Tagihan() {
             value={usage.seatsUsed}
             limit={current.limits.seats}
             unit="pengguna"
+            note="Pemantau tidak memakai kursi"
           />
           <Meter
             index={2}

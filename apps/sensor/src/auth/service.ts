@@ -9,6 +9,7 @@ import type {
   InviteInfo,
   LoginSession,
   Principal,
+  RegisterInput,
   Role,
   SetupInput,
   TokenScope,
@@ -36,7 +37,8 @@ export type AuthErrorCode =
   | 'locked'
   | 'disabled'
   | 'setup_done'
-  | 'setup_unavailable'
+  | 'setup_required'
+  | 'registration_closed'
   | 'invalid_token'
   | 'invalid_code'
   | 'conflict'
@@ -51,7 +53,8 @@ export const AUTH_ERROR_STATUS: Readonly<Record<AuthErrorCode, 400 | 401 | 403 |
     locked: 429,
     disabled: 403,
     setup_done: 409,
-    setup_unavailable: 403,
+    setup_required: 409,
+    registration_closed: 403,
     invalid_token: 400,
     invalid_code: 401,
     conflict: 409,
@@ -86,15 +89,20 @@ export interface AuthDeps {
   db: Db;
   audit: AuditLog;
   box: SecretBox;
-  /** SETUP_TOKEN untuk membuat akun pemilik pertama; null = penyiapan lewat UI tidak tersedia. */
+  /** SETUP_TOKEN untuk akun pemilik pertama; null = pendaftar pertama langsung jadi pemilik. */
   setupToken: string | null;
   /** DASHBOARD_TOKEN (token layanan lab/skrip); null = nonaktif. */
   serviceToken: string | null;
   issuer: string;
   security: () => SecurityPolicy;
-  /** Batas kursi paket (pengguna aktif + undangan tertunda); null = tanpa batas. */
+  /**
+   * Batas kursi paket; null = tanpa batas. Kursi dipakai pengguna aktif berperan selain
+   * Pemantau dan undangan tertunda untuk peran itu. Pemantau (baca-saja) tidak memakai kursi.
+   */
   seatLimit: () => number | null;
-  /** Dipanggil saat penyiapan: simpan nama organisasi. */
+  /** Pendaftaran mandiri dibuka (pengaturan organisasi). */
+  registrationEnabled: () => boolean;
+  /** Dipanggil saat penyiapan bila nama organisasi diisi. */
   onSetup: (orgName: string, actor: Actor) => void;
   now?: () => number;
 }
@@ -136,14 +144,19 @@ export class AuthService {
     return this.deps.db.select({ n: count() }).from(users).get()?.n ?? 0;
   }
 
-  activeUserCount(): number {
+  /** Pengguna aktif yang memakai kursi paket: semua peran kecuali Pemantau. */
+  seatUserCount(): number {
     return (
-      this.deps.db.select({ n: count() }).from(users).where(eq(users.status, 'active')).get()?.n ??
-      0
+      this.deps.db
+        .select({ n: count() })
+        .from(users)
+        .where(and(eq(users.status, 'active'), ne(users.role, 'viewer')))
+        .get()?.n ?? 0
     );
   }
 
-  private pendingInviteCount(): number {
+  /** Undangan tertunda yang akan memakai kursi (peran selain Pemantau). */
+  private pendingSeatInviteCount(): number {
     return (
       this.deps.db
         .select({ n: count() })
@@ -151,6 +164,7 @@ export class AuthService {
         .where(
           and(
             eq(oneTimeTokens.kind, 'invite'),
+            ne(oneTimeTokens.role, 'viewer'),
             isNull(oneTimeTokens.usedAt),
             isNull(oneTimeTokens.revokedAt),
             gt(oneTimeTokens.expiresAt, this.now()),
@@ -164,8 +178,14 @@ export class AuthService {
     return this.userCount() === 0;
   }
 
-  setupAvailable(): boolean {
-    return this.deps.setupToken !== null && this.needsSetup();
+  /** Pendaftaran pertama meminta SETUP_TOKEN hanya bila token itu di-set. */
+  setupTokenRequired(): boolean {
+    return this.deps.setupToken !== null;
+  }
+
+  /** Pendaftaran mandiri: hanya setelah ada pemilik dan bila admin membukanya. */
+  registrationOpen(): boolean {
+    return !this.needsSetup() && this.deps.registrationEnabled();
   }
 
   userToApi(u: UserRow): User {
@@ -228,20 +248,27 @@ export class AuthService {
 
   private seatsLeft(): number | null {
     const limit = this.deps.seatLimit();
-    return limit === null ? null : limit - this.activeUserCount() - this.pendingInviteCount();
+    return limit === null ? null : limit - this.seatUserCount() - this.pendingSeatInviteCount();
   }
 
-  // --- Penyiapan pemilik -------------------------------------------------------------
+  /** Kursi masih tersedia untuk satu pengguna aktif lagi (tanpa menghitung undangan). */
+  private seatAvailable(): boolean {
+    const limit = this.deps.seatLimit();
+    return limit === null || this.seatUserCount() < limit;
+  }
 
+  // --- Penyiapan pemilik & pendaftaran mandiri ---------------------------------------
+
+  /**
+   * Akun pertama = pemilik (Admin). Token diperiksa hanya bila SETUP_TOKEN di-set; tanpa itu
+   * pendaftar pertama langsung menjadi pemilik (nol penyiapan).
+   */
   async setup(input: SetupInput, ctx: RequestContext): Promise<{ token: string; user: UserRow }> {
     if (this.userCount() > 0) {
       throw new AuthError('setup_done', 'Penyiapan sudah selesai; masuk dengan akun yang ada.');
     }
     const expected = this.deps.setupToken;
-    if (expected === null) {
-      throw new AuthError('setup_unavailable', 'SETUP_TOKEN belum di-set di environment sensor.');
-    }
-    if (!safeEqual(input.setupToken, expected)) {
+    if (expected !== null && !safeEqual(input.setupToken ?? '', expected)) {
       this.deps.audit.record(
         { id: null, name: input.email },
         'auth.setup_failed',
@@ -255,25 +282,72 @@ export class AuthService {
     if (this.userCount() > 0) {
       throw new AuthError('setup_done', 'Penyiapan sudah selesai; masuk dengan akun yang ada.');
     }
-    const t = this.now();
-    const user = this.deps.db
-      .insert(users)
-      .values({
-        id: randomUUID(),
-        email: input.email,
-        name: input.name,
-        role: 'admin',
-        isOwner: true,
-        status: 'active',
-        passwordHash: hash,
-        createdAt: t,
-        updatedAt: t,
-      })
-      .returning()
-      .get();
-    this.deps.onSetup(input.orgName, actorOfUser(user));
-    this.deps.audit.record(actorOfUser(user), 'auth.setup', user.email, ctx.ip);
+    const user = this.insertUser({
+      email: input.email,
+      name: input.name,
+      role: 'admin',
+      isOwner: true,
+      passwordHash: hash,
+    });
+    if (input.orgName) this.deps.onSetup(input.orgName, actorOfUser(user));
+    this.deps.audit.record(actorOfUser(user), 'auth.setup', user.email, ctx.ip, {
+      withToken: expected !== null,
+    });
     return { token: this.createSession(user, ctx), user };
+  }
+
+  /** Pendaftaran mandiri: akun baru berperan Pemantau (baca-saja), langsung masuk. */
+  async register(
+    input: RegisterInput,
+    ctx: RequestContext,
+  ): Promise<{ token: string; user: UserRow }> {
+    if (this.needsSetup()) {
+      throw new AuthError('setup_required', 'Belum ada pemilik. Buat akun pertama dulu.');
+    }
+    if (!this.deps.registrationEnabled()) {
+      throw new AuthError(
+        'registration_closed',
+        'Pendaftaran ditutup oleh admin. Minta tautan undangan ke admin organisasi.',
+      );
+    }
+    if (this.byEmail(input.email)) {
+      throw new AuthError('conflict', 'Email sudah terdaftar. Silakan masuk.');
+    }
+    const hash = await hashPassword(input.password);
+    const user = this.insertUser({
+      email: input.email,
+      name: input.name,
+      role: 'viewer',
+      isOwner: false,
+      passwordHash: hash,
+    });
+    this.deps.audit.record(actorOfUser(user), 'user.registered', user.email, ctx.ip, {
+      role: user.role,
+    });
+    return { token: this.createSession(user, ctx), user };
+  }
+
+  /** Sisipkan pengguna aktif; email ganda (termasuk balapan) menjadi galat `conflict`. */
+  private insertUser(v: {
+    email: string;
+    name: string;
+    role: Role;
+    isOwner: boolean;
+    passwordHash: string;
+  }): UserRow {
+    const t = this.now();
+    try {
+      return this.deps.db
+        .insert(users)
+        .values({ id: randomUUID(), ...v, status: 'active', createdAt: t, updatedAt: t })
+        .returning()
+        .get();
+    } catch (err) {
+      if (err instanceof Error && /UNIQUE/i.test(err.message)) {
+        throw new AuthError('conflict', 'Email sudah terdaftar. Silakan masuk.');
+      }
+      throw err;
+    }
   }
 
   // --- Login --------------------------------------------------------------------------
@@ -521,11 +595,12 @@ export class AuthService {
         ),
       )
       .run();
-    const left = this.seatsLeft();
+    // Pemantau tidak memakai kursi paket; peran lain butuh kursi kosong.
+    const left = role === 'viewer' ? null : this.seatsLeft();
     if (left !== null && left <= 0) {
       throw new AuthError(
         'seats_exceeded',
-        'Kursi paket sudah penuh. Naikkan paket di Tagihan atau nonaktifkan pengguna.',
+        'Kursi paket sudah penuh. Naikkan paket di Tagihan, nonaktifkan pengguna, atau undang sebagai Pemantau.',
       );
     }
     const token = randomToken(32);
@@ -603,8 +678,7 @@ export class AuthService {
     const fresh = this.validOneTime(token, 'invite');
     if (!fresh) throw new AuthError('invalid_token', 'Undangan tidak valid atau kedaluwarsa.');
     if (this.byEmail(fresh.email)) throw new AuthError('conflict', 'Email sudah terdaftar.');
-    const limit = this.deps.seatLimit();
-    if (limit !== null && this.activeUserCount() >= limit) {
+    if ((fresh.role ?? 'viewer') !== 'viewer' && !this.seatAvailable()) {
       throw new AuthError('seats_exceeded', 'Kursi paket sudah penuh; hubungi admin organisasi.');
     }
     const t = this.now();
@@ -882,7 +956,7 @@ export class AuthService {
   }
 
   seats(): { used: number; limit: number | null } {
-    return { used: this.activeUserCount(), limit: this.deps.seatLimit() };
+    return { used: this.seatUserCount(), limit: this.deps.seatLimit() };
   }
 
   private otherActiveAdmins(exceptId: string): number {
@@ -918,11 +992,16 @@ export class AuthService {
         throw new AuthError('forbidden', 'Minimal harus ada satu admin aktif.');
       }
     }
-    if (enabling) {
-      const limit = this.deps.seatLimit();
-      if (limit !== null && this.activeUserCount() >= limit) {
-        throw new AuthError('seats_exceeded', 'Kursi paket sudah penuh.');
-      }
+    // Kursi baru terpakai bila pengguna akan aktif dengan peran selain Pemantau padahal kini
+    // belum memakai kursi (diaktifkan kembali, atau Pemantau dinaikkan perannya).
+    const nextRole = input.role ?? target.role;
+    const activeAfter = enabling || (target.status === 'active' && !disabling);
+    const holdsSeat = target.status === 'active' && target.role !== 'viewer';
+    if (activeAfter && nextRole !== 'viewer' && !holdsSeat && !this.seatAvailable()) {
+      throw new AuthError(
+        'seats_exceeded',
+        'Kursi paket sudah penuh. Naikkan paket di Tagihan atau nonaktifkan pengguna.',
+      );
     }
     if (!roleChange && !disabling && !enabling) return this.userToApi(target);
     const db = this.deps.db;

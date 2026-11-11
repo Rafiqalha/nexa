@@ -1,5 +1,5 @@
 // Pengguna & peran (Admin): undang pengguna lewat tautan sekali pakai, ubah peran,
-// nonaktifkan, buat tautan reset kata sandi, reset 2FA. Kursi dibatasi paket.
+// nonaktifkan, buat tautan reset kata sandi, reset 2FA. Kursi dibatasi paket (Pemantau gratis).
 import {
   InviteCreatedSchema,
   OkSchema,
@@ -121,7 +121,7 @@ export function Pengguna() {
       <Section
         id="undang-title"
         title="Undang pengguna"
-        description={`Undangan berupa tautan sekali pakai (berlaku 72 jam). ${seatsText}${seatsText ? ' (pengguna aktif + undangan tertunda dibatasi paket).' : ''}`}
+        description={`Undangan berupa tautan sekali pakai (berlaku 72 jam). ${seatsText}${seatsText ? ' (pengguna aktif + undangan tertunda dibatasi paket; Pemantau gratis).' : ''} Pendaftar mandiri otomatis menjadi Pemantau.`}
       >
         <form
           className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end"

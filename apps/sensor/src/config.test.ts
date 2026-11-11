@@ -65,10 +65,23 @@ describe('loadConfig', () => {
     expect(c.admin.publicOrigin).toBe('https://nexa.uji.test');
     expect(c.auth.setupToken).toBeNull();
     expect(c.auth.secret).toBeNull();
-    // Lab: token layanan sekaligus token penyiapan & sumber secret turunan.
+    // Lab: token layanan hanya sumber secret turunan, BUKAN token penyiapan diam-diam.
     const lab = loadConfig(validEnv);
-    expect(lab.auth.setupToken).toBe(SECRET_TOKEN);
+    expect(lab.auth.setupToken).toBeNull();
     expect(lab.auth.secret).not.toBe(SECRET_TOKEN);
+    // Token penyiapan hanya bila SETUP_TOKEN di-set eksplisit (lab maupun produksi).
+    const withToken = 'token-penyiapan-uji-0123';
+    expect(loadConfig({ ...validEnv, SETUP_TOKEN: withToken }).auth.setupToken).toBe(withToken);
+  });
+
+  it('PUBLIC_SITE_URL opsional: hanya http(s), slash akhir dibuang', () => {
+    expect(loadConfig(validEnv).sensor.publicSiteUrl).toBeNull();
+    expect(
+      loadConfig({ ...validEnv, PUBLIC_SITE_URL: 'https://portal.uji.test/' }).sensor.publicSiteUrl,
+    ).toBe('https://portal.uji.test');
+    expect(problemsOf({ ...validEnv, PUBLIC_SITE_URL: 'ftp://x.test' }).join('\n')).toMatch(
+      /PUBLIC_SITE_URL/,
+    );
   });
 
   it('header IP klien di balik proxy bisa dipilih', () => {

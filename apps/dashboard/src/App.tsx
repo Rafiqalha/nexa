@@ -7,7 +7,7 @@ import { TitleBar } from './components/TitleBar';
 import { Button } from './components/ui/button';
 import { refreshAuth, signOut, useAuth } from './lib/auth';
 import { navItem, PUBLIC_TITLES } from './lib/nav';
-import { type AppPage, isPublicPage, useRoute } from './lib/router';
+import { type AppPage, isPublicPage, REGISTER_HASH, useHash, useRoute } from './lib/router';
 import { applyStreamMessage, setConnection } from './lib/store';
 import { connectStream } from './lib/stream';
 import { TITLEBAR_HEIGHT, useWindowControlsOverlay } from './lib/windowControls';
@@ -120,6 +120,7 @@ function Shell({
 export function App() {
   const { status, offline } = useAuth();
   const route = useRoute();
+  const hash = useHash();
   const overlay = useWindowControlsOverlay();
 
   useEffect(() => {
@@ -135,9 +136,15 @@ export function App() {
   }, [overlay]);
 
   const principal = status?.principal ?? null;
+  // Judul layar tanpa login: akun pertama, tab Daftar, atau Masuk.
+  const loginSection = status?.needsSetup
+    ? 'Buat akun'
+    : status?.registrationOpen && hash === REGISTER_HASH
+      ? 'Daftar'
+      : 'Masuk';
   useEffect(() => {
-    if (!principal) document.title = 'NEXA — Masuk';
-  }, [principal]);
+    if (!principal) document.title = `NEXA — ${loginSection}`;
+  }, [principal, loginSection]);
 
   // Undangan & reset kata sandi bisa dibuka tanpa login.
   if (isPublicPage(route.page) && !principal) {
@@ -172,7 +179,7 @@ export function App() {
   if (!principal) {
     return (
       <>
-        <TitleBar section={status.needsSetup ? 'Penyiapan awal' : 'Masuk'} showStatus={false} />
+        <TitleBar section={loginSection} showStatus={false} />
         <Login status={status} />
       </>
     );

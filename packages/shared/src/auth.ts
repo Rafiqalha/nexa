@@ -77,9 +77,12 @@ export const AuthStatusSchema = z.object({
   mode: NexaModeSchema,
   label: DataLabelSchema,
   orgName: z.string(),
-  /** Belum ada akun: layar masuk menampilkan penyiapan pemilik (butuh SETUP_TOKEN). */
+  /** Belum ada akun: pendaftar pertama menjadi pemilik organisasi (Admin). */
   needsSetup: z.boolean(),
-  setupAvailable: z.boolean(),
+  /** Pendaftaran pertama meminta SETUP_TOKEN (hanya bila di-set di environment sensor). */
+  setupTokenRequired: z.boolean(),
+  /** Pendaftaran mandiri dibuka: akun baru langsung masuk sebagai Pemantau. */
+  registrationOpen: z.boolean(),
   principal: PrincipalSchema.nullable(),
   /** Admin wajib 2FA tapi belum mengaktifkannya: dashboard mengarahkan ke Akun. */
   mustEnable2fa: z.boolean(),
@@ -127,14 +130,23 @@ export const TotpLoginInputSchema = z.object({
   code: TotpCodeSchema,
 });
 
+/** Akun pertama (pemilik). Token hanya diperiksa bila SETUP_TOKEN di-set di sensor. */
 export const SetupInputSchema = z.object({
-  setupToken: z.string().trim().min(16, 'token penyiapan minimal 16 karakter').max(256),
-  orgName: z.string().trim().min(2, 'nama organisasi minimal 2 karakter').max(80),
+  setupToken: z.string().trim().max(256).optional(),
+  orgName: z.string().trim().min(2, 'nama organisasi minimal 2 karakter').max(80).optional(),
   name: PersonNameSchema,
   email: EmailSchema,
   password: PasswordSchema,
 });
 export type SetupInput = z.infer<typeof SetupInputSchema>;
+
+/** Pendaftaran mandiri: akun baru berperan Pemantau (baca-saja). */
+export const RegisterInputSchema = z.object({
+  name: PersonNameSchema,
+  email: EmailSchema,
+  password: PasswordSchema,
+});
+export type RegisterInput = z.infer<typeof RegisterInputSchema>;
 
 export const AcceptInviteInputSchema = z.object({
   token: z.string().min(16).max(256),

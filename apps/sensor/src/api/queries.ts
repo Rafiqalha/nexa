@@ -248,6 +248,7 @@ export interface OverviewContext {
   llmModel: string;
   startedAt: number;
   upstreamHost: string;
+  publicSiteUrl?: string | null;
   now?: number;
 }
 
@@ -296,7 +297,11 @@ export function computeOverview(db: Db, ctx: OverviewContext): Overview {
   return OverviewSchema.parse({
     label: ctx.label,
     generatedAt: ctx.now ?? Date.now(),
-    sensor: { startedAt: ctx.startedAt, upstreamHost: ctx.upstreamHost },
+    sensor: {
+      startedAt: ctx.startedAt,
+      upstreamHost: ctx.upstreamHost,
+      publicSiteUrl: ctx.publicSiteUrl ?? null,
+    },
     cost: {
       attackerTokens,
       attackerIdr: tokensToIdr(attackerTokens, attackerPrice),

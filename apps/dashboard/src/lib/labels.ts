@@ -80,7 +80,7 @@ export const AUDIT_CATEGORIES: readonly { value: string; label: string }[] = [
 ];
 
 export const AUDIT_ACTIONS: Readonly<Record<string, string>> = {
-  'auth.setup': 'Penyiapan pemilik',
+  'auth.setup': 'Akun pemilik dibuat',
   'auth.setup_failed': 'Token penyiapan salah',
   'auth.login': 'Masuk',
   'auth.login_failed': 'Gagal masuk',
@@ -91,6 +91,7 @@ export const AUDIT_ACTIONS: Readonly<Record<string, string>> = {
   'user.invited': 'Undangan dibuat',
   'user.invite_revoked': 'Undangan dicabut',
   'user.invite_accepted': 'Undangan diterima',
+  'user.registered': 'Daftar sendiri (Pemantau)',
   'user.role_changed': 'Peran diubah',
   'user.disabled': 'Pengguna dinonaktifkan',
   'user.enabled': 'Pengguna diaktifkan',
