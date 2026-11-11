@@ -6,7 +6,7 @@ Instruksi untuk Claude Code di repo ini.
 
 Dokumen lain:
 - `PRD.md` — lingkup, non-tujuan, risiko, metrik.
-- `DESIGN.md` — token warna, tipografi, aturan UI flat.
+- `DESIGN.md` — token warna, tipografi, aturan UI flat dan gerak.
 
 ---
 
@@ -25,7 +25,7 @@ Ulangan dari `AGENTS.md` §2 — paling sering dilanggar tanpa sengaja:
 - **Tidak ada deploy rule tanpa approval record.**
 - **Secrets tidak pernah ke dashboard, Electron, log, atau repo.**
 - **Lab hanya menyasar `lab/target-app`.** Agen uji tetap minimal; jangan tambahkan kemampuan eksploitasi, evasion, atau persistence.
-- **UI flat.** Tanpa shadow, gradien, glow, denyut, badge, kartu. Lihat `DESIGN.md`.
+- **UI flat.** Tanpa shadow, gradien, glow, blur, badge, kartu. Gerak hanya lewat keyframe `nx-*` di `apps/dashboard/src/styles/index.css` (transform/opacity/warna), bukan `animate-*` bawaan Tailwind, dan wajib berhenti saat `prefers-reduced-motion`. Lihat `DESIGN.md` §1 dan §8.6.
 
 Kalau sebuah permintaan tampak butuh melanggar salah satu di atas, **berhenti dan tanyakan** pemilik proyek, jangan cari jalan memutar.
 
@@ -62,7 +62,7 @@ Kalau sebuah permintaan tampak butuh melanggar salah satu di atas, **berhenti da
 - Hono untuk server; Drizzle + better-sqlite3 untuk DB; SSE untuk realtime.
 - React + Tailwind + shadcn/ui di dashboard; pakai token dari `apps/dashboard/src/styles/tokens.css`, bukan warna bawaan Tailwind.
 - Font: Geist (UI), JetBrains Mono (data, angka tabular). Ikon: Lucide saja.
-- Teks UI dalam Bahasa Indonesia dengan istilah militer (Pos Komando, Kontak, Intel, Aturan, Latihan).
+- Teks UI dalam Bahasa Indonesia dengan istilah profesional: Dashboard, Sesi, Intelijen, Aturan, Latihan (roadmap). Label menu dan judul halaman hanya di `apps/dashboard/src/lib/nav.ts`; jangan kembali ke istilah lama (Pos Komando, Kontak, Intel).
 - Commit: Conventional Commits.
 
 ---
@@ -72,5 +72,6 @@ Kalau sebuah permintaan tampak butuh melanggar salah satu di atas, **berhenti da
 - Labirin harus **deterministik per seed**; saat debugging gunakan seed tetap agar hasil bisa direproduksi.
 - Estimasi token penyerang = jumlah karakter yang disajikan ÷ rasio karakter-per-token yang dikonfigurasi. Tampilkan sebagai **estimasi**.
 - Electron hanya memuat dashboard dan bicara ke API sensor. Jangan pasang `better-sqlite3` di Electron (menghindari rebuild modul native).
+- Bilah judul desktop kustom memakai `titleBarStyle: 'hidden'` + `titleBarOverlay`, tanpa preload atau IPC; dashboard mendeteksinya lewat Window Controls Overlay (`apps/dashboard/src/lib/windowControls.ts`). Tinggi 40px tercatat di dua `TITLEBAR_HEIGHT` (di file itu dan `apps/desktop/src/main/security.ts`) dan harus sama.
 - Untuk demo, data di dashboard harus berasal dari run `lab:attack` nyata dan tetap berlabel "Data simulasi lab".
 - Interogasi (`interrogate/`) bersifat eksperimental; kerjakan terakhir, dan laporkan tingkat keberhasilan apa adanya.
