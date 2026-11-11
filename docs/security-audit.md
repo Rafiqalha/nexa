@@ -33,7 +33,8 @@ Dashboard tidak lagi memakai satu token bersama. Kontrol berikut dijaga
 
 | Kontrol | Penegakan | Test |
 |---|---|---|
-| Penyiapan pemilik | Hanya dengan `SETUP_TOKEN` (perbandingan waktu-konstan), hanya sekali, dibatasi 10 gagal per 15 menit per IP. Produksi tidak memakai `DASHBOARD_TOKEN` sebagai token penyiapan. | "penyiapan pemilik"; `config.test.ts` |
+| Akun pertama (pemilik) | Hanya sekali; pendaftar pertama menjadi pemilik. Bila `SETUP_TOKEN` di-set, token wajib (perbandingan waktu-konstan, 10 gagal per 15 menit per IP). `DASHBOARD_TOKEN` tidak pernah menjadi token penyiapan. | "penyiapan pemilik"; `config.test.ts` |
+| Daftar mandiri | Hanya menghasilkan Pemantau (baca-saja, tanpa token API, tanpa keputusan aturan), baru dibuka setelah ada pemilik, bisa ditutup Admin, 30 percobaan per jam per IP, email ganda ditolak, dicatat `user.registered`. Pemantau tidak memakai kursi; menaikkan peran butuh kursi kosong. | "pendaftaran mandiri" |
 | Kata sandi & login | scrypt (N=16384) dengan hash tiruan untuk email tak dikenal, pesan galat generik, akun terkunci 15 menit setelah 5 gagal, batas 20 gagal per 10 menit per IP | "login" |
 | Sesi | Token acak, DB hanya menyimpan sha256. Cookie HttpOnly + SameSite=Strict, di produksi `__Host-` + Secure. Kedaluwarsa idle dan mutlak, bisa dicabut per perangkat. | "login", "mode produksi" |
 | CSRF | Metode yang mengubah data ditolak bila `Origin` asing atau `Sec-Fetch-Site: cross-site`. Produksi hanya menerima origin dashboard itu sendiri (`DASHBOARD_ORIGIN` atau host yang sama), tanpa pengecualian loopback. | "CSRF: penjaga Origin" |
@@ -69,6 +70,12 @@ Verifikasi pasca-deploy di Railway (11 November 2026):
   cadangan volume belum diotomasi.
 - Tagihan dicatat manual oleh Admin (tanpa payment gateway); status lunas bergantung pada
   pencatatan referensi transfer yang benar.
+- Tanpa `SETUP_TOKEN`, siapa pun yang pertama membuka dashboard menjadi pemilik. Isi
+  `SETUP_TOKEN` bila URL bisa ditemukan orang lain sebelum pemilik mendaftar. Demo live
+  memakainya.
+- Pendaftaran mandiri terbuka secara bawaan. Setiap pendaftar (Pemantau) bisa melihat data
+  sesi, termasuk IP dan User-Agent penyerang. Tutup di Pengaturan bila data tidak boleh
+  dibagikan. Belum ada verifikasi email (tanpa SMTP).
 - Di produksi, Suricata tidak berada di jalur paket. Aturan yang disetujui dimuat ke engine dan
   dapat diekspor untuk IDS/IPS organisasi.
 - Installer desktop **belum ditandatangani**, sehingga Windows SmartScreen memperingatkan saat

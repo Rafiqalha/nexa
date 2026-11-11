@@ -59,8 +59,8 @@ Batas kepercayaan:
   `intel/redact.ts`, dengan budget harian (§2.3–2.4).
 - **Port admin** wajib login akun. Di lab hanya terikat ke `127.0.0.1`. Di produksi
   (`NEXA_MODE=production`) ia terbuka lewat HTTPS. Setiap rute `/api` selain status, login,
-  keluar, penyiapan, undangan, dan reset sandi butuh sesi akun (cookie HttpOnly) atau token
-  API. Permintaan yang mengubah data wajib berasal dari origin yang sama. Dashboard dan
+  keluar, penyiapan, daftar, undangan, dan reset sandi butuh sesi akun (cookie HttpOnly) atau
+  token API. Permintaan yang mengubah data wajib berasal dari origin yang sama. Dashboard dan
   Electron tidak pernah memegang secret sensor (§2.6).
 
 ## Alur satu sesi penyerang
@@ -116,9 +116,9 @@ sequenceDiagram
 | `intel/` | Antrean pasca-sesi, redaksi, budget harian, satu pintu ke model |
 | `mcp/intel.ts` | Server MCP baca-saja untuk analis (`/api/mcp`) |
 | `api/` | REST, SSE (throttle 750 ms), rute akun & admin, penjaga Origin, harga & estimasi biaya |
-| `auth/` | Akun (scrypt), sesi login (cookie, idle & batas mutlak), kunci akun, 2FA TOTP (secret terenkripsi AES-256-GCM), undangan & reset sekali pakai, token API `nxa_…`, rate limit per IP |
+| `auth/` | Akun (scrypt), akun pertama tanpa penyiapan, daftar mandiri sebagai Pemantau, sesi login (cookie, idle & batas mutlak), kunci akun, 2FA TOTP (secret terenkripsi AES-256-GCM), undangan & reset sekali pakai, token API `nxa_…`, rate limit per IP |
 | `audit/` | Log audit (login, pengguna, pengaturan, tagihan, keputusan aturan) tanpa secret |
-| `settings/` | Pengaturan organisasi, keamanan sesi, ambang deteksi, budget intel (berlaku tanpa restart) |
+| `settings/` | Pengaturan organisasi, pendaftaran mandiri, keamanan sesi, ambang deteksi, budget intel (berlaku tanpa restart) |
 | `billing/` | Paket (`config/plans.json`), periode bulan WIB, kuota, invoice, upgrade prorata, pembayaran manual |
 
 ## Aplikasi lain
@@ -152,9 +152,18 @@ sha256 token), `one_time_tokens` (undangan dan reset), `api_tokens` (hanya sha25
 | Ekspor aturan, token API pribadi | ✓ | ✓ | ✓ | |
 | Pengguna, Pengaturan, Tagihan, Audit | ✓ | | | |
 
-Akun pertama (pemilik) dibuat dengan `SETUP_TOKEN` dan tidak bisa diturunkan atau dinonaktifkan.
-Harus selalu ada minimal satu Admin aktif. Bila pengaturan mewajibkan 2FA untuk Admin, Admin
-tanpa 2FA hanya bisa membuka halaman Akun sampai 2FA aktif.
+Alur tanpa penyiapan:
+
+- **Akun pertama.** Pendaftar pertama di sensor menjadi pemilik (Admin) dan langsung masuk ke
+  Dashboard yang masih kosong. Token penyiapan hanya diminta bila `SETUP_TOKEN` di-set.
+- **Daftar mandiri.** Setelah ada pemilik, siapa pun bisa daftar sendiri (tab Daftar,
+  `#/daftar`) dan langsung masuk sebagai Pemantau. Pemantau tidak memakai kursi paket.
+- **Kontrol Admin.** Admin menaikkan peran, mengundang dengan peran lain, atau menutup
+  pendaftaran di Pengaturan.
+
+Pemilik tidak bisa diturunkan atau dinonaktifkan, dan harus selalu ada minimal satu Admin
+aktif. Bila pengaturan mewajibkan 2FA untuk Admin, Admin tanpa 2FA hanya bisa membuka halaman
+Akun sampai 2FA aktif.
 
 Topologi produksi (Railway, region Singapura):
 

@@ -59,18 +59,21 @@ pnpm demo
 `pnpm env:init` membuat `.env` dengan token acak. `pnpm demo` membangun dashboard, menyalakan
 lab, menjalankan agen uji, lalu menunggu draf aturan siap.
 
-Dashboard NEXA: <http://127.0.0.1:8081>. Saat pertama dibuka, buat akun pemilik dengan token
-penyiapan (`SETUP_TOKEN`). Token itu disalin ke clipboard tanpa ditampilkan dengan:
+Dashboard NEXA: <http://127.0.0.1:8081>. Tanpa penyiapan:
 
-```bash
-pnpm token
-```
+1. Saat pertama dibuka, isi nama, email, dan kata sandi. Akun pertama menjadi pemilik (Admin)
+   dan langsung masuk ke Dashboard.
+2. Orang lain memilih tab **Daftar** (atau membuka `#/daftar`) dan langsung masuk sebagai
+   Pemantau (baca-saja).
+
+Bila `SETUP_TOKEN` diisi di `.env`, akun pertama memerlukannya. Token itu disalin tanpa
+ditampilkan dengan `pnpm token`.
 
 | Perintah | Fungsi |
 |---|---|
 | `pnpm lab:up` / `pnpm lab:down` | Nyalakan/matikan lab (Docker Compose bila tersedia, selain itu proses lokal) |
 | `pnpm lab:attack [-- --model deepseek-v4-pro \| --baseline \| --scripted]` | Jalankan agen uji |
-| `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop NEXA Dashboard / installer Windows ([unduh di rilis](https://github.com/Rafiqalha/nexa/releases/latest)) |
+| `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop NEXA Dashboard (dari repo: sensor lab lokal) / installer Windows. Mulai v0.3.0, aplikasi terpasang langsung membuka NEXA live. ([unduh di rilis](https://github.com/Rafiqalha/nexa/releases/latest)) |
 | `pnpm lab:human`, `pnpm lab:metrics`, `pnpm lab:interrogation` | Simulasi manusia, tabel metrik, laporan interogasi |
 | `pnpm typecheck && pnpm lint && pnpm test` | Verifikasi (400+ test) |
 
@@ -85,13 +88,20 @@ berjalan di Railway (region Singapura):
 | Layanan | Alamat |
 |---|---|
 | Dashboard NEXA (wajib login) | <https://nexa-console.up.railway.app> |
+| Daftar akun (langsung masuk sebagai Pemantau) | <https://nexa-console.up.railway.app/#/daftar> |
 | Portal demo BAYU-7 (dilindungi NEXA) | <https://portal-bayu7.up.railway.app> |
 
 - Portal demo fiktif BAYU-7 berada di balik sensor dan hanya bisa dijangkau lewat NEXA.
   Data di mode produksi berlabel **"Trafik nyata (produksi)"**: berasal dari pengunjung
   sungguhan portal itu. Agen uji tidak pernah di-deploy.
-- Akun dan peran: Admin, Operator, Analis, Pemantau. Akun pemilik pertama dibuat dengan
-  `SETUP_TOKEN`, sedangkan pengguna lain ditambahkan lewat tautan undangan sekali pakai.
+- Akun dan peran: Admin, Operator, Analis, Pemantau.
+  - Siapa pun bisa daftar sendiri dan langsung masuk sebagai Pemantau (baca-saja, tidak
+    memakai kursi paket).
+  - Peran lain diberikan lewat undangan, atau dengan menaikkan peran di menu Pengguna.
+  - Admin bisa menutup pendaftaran di Pengaturan.
+  - Akun pertama menjadi pemilik. Bila `SETUP_TOKEN` di-set, akun pertama memerlukannya.
+- Dashboard yang masih kosong menjelaskan dari mana data akan datang, yaitu situs yang
+  dilindungi, lalu terisi otomatis saat ada trafik.
 - Fitur akun: 2FA (TOTP), daftar sesi login yang bisa dicabut, dan token API.
 - Fitur admin: pengaturan deteksi dan budget intel, log audit, serta tagihan paket (Lab, Pro,
   Enterprise) dengan invoice. Pembayaran dicatat manual tanpa payment gateway.
@@ -110,7 +120,8 @@ Ditegakkan oleh kode dan test regresi, dengan bukti per batasan di
 - Tidak ada deploy rule tanpa record persetujuan operator dan validasi `suricata -T`.
 - Secret hanya di environment sensor: tidak pernah di repo, dashboard, atau aplikasi desktop.
 - Dashboard wajib login akun berperan. Perlindungannya: cookie sesi HttpOnly, 2FA TOTP, akun
-  terkunci 15 menit setelah 5 kali gagal, penjaga Origin (CSRF), dan log audit.
+  terkunci 15 menit setelah 5 kali gagal, penjaga Origin (CSRF), dan log audit. Pendaftaran
+  mandiri hanya menghasilkan peran Pemantau (baca-saja) dan dibatasi per IP.
 - Lab terisolasi; agen uji minimal. Konten labirin fiktif.
 - UI jujur: label "Data simulasi lab" di lab, dan "Trafik nyata (produksi)" hanya di mode
   produksi.

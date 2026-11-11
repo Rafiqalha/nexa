@@ -30,9 +30,10 @@ pnpm install
 pnpm env:init
 ```
 
-Membuat `.env` dari `.env.example` tanpa menimpa nilai yang sudah ada. `SETUP_TOKEN`,
-`AUTH_SECRET`, `DASHBOARD_TOKEN`, dan `SURICATA_CONTROL_TOKEN` diisi acak; nilainya tidak pernah
-dicetak. Isi bila perlu:
+Membuat `.env` dari `.env.example` tanpa menimpa nilai yang sudah ada. `AUTH_SECRET`,
+`DASHBOARD_TOKEN`, dan `SURICATA_CONTROL_TOKEN` diisi acak; nilainya tidak pernah dicetak.
+`SETUP_TOKEN` sengaja dibiarkan kosong agar pendaftar pertama di dashboard langsung menjadi
+pemilik. Isi bila perlu:
 
 - `DEEPSEEK_API_KEY`: intel pasca-sesi lewat model (tanpa key, intel dibuat heuristik).
 - `ATTACKER_LLM_API_KEY`: agen uji berbasis LLM (tanpa key, agen berjalan dalam mode skrip).
@@ -88,18 +89,20 @@ sampai tervalidasi (AGENTS.md §2.5). Dashboard menampilkan jumlah draf yang mas
 - Browser: <http://127.0.0.1:8081>
 - Aplikasi desktop: `pnpm desktop`, atau pasang installer (langkah 8).
 
-Pertama kali dibuka, dashboard meminta **token penyiapan** untuk membuat akun pemilik (peran
-Admin). Token penyiapan adalah `SETUP_TOKEN`; di lab, bila kosong, dipakai `DASHBOARD_TOKEN`.
-Salin tanpa menampilkannya:
+Tanpa penyiapan:
 
-```bash
-pnpm token
-```
+1. **Akun pertama.** Layar **Mulai pakai NEXA** meminta nama, email, dan kata sandi. Akun
+   pertama menjadi pemilik (Admin) dan langsung masuk ke Dashboard yang masih kosong.
+2. **Orang lain.** Mereka memilih tab **Daftar** (atau membuka
+   `http://127.0.0.1:8081/#/daftar`) dan langsung masuk sebagai Pemantau (baca-saja, tidak
+   memakai kursi paket).
+3. **Peran lain.** Admin menaikkan peran di menu **Pengguna**, atau mengundang dengan tautan
+   sekali pakai yang berlaku 72 jam. Pendaftaran mandiri bisa ditutup di **Pengaturan →
+   Pendaftaran akun**.
 
-Setelah itu masuk dengan email dan kata sandi. Pengguna lain ditambahkan lewat menu
-**Pengguna** dengan tautan undangan sekali pakai yang berlaku 72 jam. Perintah
-`pnpm token -- service` menyalin `DASHBOARD_TOKEN`, yaitu token layanan (bearer, setara Admin)
-untuk skrip lab.
+Bila `SETUP_TOKEN` diisi di `.env`, layar akun pertama menampilkan kolom token penyiapan. Salin
+token itu tanpa menampilkannya dengan `pnpm token`. Perintah `pnpm token -- service` menyalin
+`DASHBOARD_TOKEN`, yaitu token layanan (bearer, setara Admin) untuk skrip lab.
 
 ## 6. Jalankan serangan uji
 
@@ -142,8 +145,12 @@ pnpm desktop:installer
 
 Hasilnya `apps/desktop/release/NEXA-Dashboard-Setup-<versi>.exe`: per pengguna, tanpa admin.
 Installer belum ditandatangani, jadi SmartScreen meminta konfirmasi ("More info" → "Run
-anyway"). Untuk sensor di mesin lain, tambahkan `--sensor-url=http://<host>:8081/` di target
-shortcut.
+anyway").
+
+Mulai v0.3.0, aplikasi yang terpasang langsung membuka NEXA live
+(<https://nexa-console.up.railway.app>): daftar atau masuk, lalu Dashboard. Untuk sensor lain
+(mis. lab lokal), tambahkan `--sensor-url=http://127.0.0.1:8081/` di target shortcut.
+`pnpm desktop` dari repo tetap membuka sensor lab lokal.
 
 ## 9. Metrik lab
 
@@ -195,6 +202,7 @@ Variabel service `sensor` (bukan secret):
 | `TRUST_PROXY`, `CLIENT_IP_HEADER` | `true`, `x-real-ip` |
 | `UPSTREAM_URL` | `http://portal.railway.internal:3000` |
 | `DASHBOARD_ORIGIN` | `https://<domain dashboard>` |
+| `PUBLIC_SITE_URL` | `https://<domain portal>` (ditampilkan di Dashboard yang masih kosong) |
 | `DATABASE_PATH`, `SURICATA_RULES_DIR` | `/data/nexa.db`, `/data/rules` |
 | `SURICATA_RUNNER`, `SURICATA_EXEC` | `exec`, `bash /opt/nexa/nexa-suricata.sh` |
 
@@ -207,8 +215,10 @@ dengan IP asli pengirim.
 
 Secret diisi sendiri di tab **Variables** service `sensor`, tidak pernah di repo:
 
-- `SETUP_TOKEN` (wajib untuk penyiapan, minimal 16 karakter acak): dipakai sekali untuk
-  membuat akun pemilik. Setelah ada akun, penyiapan ditutup dan variabel ini boleh dihapus.
+- `SETUP_TOKEN` (opsional, minimal 16 karakter acak): bila di-set, akun pertama (pemilik)
+  memerlukannya. Tanpa variabel ini, siapa pun yang pertama membuka dashboard menjadi
+  pemilik. Isi variabel ini bila URL dashboard bisa ditemukan orang lain sebelum Anda
+  mendaftar. Setelah ada pemilik, penyiapan ditutup dan variabel ini boleh dihapus.
 - `DEEPSEEK_API_KEY` (opsional): intel pasca-sesi lewat model. Tanpa key, intel dibuat
   heuristik.
 - `AUTH_SECRET` tidak perlu diisi. Sensor membuatnya sekali di `/data/auth-secret` (izin 0600)
@@ -230,17 +240,22 @@ trafik, sama seperti di lab. Ia memvalidasi draf (`suricata -T`) dan memuat atur
 disetujui. Karena tidak berada di jalur paket, penegakan di jaringan organisasi dilakukan
 dengan mengekspor aturan (halaman **Aturan** → Ekspor) ke IDS/IPS milik organisasi.
 
-Setelah deploy, buka domain dashboard, tempel `SETUP_TOKEN`, lalu buat akun pemilik. Mode
-produksi memakai cookie `__Host-nexa_session` (Secure, HttpOnly, SameSite=Strict), menolak
-permintaan lintas-origin yang mengubah data, dan mengirim HSTS. `DASHBOARD_TOKEN` (bearer
-statis) sebaiknya tidak di-set di produksi.
+Setelah deploy, buka domain dashboard dan buat akun pertama (tempel `SETUP_TOKEN` bila
+di-set). Anda langsung masuk ke Dashboard sebagai pemilik. Orang lain cukup membuka
+`https://<domain dashboard>/#/daftar` dan langsung masuk sebagai Pemantau. Pendaftaran ini
+terbuka secara bawaan dan bisa ditutup di **Pengaturan → Pendaftaran akun**.
+
+Mode produksi memakai cookie `__Host-nexa_session` (Secure, HttpOnly, SameSite=Strict),
+menolak permintaan lintas-origin yang mengubah data, dan mengirim HSTS. `DASHBOARD_TOKEN`
+(bearer statis) sebaiknya tidak di-set di produksi.
 
 ## Masalah umum
 
 | Gejala | Penyebab / solusi |
 |---|---|
 | "Token penyiapan salah." | Nilai yang ditempel bukan `SETUP_TOKEN`. Pakai `pnpm token` (lab) atau salin dari tab Variables (Railway). |
-| "SETUP_TOKEN belum di-set di environment sensor." | Mode produksi tidak memakai `DASHBOARD_TOKEN` sebagai token penyiapan. Isi `SETUP_TOKEN`, lalu deploy ulang. |
+| "Pendaftaran ditutup oleh admin." | Pendaftaran mandiri dimatikan di Pengaturan. Minta tautan undangan, atau minta Admin membukanya lagi. |
+| "Email sudah terdaftar. Silakan masuk." | Akun dengan email itu sudah ada. Pakai tab Masuk, atau minta Admin membuat tautan reset. |
 | "Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit." | Akun terkunci setelah 5 kali salah kata sandi. Tunggu 15 menit atau minta Admin membuat tautan reset. |
 | "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi." | Batas per IP, misalnya 20 login gagal per 10 menit. Tunggu sebentar. |
 | Desktop menampilkan "Sensor tidak terjangkau" | Sensor belum jalan (`pnpm lab:up`). Jendela mencoba lagi tiap 5 detik. |
