@@ -14,7 +14,7 @@ Sistem desain Dashboard NEXA (web dan aplikasi desktop). v0.2 · 11 November 202
 2. **Gerak bermakna, tetap flat.** Gerak menandai peristiwa: konten masuk, data baru dari sensor, umpan balik klik, status koneksi. Hanya `transform`, `opacity`, dan warna, lewat keyframe `nx-*` sendiri (§8.6), tanpa easing yang memantul. Gerak berulang hanya untuk titik status sensor, spinner proses, dan loreng di dasar sidebar (§5); tidak ada hujan kode, scanline, atau animasi idle di area konten. Semua gerak wajib berhenti saat `prefers-reduced-motion`.
 3. **Tanpa badge & pil.** Status ditandai **warna teks** saja, bukan kapsul berlatar. Titik status sensor selalu didampingi label teks.
 4. **Tanpa kartu.** Bagian dipisah oleh **garis 1px** dan **ruang kosong**, bukan kotak berlatar atau border tebal.
-5. **Satu aksen.** Hijau sage satu-satunya warna aksen, dipakai hemat: item navigasi aktif, angka biaya NEXA, tombol aksi primer, logo NEXA, titik "Sensor aktif", outline fokus, kilasan data baru (§8.6), dan garis grafik (§8.5). Daftar komponen yang boleh memakai kelas aksen dijaga `apps/dashboard/src/design.test.ts`.
+5. **Satu aksen.** Hijau sage satu-satunya warna aksen, dipakai hemat: item navigasi aktif, angka token NEXA, tombol aksi primer, logo NEXA, titik "Sensor aktif", outline fokus, kilasan data baru (§8.6), dan garis grafik (§8.5). Daftar komponen yang boleh memakai kelas aksen dijaga `apps/dashboard/src/design.test.ts`.
 6. **Tipografi membawa hierarki.** Ukuran, berat, dan warna teks — bukan dekorasi — yang membedakan penting vs tidak.
 7. **Angka itu produk.** Semua angka memakai font mono dengan angka tabular agar tidak "bergoyang" saat berubah, termasuk selama animasi menghitung naik.
 8. **Identitas lewat loreng digital, dosis kecil.** Satu tempat saja, nyaris menyatu dengan latar (lihat §5).
@@ -48,7 +48,7 @@ Palet diturunkan dari deskripsi warna PDL TNI baru (sage green, pola digital). *
 
 | Token | Hex | Pemakaian |
 |---|---|---|
-| `--accent` | `#A3B18A` | Satu-satunya aksen: nav aktif, biaya NEXA, tombol primer, logo, titik "Sensor aktif", outline fokus, kilasan data baru |
+| `--accent` | `#A3B18A` | Satu-satunya aksen: nav aktif, token NEXA, tombol primer, logo, titik "Sensor aktif", outline fokus, kilasan data baru |
 | `--on-accent` | `#0C0F0D` | Teks di atas tombol aksen |
 | `--status-trapped` | `#E07A62` | "Terjebak" / ancaman (merah bata redup) |
 | `--status-suspect` | `#D9A441` | "Dicurigai" (kuning tanah) |
@@ -98,7 +98,7 @@ Di Tailwind 4, token dipetakan lewat `@theme inline` di `apps/dashboard/src/styl
 
 | Peran | Font | Ukuran | Berat | Catatan |
 |---|---|---|---|---|
-| Angka hero (meteran biaya) | JetBrains Mono | 56px | 500 | `letter-spacing: -0.02em`, `line-height: 1` |
+| Angka hero (meteran token) | JetBrains Mono | maks. 56px | 500 | `letter-spacing: -0.02em`, `line-height: 1`; mengecil mengikuti lebar kolom agar angka + satuan tetap satu baris |
 | Judul halaman | Geist | 28px | 500 | `letter-spacing: -0.01em` |
 | Angka ringkasan | JetBrains Mono | 28px | 400 | tabular |
 | Judul bagian | Geist | 16px | 500 | |
@@ -175,7 +175,7 @@ Rute lama `#/kontak` tetap diterima sebagai alias `#/sesi` agar tautan lama tida
 
 ### 7.1 Dashboard (utama)
 1. **Header:** ikon + judul + metadata mono: titik status + "Sensor aktif" / waktu WIB / "Data simulasi lab".
-2. **Meteran biaya:** dua kolom dipisah garis vertikal — "Biaya dibakar penyerang" (Rp + token, estimasi batas bawah) vs "Biaya NEXA" (warna aksen). Ini momen paling diingat di demo.
+2. **Meteran token:** dua kolom dipisah garis vertikal — "Token dibakar penyerang" (estimasi batas bawah, 1 token ≈ 4 karakter umpan) vs "Token dipakai NEXA" (LLM intel pasca-sesi, warna aksen). Angka hero diikuti satuan "token" (Geist 16px `--text-muted`); meteran tidak menampilkan Rupiah. Ini momen paling diingat di demo.
 3. **Ringkasan:** Sesi terjebak · Rata-rata tertahan · Kedalaman maksimum · Aturan menunggu.
 4. **Sesi aktif** (tabel) + **Aturan menunggu persetujuan** (panel kanan sticky, dengan Setujui/Tolak), berdampingan; menumpuk di layar sempit.
 
@@ -245,7 +245,7 @@ Semua keyframe ada di `apps/dashboard/src/styles/index.css` dan berawalan `nx-`.
 | `nx-live` | 1800 ms, berulang | Cincin titik status sensor (diam saat terputus) |
 | `nx-camo-in`, `nx-camo-blink`, `nx-scan` | lihat §5 | Loreng hidup |
 | Indikator menu aktif | 300 ms (transisi) | Garis aksen 2px meluncur ke menu aktif |
-| `useCountUp` | 900 ms (JS) | Angka meteran biaya dan ringkasan |
+| `useCountUp` | 900 ms (JS) | Angka meteran token dan ringkasan |
 
 Aturan:
 - Hanya `transform`, `opacity`, dan warna (latar, `fill`, `stroke-dashoffset`). Tanpa `box-shadow`, `filter: blur`, atau gradien.
@@ -285,6 +285,6 @@ Aturan:
 
 ## 11. Aset Submission
 
-- **Thumbnail:** 1200×630, ≤500KB — pakai crop meteran biaya di atas latar `--bg`.
+- **Thumbnail:** 1200×630, ≤500KB — tiga metrik lab utama di atas latar `--bg` dengan pita loreng (dibuat ulang dengan `python scripts/make-thumbnail.py`).
 - **Screenshot:** maksimal 5 — Dashboard, Sesi, Linimasa sesi, Aturan, Intelijen (`docs/submission/screenshots/`, dibuat ulang dengan `node scripts/capture-screenshots.mjs`). Diagram arsitektur ada di `docs/architecture.md`.
 - Semua screenshot memakai data lab nyata hasil uji tim, berlabel simulasi.

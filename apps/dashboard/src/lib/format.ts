@@ -1,10 +1,6 @@
 // Format angka & waktu (locale id-ID, zona WIB). Semua angka tampil dengan font mono tabular.
 
 const intFmt = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
-const idrSmall = new Intl.NumberFormat('id-ID', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
 const timeFmt = new Intl.DateTimeFormat('id-ID', {
   timeZone: 'Asia/Jakarta',
   hour: '2-digit',
@@ -26,12 +22,6 @@ const dateFmt = new Intl.DateTimeFormat('id-ID', {
 
 export function formatInt(n: number): string {
   return intFmt.format(n);
-}
-
-/** Rupiah: dua desimal untuk nilai kecil agar biaya mikro tetap terbaca jujur. */
-export function formatIdr(n: number): string {
-  if (n === 0) return 'Rp 0';
-  return n < 1_000 ? `Rp ${idrSmall.format(n)}` : `Rp ${intFmt.format(Math.round(n))}`;
 }
 
 export function formatScore(n: number): string {

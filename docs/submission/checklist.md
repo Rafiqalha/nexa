@@ -18,7 +18,7 @@ Deadline: **15 November 2026, 23:59 WIB**. Status per 11 November 2026.
 2. **Arsitektur (0:45–1:45):** diagram `docs/architecture.md`, tekankan batas aman (tanpa LLM di
    jalur request, tanpa hack-back, deploy hanya dengan persetujuan).
 3. **Demo langsung (1:45–5:30):** `pnpm demo -- --desktop --wait 15`.
-   - Dashboard: biaya penyerang naik secara langsung (SSE).
+   - Dashboard: token yang dibakar penyerang naik secara langsung (SSE).
    - Sesi → linimasa: honeylink, umpan, canary dipakai, MCP umpan, balasan interogasi.
    - Aturan: draf tervalidasi `suricata -T`, tekan Setujui → aktif di Suricata.
    - Intelijen: ringkasan pasca-sesi (data disamarkan, budget harian).
