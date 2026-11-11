@@ -124,6 +124,9 @@ menjalankan `lab:attack`. Setelah itu skrip menunggu draf aturan siap ditinjau.
 
 ## 8. Installer desktop (Windows)
 
+Installer siap pakai ada di [rilis GitHub](https://github.com/Rafiqalha/nexa/releases/latest)
+(SHA-256 tercantum di catatan rilis). Untuk membangunnya sendiri:
+
 ```bash
 pnpm desktop:installer
 ```

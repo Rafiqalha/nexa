@@ -69,7 +69,7 @@ pnpm token
 |---|---|
 | `pnpm lab:up` / `pnpm lab:down` | Nyalakan/matikan lab (Docker Compose bila tersedia, selain itu proses lokal) |
 | `pnpm lab:attack [-- --model deepseek-v4-pro \| --baseline \| --scripted]` | Jalankan agen uji |
-| `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop NEXA Dashboard / installer Windows |
+| `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop NEXA Dashboard / installer Windows ([unduh di rilis](https://github.com/Rafiqalha/nexa/releases/latest)) |
 | `pnpm lab:human`, `pnpm lab:metrics`, `pnpm lab:interrogation` | Simulasi manusia, tabel metrik, laporan interogasi |
 | `pnpm typecheck && pnpm lint && pnpm test` | Verifikasi (331+ test) |
 

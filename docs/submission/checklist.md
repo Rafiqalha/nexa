@@ -10,7 +10,7 @@ Deadline: **15 November 2026, 23:59 WIB**. Status per 11 November 2026.
 | Video demo ≤ 10 menit | ☐ **Belum** | Perlu direkam tim. Urutan yang disarankan ada di bawah. |
 | Slide presentasi | ☐ **Belum** | Perlu dibuat tim. Bahan: README, `docs/architecture.md`, `docs/metrics.md`, `docs/prior-art.md`. |
 | Dokumentasi | ☑ Sudah | `README.md`, `docs/architecture.md`, `docs/install.md`, `docs/metrics.md`, `docs/interrogation.md`, `docs/security-audit.md`, `docs/prior-art.md`, `docs/versions.md`. |
-| (Opsional) Installer aplikasi desktop | ☑ Sudah dibangun | `pnpm desktop:installer` → `apps/desktop/release/NEXA-Dashboard-Setup-0.2.0.exe` (±107 MB, belum ditandatangani). Lampirkan ke rilis GitHub, bukan ke repo. |
+| (Opsional) Installer aplikasi desktop | ☑ Sudah dirilis | [Rilis v0.2.0](https://github.com/Rafiqalha/nexa/releases/tag/v0.2.0): `NEXA-Dashboard-Setup-0.2.0.exe` (±107 MB, SHA-256 `ba09755d…1e31`, belum ditandatangani), dilampirkan ke rilis, bukan ke repo. Dibangun ulang dengan `pnpm desktop:installer`. |
 
 ## Urutan video yang disarankan (± 8 menit)
 
