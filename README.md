@@ -85,6 +85,7 @@ berjalan di Railway (region Singapura):
 | Layanan | Alamat |
 |---|---|
 | Dashboard NEXA (wajib login) | <https://nexa-console.up.railway.app> |
+| Portal demo BAYU-7 (dilindungi NEXA) | <https://portal-bayu7.up.railway.app> |
 
 - Portal demo fiktif BAYU-7 berada di balik sensor dan hanya bisa dijangkau lewat NEXA.
   Data di mode produksi berlabel **"Trafik nyata (produksi)"**: berasal dari pengunjung

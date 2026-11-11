@@ -176,7 +176,13 @@ akun penuh. Di mode ini label data menjadi "Trafik nyata (produksi)". Topologi d
 | `portal` | `lab/target-app/Dockerfile` (portal fiktif BAYU-7) | Hanya privat: `portal.railway.internal:3000`, tanpa domain publik |
 
 Agen uji (`lab/attacker-agent`) tidak pernah di-deploy. Portal hanya bisa dijangkau lewat
-sensor, sehingga setiap pengunjung melewati deteksi NEXA.
+sensor, sehingga setiap pengunjung melewati deteksi NEXA. Demo live memakai
+<https://nexa-console.up.railway.app> (dashboard) dan <https://portal-bayu7.up.railway.app>
+(portal).
+
+Railway CLI dan MCP hanya membuat satu domain Railway per service. Domain kedua (port 8080)
+ditambahkan sebagai perubahan *staged* yang diterapkan dari dashboard Railway; bila akun memakai
+2FA, penerapannya meminta kode 2FA.
 
 Variabel service `sensor` (bukan secret):
 
