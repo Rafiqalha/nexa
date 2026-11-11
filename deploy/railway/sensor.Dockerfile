@@ -13,6 +13,7 @@ COPY packages/shared/package.json packages/shared/
 COPY apps/sensor/package.json apps/sensor/
 COPY apps/dashboard/package.json apps/dashboard/
 COPY apps/desktop/package.json apps/desktop/
+COPY apps/landing/package.json apps/landing/
 COPY lab/target-app/package.json lab/target-app/
 COPY lab/attacker-agent/package.json lab/attacker-agent/
 

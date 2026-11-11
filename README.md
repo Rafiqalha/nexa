@@ -75,6 +75,7 @@ ditampilkan dengan `pnpm token`.
 | `pnpm lab:attack [-- --model deepseek-v4-pro \| --baseline \| --scripted]` | Jalankan agen uji |
 | `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop NEXA Dashboard (dari repo: sensor lab lokal) / installer Windows. Mulai v0.3.0, aplikasi terpasang langsung membuka NEXA live. ([unduh di rilis](https://github.com/Rafiqalha/nexa/releases/latest)) |
 | `pnpm lab:human`, `pnpm lab:metrics`, `pnpm lab:interrogation` | Simulasi manusia, tabel metrik, laporan interogasi |
+| `pnpm landing` / `pnpm landing:build` | Landing page NEXA (statis, <http://127.0.0.1:5180>) / build ke `apps/landing/dist` |
 | `pnpm typecheck && pnpm lint && pnpm test` | Verifikasi (400+ test) |
 
 Langkah lengkap, termasuk Docker Compose, Suricata di WSL, dan produksi di Railway, ada di
@@ -132,6 +133,7 @@ Ditegakkan oleh kode dan test regresi, dengan bukti per batasan di
 apps/sensor      reverse proxy, deteksi, labirin, canary, MCP, rules, intel, API admin, akun, tagihan
 apps/dashboard   Dashboard (React + Vite + Tailwind, UI flat + animasi)
 apps/desktop     shell Electron + installer NSIS
+apps/landing     landing page statis (Vite + TypeScript, animasi kanvas flat buatan sendiri)
 packages/shared  skema API bersama (zod)
 lab/             target fiktif + agen penyerang uji (tidak ikut build produksi)
 deploy/          Docker Compose, image Railway, Suricata (sidecar & WSL)
@@ -146,4 +148,5 @@ docs/            arsitektur, instalasi, metrik, interogasi, audit, prior art, ve
 - [Metrik lab](docs/metrics.md) · [Interogasi](docs/interrogation.md)
 - [Audit keamanan](docs/security-audit.md) · [Versi & audit dependensi](docs/versions.md)
 - [Prior art](docs/prior-art.md): Mantis, Palisade, Cloudflare AI Labyrinth, Nepenthes
+- [Riset landing page](docs/landing-research.md): referensi, keputusan desain, aturan gerak
 - [Checklist submission](docs/submission/checklist.md)

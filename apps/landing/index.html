@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NEXA — Deception defensif untuk agen AI penyerang</title>
+    <meta
+      name="description"
+      content="NEXA mendeteksi agen AI penyerang di reverse proxy, menahannya di labirin umpan prosedural, merekam sesinya, dan menyiapkan draf aturan blokir yang menunggu persetujuan operator."
+    />
+    <meta name="theme-color" content="#0c0f0d" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NEXA — Biarkan agen AI penyerang tersesat" />
+    <meta
+      property="og:description"
+      content="Lapisan deception defensif: deteksi agen AI, labirin umpan prosedural tanpa LLM, canary, intelijen pasca-sesi, dan aturan blokir dengan persetujuan operator."
+    />
+    <meta property="og:image" content="/og.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <a class="skip" href="#isi">Langsung ke isi</a>
+    <div class="progress" aria-hidden="true"><span></span></div>
+
+    <header class="top">
+      <div class="wrap top__inner">
+        <a class="brand" href="#mulai" aria-label="NEXA, kembali ke atas">
+          <svg class="logo" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true" focusable="false">
+            <rect class="logo__frame" x="0.5" y="0.5" width="27" height="27" rx="2" fill="none" />
+            <path class="logo__n" d="M8.5 19V8.5L19.5 19V8.5" fill="none" stroke-width="2.2" stroke-linecap="square" />
+            <path class="logo__bar" d="M8.5 23h11" stroke-width="2" />
+          </svg>
+          <span class="brand__word">NEXA</span>
+        </a>
+        <nav class="nav" aria-label="Navigasi utama">
+          <a href="#cara-kerja">Cara kerja</a>
+          <a href="#labirin">Labirin</a>
+          <a href="#hasil">Hasil lab</a>
+          <a href="#batas">Batas aman</a>
+        </nav>
+        <a class="btn btn--primary btn--sm top__cta" href="https://nexa-console.up.railway.app/#/daftar" target="_blank" rel="noreferrer">
+          Coba dashboard
+        </a>
+      </div>
+    </header>
+
+    <main id="isi">
+      <!-- ============ HERO ============ -->
+      <section class="hero" id="mulai" aria-labelledby="hero-title">
+        <div class="wrap">
+          <p class="eyebrow" data-reveal>FIG. 00 · Deception defensif untuk agen AI</p>
+          <h1 id="hero-title" class="hero__title">
+            <span class="sr-only">Biarkan agen AI penyerang tersesat.</span>
+            <span class="hero__line" aria-hidden="true" data-reveal="wipe">Biarkan agen AI penyerang</span>
+            <span class="hero__line" aria-hidden="true"><span class="rotator" data-words="tersesat|membakar token|meninggalkan jejak|terekam utuh">tersesat</span>.</span>
+          </h1>
+          <div class="hero__grid">
+            <p class="lead" data-reveal>
+              NEXA berdiri di depan aplikasi web Anda.
+              <span class="muted">Agen AI otonom terdeteksi di reverse proxy, dibelokkan ke labirin umpan yang tidak ada habisnya, direkam, lalu menjadi draf aturan blokir yang menunggu persetujuan operator. Pengunjung sah tetap diteruskan utuh.</span>
+            </p>
+            <div class="cta" data-reveal>
+              <a class="btn btn--primary" href="https://nexa-console.up.railway.app/#/daftar" target="_blank" rel="noreferrer">
+                Coba dashboard live <span data-icon="arrow-up-right" data-size="16" data-stroke="2"></span>
+              </a>
+              <a class="btn btn--ghost" href="https://github.com/Rafiqalha/nexa/releases/latest" target="_blank" rel="noreferrer">
+                <span data-icon="download" data-size="16" data-stroke="2"></span> Unduh aplikasi desktop
+              </a>
+              <a class="link" href="https://github.com/Rafiqalha/nexa" target="_blank" rel="noreferrer">
+                Kode sumber <span data-icon="arrow-up-right" data-size="14"></span>
+              </a>
+            </div>
+          </div>
+
+          <figure class="arena" aria-labelledby="arena-cap">
+            <div class="arena__head">
+              <span class="fig">FIG. 01 · Arena</span>
+              <div class="arena__controls">
+                <button type="button" class="btn btn--ghost btn--sm" data-arena="agent">
+                  <span data-icon="bot" data-size="16" data-stroke="2"></span> Lepas agen
+                </button>
+                <button type="button" class="btn btn--ghost btn--sm" data-arena="human">
+                  <span data-icon="user" data-size="16" data-stroke="2"></span> Kirim pengunjung
+                </button>
+              </div>
+            </div>
+            <canvas
+              class="arena__canvas"
+              role="img"
+              aria-label="Ilustrasi: permintaan mengalir dari internet ke gerbang NEXA. Pengunjung sah diteruskan ke aplikasi asli; agen AI ditandai lalu dibelokkan ke labirin umpan dan berkeliling tanpa ujung."
+            ></canvas>
+            <dl class="arena__stats" aria-live="off">
+              <div><dt>Diteruskan utuh</dt><dd data-stat="forwarded">0</dd></div>
+              <div><dt>Agen dijebak</dt><dd class="is-trap" data-stat="trapped">0</dd></div>
+              <div><dt>Halaman umpan disajikan</dt><dd data-stat="pages">0</dd></div>
+              <div><dt>Token dibakar penyerang (estimasi)</dt><dd data-stat="tokens">0</dd></div>
+            </dl>
+            <figcaption id="arena-cap" class="caption">
+              Ilustrasi alur, bukan data langsung. Klik area kiri atau tombol di atas untuk melepas agen; arahkan kursor ke titik untuk melihat skornya. Estimasi ±600 token per halaman umpan (median lab).
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ============ MANIFESTO ============ -->
+      <section class="manifesto" aria-label="Prinsip">
+        <div class="wrap">
+          <div class="manifesto__meta">
+            <span>Penangkalan</span>
+            <span>Kartika Cyber Hackathon 2026</span>
+            <a href="#batas">→ Batas aman</a>
+          </div>
+          <p class="manifesto__text" data-manifesto>
+            Pertahanan saja. Tidak ada serangan balik. Tidak ada LLM di jalur penyerang. Tidak ada aturan aktif tanpa persetujuan operator.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ CARA KERJA ============ -->
+      <section class="section story" id="cara-kerja" aria-labelledby="story-title">
+        <div class="wrap">
+          <header class="section-head">
+            <p class="eyebrow" data-reveal>FIG. 02–07 · Cara kerja</p>
+            <h2 id="story-title" data-reveal="wipe">Satu sesi penyerang, <span class="muted">dari pintu masuk sampai keputusan operator.</span></h2>
+          </header>
+
+          <div class="story__grid">
+            <ol class="story__index" aria-label="Langkah">
+              <li><a href="#langkah-1" data-index="1"><span class="num">01</span> Deteksi</a></li>
+              <li><a href="#langkah-2" data-index="2"><span class="num">02</span> Belokkan</a></li>
+              <li><a href="#langkah-3" data-index="3"><span class="num">03</span> Tahan</a></li>
+              <li><a href="#langkah-4" data-index="4"><span class="num">04</span> Canary</a></li>
+              <li><a href="#langkah-5" data-index="5"><span class="num">05</span> Redaksi</a></li>
+              <li><a href="#langkah-6" data-index="6"><span class="num">06</span> Persetujuan</a></li>
+            </ol>
+
+            <div class="story__steps">
+              <article class="step" id="langkah-1" data-step="1">
+                <p class="step__num">01 · Deteksi</p>
+                <h3>Skor dari sinyal, bukan tebakan.</h3>
+                <p>Setiap permintaan dinilai dari honeylink tersembunyi, User-Agent otomasi, header browser yang hilang, dan ritme yang terlalu cepat. Lewat ambang 0,85, sesi diklasifikasikan sebagai agen.</p>
+                <p class="meta">Median 1,8 detik sampai agen terjebak · Data simulasi lab</p>
+              </article>
+              <article class="step" id="langkah-2" data-step="2">
+                <p class="step__num">02 · Belokkan</p>
+                <h3>Pengunjung sah tidak merasakan apa pun.</h3>
+                <p>Trafik sah diteruskan byte-per-byte ke aplikasi asli. Sesi yang terdeteksi sebagai agen dibelokkan ke labirin, jadi aplikasi asli berhenti menerima permintaannya.</p>
+              </article>
+              <article class="step" id="langkah-3" data-step="3">
+                <p class="step__num">03 · Tahan</p>
+                <h3>Labirin yang tidak ada ujungnya.</h3>
+                <p>Direktori, dokumen API, kredensial palsu, laporan insiden, sampai server MCP umpan, dibangkitkan prosedural dan deterministik per seed. Setiap halaman menautkan halaman berikutnya. Tanpa LLM, jadi NEXA tidak membakar satu token pun selama agen tertahan.</p>
+              </article>
+              <article class="step" id="langkah-4" data-step="4">
+                <p class="step__num">04 · Canary</p>
+                <h3>Umpan yang meninggalkan jejak.</h3>
+                <p>Kredensial dan token umpan unik per sesi. Begitu salah satunya dipakai di permintaan mana pun, NEXA mencatatnya sebagai bukti bahwa agen menelan umpan.</p>
+              </article>
+              <article class="step" id="langkah-5" data-step="5">
+                <p class="step__num">05 · Redaksi</p>
+                <h3>Intelijen pasca-sesi, data tersamarkan.</h3>
+                <p>Setelah sesi berakhir, dosir disamarkan (IP, host, path, email, secret) sebelum satu-satunya pintu ke model merangkum pola serangan, dengan budget token harian. Hanya data sesi di dalam jebakan yang boleh keluar.</p>
+              </article>
+              <article class="step" id="langkah-6" data-step="6">
+                <p class="step__num">06 · Persetujuan</p>
+                <h3>Tidak ada yang aktif tanpa operator.</h3>
+                <p>Draf aturan Suricata divalidasi <span class="mono">suricata -T</span> lebih dulu, lalu menunggu keputusan. Aturan hanya aktif setelah operator menekan Setujui, dan setiap keputusan tercatat.</p>
+              </article>
+            </div>
+
+            <div class="story__stage" aria-hidden="true">
+              <div class="stage" data-active="1">
+                <span class="stage__label fig" data-stage-label>FIG. 02 · Deteksi</span>
+
+                <!-- 1. Deteksi -->
+                <div class="panel" data-panel="1">
+                  <div class="log">
+                    <div class="log__row"><span>GET</span><span class="path">/</span><span>Mozilla/5.0 (Windows…)</span><span class="score">0,00</span></div>
+                    <div class="log__row"><span>GET</span><span class="path">/layanan</span><span>Mozilla/5.0 (Windows…)</span><span class="score">0,00</span></div>
+                    <div class="log__row is-agent">
+                      <span>GET</span><span class="path">/arsip-internal/</span><span>agent/1.0 (+bot)</span><span class="score">0,90</span>
+                      <span class="hud"><i></i><i></i><i></i><i></i><span class="hud__tag">AGEN AI</span></span>
+                    </div>
+                    <div class="log__row"><span>GET</span><span class="path">/kontak</span><span>Mozilla/5.0 (Macintosh…)</span><span class="score">0,00</span></div>
+                  </div>
+                  <div class="signals">
+                    <div class="signal" style="--i: 0"><span>honeylink</span><span class="signal__bar"><span style="width: 70%"></span></span><span class="signal__val">+0,70</span></div>
+                    <div class="signal" style="--i: 1"><span>header browser hilang</span><span class="signal__bar"><span style="width: 20%"></span></span><span class="signal__val">+0,20</span></div>
+                  </div>
+                  <div class="verdict"><span>skor 0,90 ≥ ambang 0,85</span><b>AGEN · DIBELOKKAN</b></div>
+                </div>
+
+                <!-- 2. Belokkan -->
+                <div class="panel" data-panel="2">
+                  <svg class="fork" viewBox="0 0 520 300" role="presentation">
+                    <path class="line" d="M10 150 H200" />
+                    <path class="line" d="M232 150 C 300 150 300 66 368 66 H372" />
+                    <path class="line" d="M232 150 C 300 150 300 234 368 234 H372" />
+                    <path class="flow flow--human" d="M10 150 H200 M232 150 C 300 150 300 66 368 66 H372" />
+                    <path class="flow flow--agent" d="M232 150 C 300 150 300 234 368 234 H372" />
+                    <rect class="node" x="200" y="134" width="32" height="32" />
+                    <text class="t-accent" x="216" y="122" text-anchor="middle">NEXA</text>
+                    <text class="t-muted" x="10" y="136">permintaan masuk</text>
+                    <rect class="box" x="372" y="38" width="138" height="56" />
+                    <text x="384" y="62">aplikasi asli</text>
+                    <text class="t-muted" x="384" y="80">byte-per-byte</text>
+                    <rect class="box box--trap" x="372" y="206" width="138" height="56" />
+                    <text class="t-trap" x="384" y="230">labirin umpan</text>
+                    <text class="t-muted" x="384" y="248">tanpa LLM</text>
+                    <text class="t-muted" x="268" y="100">manusia</text>
+                    <text class="t-trap" x="268" y="210">agen</text>
+                  </svg>
+                </div>
+
+                <!-- 3. Tahan -->
+                <div class="panel" data-panel="3">
+                  <div class="stack">
+                    <div class="sheet" style="--i: 0"><small>kedalaman 1</small>/arsip-internal/</div>
+                    <div class="sheet" style="--i: 1"><small>kedalaman 2</small>/arsip-internal/ops-lat/</div>
+                    <div class="sheet" style="--i: 2"><small>kedalaman 3</small>laporan-operasi-07.md</div>
+                    <div class="sheet" style="--i: 3"><small>kedalaman 4</small>kunci-integrasi.conf</div>
+                    <div class="sheet" style="--i: 4"><small>kedalaman 5</small>/arsip-internal/mcp · tools/list</div>
+                  </div>
+                  <div class="depth"><span>Token LLM NEXA selama agen tertahan</span><b>0</b></div>
+                </div>
+
+                <!-- 4. Canary -->
+                <div class="panel" data-panel="4">
+                  <div class="doc">
+                    <span class="k"># kunci-integrasi.conf · disajikan ke sesi 7f3a…</span><br />
+                    akun_layanan = svc_backup<br />
+                    sandi = <span class="canary">B7pw-K2Q9-7F3A</span>
+                  </div>
+                  <div class="trip"><span class="trip__line"></span><span class="trip__tag">CANARY DIPAKAI</span></div>
+                  <div class="req">
+                    <span class="k">POST /masuk · 4 menit kemudian</span><br />
+                    user=svc_backup&amp;pass=<span class="canary">B7pw-K2Q9-7F3A</span>
+                  </div>
+                </div>
+
+                <!-- 5. Redaksi -->
+                <div class="panel" data-panel="5">
+                  <div class="dossier">{
+  "sourceIp": "<span class="redact" style="--i: 0"><span class="redact__real">203.0.113.47</span><span class="redact__token">[IP-1]</span></span>",
+  "host": "<span class="redact" style="--i: 1"><span class="redact__real">portal.bayu7.latihan.test</span><span class="redact__token">[HOST-1]</span></span>",
+  "steps": 32,
+  "canaryUsed": "<span class="redact" style="--i: 2"><span class="redact__real">B7pw-K2Q9-7F3A</span><span class="redact__token">[SECRET-1]</span></span>"
+}</div>
+                  <div class="handoff"><span data-icon="brain-circuit" data-size="16"></span> <span>dikirim ke <b>intel/llm.ts</b> · budget harian</span></div>
+                </div>
+
+                <!-- 6. Persetujuan -->
+                <div class="panel" data-panel="6">
+                  <div class="rule" data-rule>drop http any any -&gt; $HOME_NET any (msg:"NEXA honeylink diakses /arsip-internal/"; flow:established,to_server; http.uri; content:"/arsip-internal/"; sid:9100001; rev:1;)</div>
+                  <ul class="checks" data-checks>
+                    <li class="check ok" style="--i: 0"><span data-icon="check" data-size="16" data-stroke="2"></span> suricata -T · lolos validasi</li>
+                    <li class="check wait" style="--i: 1"><span data-icon="gavel" data-size="16"></span> menunggu keputusan operator</li>
+                  </ul>
+                  <div class="approve" data-approve>
+                    <span class="muted">aktif hanya dengan record persetujuan</span>
+                    <span class="btn btn--primary btn--sm approve__btn">
+                      <svg class="tick" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="2.2" /></svg>
+                      Setujui
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ LABIRIN DARI SEED ============ -->
+      <section class="section play" id="labirin" aria-labelledby="play-title">
+        <div class="wrap">
+          <header class="section-head">
+            <p class="eyebrow" data-reveal>FIG. 08 · Labirin deterministik</p>
+            <h2 id="play-title" data-reveal="wipe">Labirin dari seed Anda. <span class="muted">Seed yang sama selalu menghasilkan labirin yang sama.</span></h2>
+          </header>
+          <div class="play__grid">
+            <div class="play__controls" data-reveal>
+              <label class="field">
+                <span class="field__label">Seed</span>
+                <input id="seed" type="text" value="BAYU-7" maxlength="40" autocomplete="off" spellcheck="false" />
+              </label>
+              <dl class="kv">
+                <div><dt>Sidik labirin</dt><dd data-play="hash">—</dd></div>
+                <div><dt>Lapis</dt><dd data-play="layer">1</dd></div>
+                <div><dt>Halaman dikunjungi agen</dt><dd data-play="pages">0</dd></div>
+              </dl>
+              <p class="body">Tanpa model bahasa di jalur penyerang: setiap halaman dibangkitkan dari seed. Agen bisa menjelajah selamanya, sementara NEXA tidak membayar satu token pun.</p>
+              <button class="btn btn--ghost" type="button" data-play="random">
+                <span data-icon="rotate-ccw" data-size="16" data-stroke="2"></span> Seed acak
+              </button>
+            </div>
+            <canvas class="play__canvas" role="img" aria-label="Ilustrasi: labirin yang dibangkitkan dari seed, dengan agen yang menjelajahinya sel demi sel."></canvas>
+            <div>
+              <p class="eyebrow play__head">Halaman umpan terbaru</p>
+              <ol class="play__pages" data-play="list"></ol>
+            </div>
+          </div>
+          <p class="caption">
+            Ilustrasi. Labirin NEXA berupa dokumen dan endpoint palsu, bukan peta; demo ini memakai PRNG dan kosakata fiktif yang sama dengan sensor (domain .test, tanpa data instansi nyata).
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ HASIL LAB ============ -->
+      <section class="section results" id="hasil" aria-labelledby="results-title">
+        <div class="wrap">
+          <header class="section-head">
+            <p class="eyebrow" data-reveal>FIG. 09 · Hasil lab</p>
+            <h2 id="results-title" data-reveal="wipe">Ke mana usaha agen pergi. <span class="muted">Dengan NEXA, hampir tidak ada yang sampai ke aplikasi asli.</span></h2>
+            <p class="meta" data-reveal>Data simulasi lab · median per run · agen uji dibatasi 15 langkah dan 250 ribu token per run</p>
+          </header>
+          <div class="results__grid">
+            <div class="bars" data-bars>
+              <p class="eyebrow bars__title">Permintaan HTTP agen yang sampai ke aplikasi asli</p>
+            </div>
+            <dl class="stats" data-stats></dl>
+          </div>
+          <a class="link" href="https://github.com/Rafiqalha/nexa/blob/main/docs/metrics.md" target="_blank" rel="noreferrer">
+            Metodologi dan tabel lengkap <span data-icon="arrow-up-right" data-size="14"></span>
+          </a>
+        </div>
+      </section>
+
+      <!-- ============ BATAS AMAN ============ -->
+      <section class="section bounds" id="batas" aria-labelledby="bounds-title">
+        <div class="wrap">
+          <header class="section-head">
+            <p class="eyebrow" data-reveal>FIG. 10 · Batas aman</p>
+            <h2 id="bounds-title" data-reveal="wipe">Batas yang tidak kami lewati. <span class="muted">Ditegakkan kode dan test regresi, bukan janji.</span></h2>
+          </header>
+          <ul class="bounds__grid">
+            <li data-reveal style="--i: 0">
+              <span data-icon="ban" data-size="20" data-stroke="1.5"></span>
+              <h3>Pertahanan saja</h3>
+              <p>Labirin, canary, dan MCP umpan hanya menjawab permintaan. Tidak pernah ada koneksi ke alamat penyerang.</p>
+            </li>
+            <li data-reveal style="--i: 1">
+              <span data-icon="route" data-size="20" data-stroke="1.5"></span>
+              <h3>Tanpa LLM di jalur penyerang</h3>
+              <p>Labirin prosedural dan deterministik. Model hanya dipanggil pasca-sesi.</p>
+            </li>
+            <li data-reveal style="--i: 2">
+              <span data-icon="eye-off" data-size="20" data-stroke="1.5"></span>
+              <h3>Redaksi sebelum keluar</h3>
+              <p>IP, host, path, email, dan secret disamarkan sebelum apa pun dikirim ke penyedia model.</p>
+            </li>
+            <li data-reveal style="--i: 3">
+              <span data-icon="brain-circuit" data-size="20" data-stroke="1.5"></span>
+              <h3>Satu pintu ke model</h3>
+              <p>Hanya satu modul yang boleh memanggil model, dengan budget token harian. Model-agnostic: DeepSeek, Ollama, atau vLLM.</p>
+            </li>
+            <li data-reveal style="--i: 4">
+              <span data-icon="gavel" data-size="20" data-stroke="1.5"></span>
+              <h3>Gerbang persetujuan</h3>
+              <p>Aturan Suricata divalidasi lebih dulu dan tidak pernah aktif tanpa keputusan operator yang tercatat.</p>
+            </li>
+            <li data-reveal style="--i: 5">
+              <span data-icon="lock-keyhole" data-size="20" data-stroke="1.5"></span>
+              <h3>Secret tetap di sensor</h3>
+              <p>Tidak pernah di repo, dashboard, log, atau aplikasi desktop.</p>
+            </li>
+            <li data-reveal style="--i: 6">
+              <span data-icon="flask-conical" data-size="20" data-stroke="1.5"></span>
+              <h3>Umpan fiktif</h3>
+              <p>Nama satuan, host .test, dan IP TEST-NET dikarang. Tidak ada data instansi nyata.</p>
+            </li>
+            <li data-reveal style="--i: 7">
+              <span data-icon="scan-eye" data-size="20" data-stroke="1.5"></span>
+              <h3>Jujur di layar</h3>
+              <p>Data lab berlabel "Data simulasi lab"; trafik produksi berlabel "Trafik nyata (produksi)".</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ============ MULAI ============ -->
+      <section class="section start" id="coba" aria-labelledby="start-title">
+        <div class="wrap">
+          <header class="section-head">
+            <p class="eyebrow" data-reveal>FIG. 11 · Mulai</p>
+            <h2 id="start-title" data-reveal="wipe">Mulai dalam satu menit. <span class="muted">Tanpa penyiapan.</span></h2>
+          </header>
+          <ol class="start__grid">
+            <li data-reveal style="--i: 0">
+              <span class="num">01</span>
+              <span data-icon="layout-dashboard" data-size="20" data-stroke="1.5"></span>
+              <h3>Dashboard live</h3>
+              <p>Daftar, lalu langsung masuk sebagai Pemantau dan lihat sesi yang terjebak di portal demo.</p>
+              <a class="btn btn--primary" href="https://nexa-console.up.railway.app/#/daftar" target="_blank" rel="noreferrer">Daftar dan masuk</a>
+            </li>
+            <li data-reveal style="--i: 1">
+              <span class="num">02</span>
+              <span data-icon="monitor" data-size="20" data-stroke="1.5"></span>
+              <h3>Aplikasi desktop</h3>
+              <p>Installer Windows per pengguna, tanpa hak admin. Setelah dipasang langsung membuka NEXA live.</p>
+              <a class="btn btn--ghost" href="https://github.com/Rafiqalha/nexa/releases/latest" target="_blank" rel="noreferrer">
+                <span data-icon="download" data-size="16" data-stroke="2"></span> Unduh installer
+              </a>
+            </li>
+            <li data-reveal style="--i: 2">
+              <span class="num">03</span>
+              <span data-icon="terminal" data-size="20" data-stroke="1.5"></span>
+              <h3>Jalankan sendiri</h3>
+              <p>Lab lengkap di mesin Anda: sensor, portal fiktif, agen uji, dan dashboard.</p>
+              <div class="code">
+                <code data-copy-source>pnpm install &amp;&amp; pnpm demo</code>
+                <button class="copy" type="button" aria-label="Salin perintah" data-copy>
+                  <span data-icon="copy" data-size="16"></span>
+                </button>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <canvas class="wordmark" role="img" aria-label="NEXA"></canvas>
+        <div class="foot__row">
+          <p>NEXA · Kartika Cyber Hackathon 2026 · Kategori Penangkalan</p>
+          <nav class="foot__links" aria-label="Tautan">
+            <a href="https://github.com/Rafiqalha/nexa" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://nexa-console.up.railway.app" target="_blank" rel="noreferrer">Dashboard</a>
+            <a href="https://portal-bayu7.up.railway.app" target="_blank" rel="noreferrer">Portal demo</a>
+            <a href="https://github.com/Rafiqalha/nexa/releases/latest" target="_blank" rel="noreferrer">Unduhan</a>
+          </nav>
+        </div>
+        <p class="meta">
+          Angka berlabel "Data simulasi lab" berasal dari lab tim sendiri dengan target fiktif. NEXA model-agnostic; demo memakai API model eksternal hanya untuk intelijen pasca-sesi.
+        </p>
+      </div>
+    </footer>
+
+    <span class="sr-only" aria-live="polite" data-announce></span>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

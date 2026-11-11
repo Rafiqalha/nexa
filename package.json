@@ -16,6 +16,8 @@
     "build": "pnpm --filter \"./apps/**\" --filter \"./packages/**\" -r build",
     "desktop": "pnpm --filter desktop start",
     "desktop:installer": "pnpm --filter desktop dist",
+    "landing": "pnpm --filter landing dev",
+    "landing:build": "pnpm --filter landing build",
     "test": "vitest run",
     "lint": "biome check .",
     "format": "biome format --write .",
