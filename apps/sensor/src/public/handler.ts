@@ -1,7 +1,7 @@
 // Jalur request publik (semua trafik masuk, termasuk penyerang).
 // ATURAN: modul ini dan semua yang di-import-nya TIDAK BOLEH memanggil LLM
 // (AGENTS.md §2.2). Test regresi `no-llm-in-request-path.test.ts` menjaganya.
-import { Readable } from 'node:stream';
+import type { Readable } from 'node:stream';
 import type { HttpBindings } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { type Context, Hono } from 'hono';
@@ -16,6 +16,7 @@ import type { LabyrinthService, ServeInput } from '../labyrinth/service';
 import type { Logger } from '../logger';
 import { decoyMcpPath } from '../mcp/decoy';
 import { forwardRequest } from '../proxy/forward';
+import { peekBody } from '../proxy/peek-body';
 
 export interface PublicDeps {
   config: Config;
@@ -30,8 +31,11 @@ export interface PublicDeps {
   interrogation?: Interrogation;
 }
 
-/** Body request sah yang lebih kecil dari ini dibaca untuk inspeksi canary lalu diteruskan utuh. */
-const MAX_INSPECT_BODY = 64 * 1024;
+/**
+ * Byte awal body yang diperiksa untuk canary. Body yang lebih panjang tetap diteruskan utuh;
+ * inspeksinya best effort (hanya bagian awal).
+ */
+export const MAX_INSPECT_BODY = 64 * 1024;
 
 export function headersToBag(headers: Headers): HeaderBag {
   const bag: Record<string, string> = {};
@@ -82,12 +86,6 @@ export function fakeVictory(
   const panel = `${root}/panel-admin-${rng.hex(4)}`;
   const banner = `> **Autentikasi berhasil.** Sesi layanan aktif (berlaku 8 jam). Lanjutkan ke [panel administrasi](${panel}) atau [unduh berkas konfigurasi](${root}/konfigurasi-${rng.hex(4)}).\n\n`;
   return { ...page, body: banner + page.body, links: [panel, ...page.links] };
-}
-
-async function readSmallBody(c: Context<{ Bindings: HttpBindings }>): Promise<Buffer | null> {
-  const length = Number(c.req.header('content-length') ?? Number.NaN);
-  if (!Number.isFinite(length) || length > MAX_INSPECT_BODY) return null;
-  return Buffer.from(await c.req.raw.arrayBuffer());
 }
 
 export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings }> {
@@ -194,17 +192,15 @@ export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings
       return served.response;
     }
 
-    // Sesi sah: body kecil dibaca untuk inspeksi canary lalu diteruskan byte-per-byte.
+    // Sesi sah: awal body dibaca dari stream (berbatas, tanpa bergantung pada Content-Length,
+    // F-10) untuk inspeksi canary, lalu body utuh diteruskan byte-per-byte.
     let body: Readable | null = null;
     let bodyText: string | null = null;
-    if (hasBody) {
-      const small = await readSmallBody(c);
-      if (small) {
-        bodyText = small.toString('utf8');
-        body = Readable.from(small);
-      } else {
-        body = (c.env?.incoming as Readable | undefined) ?? null;
-      }
+    const rawBody = hasBody ? c.req.raw.body : null;
+    if (rawBody) {
+      const peeked = await peekBody(rawBody, MAX_INSPECT_BODY);
+      bodyText = peeked.head.toString('utf8');
+      body = peeked.body;
     }
     deps.canaries?.inspect({
       sessionId: obs.session.id,

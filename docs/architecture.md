@@ -107,6 +107,7 @@ sequenceDiagram
 |---|---|
 | `public/handler.ts` | Jalur request publik: observasi sesi, inspeksi canary, belokkan ke labirin / MCP umpan / endpoint kalibrasi, atau teruskan utuh ke upstream |
 | `proxy/forward.ts` | Penerusan byte-per-byte ke `UPSTREAM_URL` (header hop-by-hop dibuang) |
+| `proxy/peek-body.ts` | Baca 64 KiB pertama body untuk inspeksi canary (chunked atau tidak), lalu teruskan body utuh |
 | `detect/` | Sinyal: honeylink 0,7 · UA otomasi 0,35 · header browser hilang 0,2 · ritme cepat 0,25 · ritme teratur 0,1. Sidik sesi = sha256(IP+UA), idle 60 detik |
 | `labyrinth/` | Generator deterministik per (seed, halaman, arm) dengan 5 arm Markdown + API JSON + robots. Bandit epsilon-greedy dengan reward lama tertahan (maks. 120 detik) |
 | `canary/` | Token unik per sesi (`bayu7_svc_…`, `B7pw-…`, `doc-…`), deteksi pemakaian di request mana pun |
