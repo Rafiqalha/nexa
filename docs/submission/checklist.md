@@ -4,7 +4,7 @@ Deadline: **15 November 2026, 23:59 WIB**. Status per 11 November 2026.
 
 | Item rulebook | Status | Lokasi / catatan |
 |---|---|---|
-| Link publik (repositori) | ☐ **Belum** | Repo belum punya remote. Tim perlu membuat repo publik (mis. GitHub), lalu `git push`. Pastikan `.env`, `data/`, `lab/output/`, `apps/desktop/release/` tidak ikut (sudah di `.gitignore`). |
+| Link publik (repositori) | ☑ Sudah | <https://github.com/Rafiqalha/nexa> (publik, branch `main`). Seluruh riwayat dipindai sebelum push: tidak ada nilai rahasia `.env`, dan `data/`, `lab/output/`, `apps/desktop/release/` tidak pernah ikut. |
 | Thumbnail 1200×630, ≤ 500 KB | ☑ Sudah | [`thumbnail.png`](thumbnail.png): 1200×630, 40 KB. Dibuat ulang dengan `python scripts/make-thumbnail.py` dari `docs/metrics.json`. |
 | Screenshot (maks. 5) | ☑ Sudah | [`screenshots/`](screenshots/): 5 JPG 1440 px (Dashboard, Sesi, Linimasa sesi, Aturan, Intelijen), diambil dengan `node scripts/capture-screenshots.mjs`. |
 | Video demo ≤ 10 menit | ☐ **Belum** | Perlu direkam tim. Urutan yang disarankan ada di bawah. |

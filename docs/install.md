@@ -18,7 +18,7 @@ memilih otomatis: Docker bila engine hidup, selain itu mode lokal.
 ## 2. Clone dan pasang dependensi
 
 ```bash
-git clone <url-repo> nexa
+git clone https://github.com/Rafiqalha/nexa.git
 cd nexa
 pnpm install
 ```
