@@ -7,7 +7,7 @@
 | Build yang diuji | `5df1164` ditambah perubahan working tree yang belum di-commit |
 | Lingkungan | Lab lokal, sensor `:8080`, admin `:8081`, target `:3000` |
 | Sifat data | Fiktif (lab NEXA) |
-| Status | Draf untuk ditinjau, belum ada perubahan kode |
+| Status | Draf untuk ditinjau. F-06 dan F-10 sudah diperbaiki (catatan status di §6.7 dan §6.11); temuan lain belum ada perubahan kode |
 
 ## 1. Ringkasan eksekutif
 
@@ -476,6 +476,25 @@ memanggil upstream langsung.
 container tanpa port publish. Di deployment, gunakan network policy yang hanya
 mengizinkan sensor menghubungi upstream.
 
+**Status (12 November 2026): diperbaiki untuk mode proses lokal.**
+
+- `lab/target-app` kini bind ke `127.0.0.1` bila `HOST` tidak di-set atau kosong
+  (`lab/target-app/src/listen.ts`). Log start mencantumkan alamat bind.
+- Docker Compose menetapkan `HOST: 0.0.0.0` secara eksplisit untuk `target-app`. Service
+  ini tetap hanya di jaringan internal `lab`, tanpa port publish.
+- Railway: service `portal` tetap menetapkan `HOST` dan `PORT` sebagai variabel service
+  (nama variabel diperiksa pada konfigurasi service; nilai `HOST=::` sesuai
+  `docs/install.md` §11, tidak dibaca ulang). Perilakunya tidak berubah.
+- Test regresi: `lab/target-app/src/isolation.test.ts`. Isinya: bind bawaan loopback,
+  `HOST` kosong tidak membuka semua antarmuka, server benar-benar listen di `127.0.0.1`,
+  dan compose tetap menjangkau target. Test bind gagal pada default lama `0.0.0.0`.
+- Verifikasi lab lokal (`pnpm lab:up` tanpa Docker): `netstat` menampilkan
+  `127.0.0.1:3000` dan tidak ada `0.0.0.0:3000`. Koneksi ke `:3000` lewat alamat LAN
+  ditolak, dan sensor tetap meneruskan trafik sah (`200`).
+- Sisa risiko: proses di host yang sama masih bisa memanggil `127.0.0.1:3000` langsung.
+  Ini di luar model ancaman (Bab 11, penyerang dengan akses host). Isolasi penuh ada di
+  jalur Docker Compose.
+
 ### 6.8 F-07: SQL injection pada login target lab
 
 **Bukti.** Lihat 5.5. Query dirakit dengan interpolasi string.
@@ -526,6 +545,29 @@ chunked encoding atau body lebih dari 64 KiB.
 **Perbaikan.** Baca body sebagai stream dengan batas atas, dan periksa potongan
 yang terbaca meskipun `Content-Length` tidak ada. Catat bahwa inspeksi bersifat
 best effort jika body melebihi batas.
+
+**Status (12 November 2026): diperbaiki.**
+
+- `readSmallBody()` diganti `peekBody()` (`apps/sensor/src/proxy/peek-body.ts`). Awal body
+  dibaca dari stream sampai `MAX_INSPECT_BODY` (64 KiB) tanpa bergantung pada
+  `Content-Length`. Potongan yang sudah terbaca lalu diputar ulang dan sisa stream
+  menyusul, sehingga upstream menerima body utuh byte-per-byte. Memori per request
+  dibatasi sekitar 64 KiB ditambah satu chunk.
+- Body di atas 64 KiB, chunked maupun ber-`Content-Length`, kini tetap diperiksa bagian
+  awalnya. Sebelumnya body seperti ini tidak diperiksa sama sekali.
+- Inspeksi tetap best effort: token yang berada setelah 64 KiB pertama tidak terdeteksi.
+- Test regresi: `apps/sensor/test/canary-chunked.test.ts` dan
+  `apps/sensor/src/proxy/peek-body.test.ts`. Kasusnya: canary di body chunked terdeteksi
+  (token terbelah di dua chunk), body chunked 256 KiB dan body ber-`Content-Length`
+  sekitar 128 KiB diteruskan utuh, batas baca, body kosong, dan body tepat 64 KiB.
+  Ketiga kasus deteksi gagal pada `readSmallBody()` lama.
+- Verifikasi lab lokal: dua canary yang diterbitkan ke sesi agen `lab:attack --scripted`
+  dikirim di body chunked (salah satunya 256 KiB) dari sesi browser sah. Keduanya
+  tercatat (`trigger_count` 0 → 1, event `canary_triggered` di linimasa sesi sah), dan
+  upstream tetap menjawab (`401` dari `/login` target).
+- Di luar lingkup perbaikan ini: jalur sesi terjebak masih membaca body penuh
+  (`c.req.text()`) sebelum dipotong 64 KiB, sehingga ukurannya tidak dibatasi. Jalur itu
+  perlu batas yang sama sebagai tindak lanjut.
 
 ### 6.12 F-11: Flag umpan statis
 
