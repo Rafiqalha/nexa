@@ -26,19 +26,56 @@ menjaganya, dan perbaikan dari audit ini. Semua test berjalan di `pnpm test`.
    layar login bisa mengunci operator sah (lihat `apps/sensor/src/api/auth.test.ts`).
 3. **Test regresi lintas repo** untuk §2.1, §2.3, §2.6, §2.7–2.8, §2.10, §2.11.
 
+## Lapisan akun dan mode produksi (11 November 2026)
+
+Dashboard tidak lagi memakai satu token bersama. Kontrol berikut dijaga
+`apps/sensor/test/auth.integration.test.ts`:
+
+| Kontrol | Penegakan | Test |
+|---|---|---|
+| Penyiapan pemilik | Hanya dengan `SETUP_TOKEN` (perbandingan waktu-konstan), hanya sekali, dibatasi 10 gagal per 15 menit per IP. Produksi tidak memakai `DASHBOARD_TOKEN` sebagai token penyiapan. | "penyiapan pemilik"; `config.test.ts` |
+| Kata sandi & login | scrypt (N=16384) dengan hash tiruan untuk email tak dikenal, pesan galat generik, akun terkunci 15 menit setelah 5 gagal, batas 20 gagal per 10 menit per IP | "login" |
+| Sesi | Token acak, DB hanya menyimpan sha256. Cookie HttpOnly + SameSite=Strict, di produksi `__Host-` + Secure. Kedaluwarsa idle dan mutlak, bisa dicabut per perangkat. | "login", "mode produksi" |
+| CSRF | Metode yang mengubah data ditolak bila `Origin` asing atau `Sec-Fetch-Site: cross-site`. Produksi hanya menerima origin dashboard itu sendiri (`DASHBOARD_ORIGIN` atau host yang sama), tanpa pengecualian loopback. | "CSRF: penjaga Origin" |
+| Peran | Matriks izin di server (bukan hanya UI). Pemilik tidak bisa diturunkan atau dinonaktifkan; minimal satu Admin aktif. | "peran & kursi paket" |
+| 2FA | TOTP RFC 6238, kode tidak bisa dipakai ulang, secret terenkripsi AES-256-GCM dengan kunci turunan `AUTH_SECRET` | "2FA (TOTP)" |
+| Token API | Prefiks `nxa_`, hanya sha256 yang disimpan, cakupan baca-saja atau tulis, bisa kedaluwarsa dan dicabut | "token API" |
+| Audit | Aksi login, pengguna, pengaturan, tagihan, dan keputusan aturan tercatat dengan aktor dan IP, tanpa kata sandi atau token di meta | "audit" |
+| Jujur di UI | Label "Trafik nyata (produksi)" hanya dari `dataLabel(mode)` di sensor, tidak di-hardcode di dashboard | `security-guardrails.test.ts` §2.11 |
+
+Verifikasi pasca-deploy di Railway (11 November 2026):
+
+- `/api/*` tanpa login dijawab 401, dan POST dengan `Origin` asing dijawab 403.
+- Respons membawa CSP ketat, HSTS, `X-Frame-Options: DENY`, dan `nosniff`.
+- API admin tidak ada di port publik (404).
+- Tiga request dengan `X-Real-IP` dan `X-Forwarded-For` palsu yang berbeda tercatat sebagai satu
+  sesi dengan IP asli pengirim, sesuai IP yang dilihat edge Railway.
+- Sesi uji yang menyentuh honeylink terjebak (skor 0,9) dan menghasilkan 2 draf aturan. Keduanya
+  lolos `suricata -T` (Suricata 7.0.10 di container) dan menunggu persetujuan operator.
+
 ## Risiko yang belum tertutup
 
-- **Jalur Docker belum terverifikasi di mesin ini.** Docker Desktop rusak (soket AF_UNIX tidak
-  dapat diakses), sehingga image dan compose hanya divalidasi lewat `docker compose config`. Lab
-  dijalankan dalam mode lokal: proses Node ditambah Suricata 8.0.6 di WSL.
-- Ketiga Dockerfile (sensor, target, agen uji) kini menyalin manifest semua paket workspace untuk
+- **Compose lokal belum terverifikasi di mesin pengembang.** Docker Desktop rusak, jadi
+  `deploy/docker-compose.yml` hanya divalidasi lewat `docker compose config`, dan lab lokal
+  memakai mode proses Node ditambah Suricata 8.0.6 di WSL. Image sensor (varian Railway) dan
+  image target sudah dibangun dan dijalankan di Railway. Build pertama itu menemukan stage
+  dashboard yang tidak menyalin `tsconfig.base.json`; perbaikannya diterapkan ke kedua
+  Dockerfile sensor.
+- Ketiga Dockerfile (sensor, target, agen uji) menyalin manifest semua paket workspace untuk
   `--frozen-lockfile`. Perubahan di `lab/attacker-agent` sudah disetujui pemilik proyek, dan
-  `apps/sensor/test/docker-manifests.test.ts` menjaganya. Build image tetap belum diuji karena
-  Docker tidak tersedia (lihat butir pertama).
+  `apps/sensor/test/docker-manifests.test.ts` menjaganya. Image agen uji tidak pernah dibangun
+  di Railway.
+- Produksi berjalan satu replika dengan SQLite di satu volume: tanpa ketersediaan tinggi, dan
+  cadangan volume belum diotomasi.
+- Tagihan dicatat manual oleh Admin (tanpa payment gateway); status lunas bergantung pada
+  pencatatan referensi transfer yang benar.
+- Di produksi, Suricata tidak berada di jalur paket. Aturan yang disetujui dimuat ke engine dan
+  dapat diekspor untuk IDS/IPS organisasi.
 - Installer desktop **belum ditandatangani**, sehingga Windows SmartScreen memperingatkan saat
   pertama dijalankan.
-- Port admin terikat ke `127.0.0.1`. Bila dibuka ke jaringan, pasang TLS di depannya; token
-  dashboard berbentuk bearer statis.
+- Di lab, port admin terikat ke `127.0.0.1`. Di produksi, port admin terbuka di balik HTTPS
+  Railway dan login akun. `DASHBOARD_TOKEN` adalah bearer statis setara Admin, jadi sebaiknya
+  tidak di-set di produksi.
 - Deteksi berbasis sinyal (UA, header, ritme, honeylink). Agen yang meniru browser penuh dan tidak
   menyentuh honeylink tidak tertangkap oleh sinyal lain. Pengunjung manusia yang mengklik sangat
   cepat mencapai skor 0,35 (ambang curiga 0,6).

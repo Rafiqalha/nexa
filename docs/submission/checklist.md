@@ -10,6 +10,7 @@ Deadline: **15 November 2026, 23:59 WIB**. Status per 11 November 2026.
 | Video demo ≤ 10 menit | ☐ **Belum** | Perlu direkam tim. Urutan yang disarankan ada di bawah. |
 | Slide presentasi | ☐ **Belum** | Perlu dibuat tim. Bahan: README, `docs/architecture.md`, `docs/metrics.md`, `docs/prior-art.md`. |
 | Dokumentasi | ☑ Sudah | `README.md`, `docs/architecture.md`, `docs/install.md`, `docs/metrics.md`, `docs/interrogation.md`, `docs/security-audit.md`, `docs/prior-art.md`, `docs/versions.md`. |
+| (Opsional) Demo live produksi | ☐ **Hampir** | Dashboard <https://nexa-console.up.railway.app> sudah live (wajib login, peran Admin/Operator/Analis/Pemantau) di Railway region Singapura, dengan label "Trafik nyata (produksi)". Sisa langkah pemilik: isi `SETUP_TOKEN` di tab Variables, terapkan domain portal (port 8080) yang sudah di-stage, lalu buat akun pemilik. Langkah: `docs/install.md` §11. |
 | (Opsional) Installer aplikasi desktop | ☑ Sudah dirilis | [Rilis v0.2.0](https://github.com/Rafiqalha/nexa/releases/tag/v0.2.0): `NEXA-Dashboard-Setup-0.2.0.exe` (±107 MB, SHA-256 `ba09755d…1e31`, belum ditandatangani), dilampirkan ke rilis, bukan ke repo. Dibangun ulang dengan `pnpm desktop:installer`. |
 
 ## Urutan video yang disarankan (± 8 menit)
@@ -31,9 +32,10 @@ memakai API DeepSeek.
 
 ## Sisa risiko (lihat juga `docs/security-audit.md`)
 
-- Jalur Docker belum diverifikasi di mesin pengembang (Docker Desktop rusak); demo memakai mode
-  lokal ditambah Suricata 8.0.6 di WSL.
-- Dockerfile ketiga image sudah lengkap manifest-nya (dijaga test), tetapi build image belum
-  diuji karena Docker tidak tersedia di mesin pengembang.
+- Compose lokal belum diverifikasi di mesin pengembang (Docker Desktop rusak); demo lab memakai
+  mode lokal ditambah Suricata 8.0.6 di WSL. Image sensor (varian Railway) dan target sudah
+  dibangun dan berjalan di Railway.
+- Demo produksi berjalan satu replika dengan SQLite di satu volume. Tagihan dicatat manual tanpa
+  payment gateway.
 - Installer belum ditandatangani (peringatan SmartScreen).
 - Sampel metrik kecil (3–6 run per kondisi); angka adalah median lab, bukan jaminan lapangan.

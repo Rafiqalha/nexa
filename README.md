@@ -59,7 +59,8 @@ pnpm demo
 `pnpm env:init` membuat `.env` dengan token acak. `pnpm demo` membangun dashboard, menyalakan
 lab, menjalankan agen uji, lalu menunggu draf aturan siap.
 
-Dashboard NEXA: <http://127.0.0.1:8081>. Token login disalin (tanpa ditampilkan) dengan:
+Dashboard NEXA: <http://127.0.0.1:8081>. Saat pertama dibuka, buat akun pemilik dengan token
+penyiapan (`SETUP_TOKEN`). Token itu disalin ke clipboard tanpa ditampilkan dengan:
 
 ```bash
 pnpm token
@@ -71,10 +72,30 @@ pnpm token
 | `pnpm lab:attack [-- --model deepseek-v4-pro \| --baseline \| --scripted]` | Jalankan agen uji |
 | `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop NEXA Dashboard / installer Windows ([unduh di rilis](https://github.com/Rafiqalha/nexa/releases/latest)) |
 | `pnpm lab:human`, `pnpm lab:metrics`, `pnpm lab:interrogation` | Simulasi manusia, tabel metrik, laporan interogasi |
-| `pnpm typecheck && pnpm lint && pnpm test` | Verifikasi (331+ test) |
+| `pnpm typecheck && pnpm lint && pnpm test` | Verifikasi (400+ test) |
 
-Langkah lengkap, termasuk Docker Compose dan Suricata di WSL, ada di
+Langkah lengkap, termasuk Docker Compose, Suricata di WSL, dan produksi di Railway, ada di
 [docs/install.md](docs/install.md).
+
+## Produksi
+
+Selain lab, NEXA bisa dijalankan dalam mode produksi (`NEXA_MODE=production`). Demo live
+berjalan di Railway (region Singapura):
+
+| Layanan | Alamat |
+|---|---|
+| Dashboard NEXA (wajib login) | <https://nexa-console.up.railway.app> |
+
+- Portal demo fiktif BAYU-7 berada di balik sensor dan hanya bisa dijangkau lewat NEXA.
+  Data di mode produksi berlabel **"Trafik nyata (produksi)"**: berasal dari pengunjung
+  sungguhan portal itu. Agen uji tidak pernah di-deploy.
+- Akun dan peran: Admin, Operator, Analis, Pemantau. Akun pemilik pertama dibuat dengan
+  `SETUP_TOKEN`, sedangkan pengguna lain ditambahkan lewat tautan undangan sekali pakai.
+- Fitur akun: 2FA (TOTP), daftar sesi login yang bisa dicabut, dan token API.
+- Fitur admin: pengaturan deteksi dan budget intel, log audit, serta tagihan paket (Lab, Pro,
+  Enterprise) dengan invoice. Pembayaran dicatat manual tanpa payment gateway.
+
+Langkah deploy: [docs/install.md §11](docs/install.md#11-produksi-di-railway).
 
 ## Batasan keamanan
 
@@ -87,17 +108,21 @@ Ditegakkan oleh kode dan test regresi, dengan bukti per batasan di
 - Data disamarkan sebelum keluar, dan hanya data sesi di dalam jebakan.
 - Tidak ada deploy rule tanpa record persetujuan operator dan validasi `suricata -T`.
 - Secret hanya di environment sensor: tidak pernah di repo, dashboard, atau aplikasi desktop.
-- Lab terisolasi; agen uji minimal. Konten labirin fiktif. UI jujur ("Data simulasi lab").
+- Dashboard wajib login akun berperan. Perlindungannya: cookie sesi HttpOnly, 2FA TOTP, akun
+  terkunci 15 menit setelah 5 kali gagal, penjaga Origin (CSRF), dan log audit.
+- Lab terisolasi; agen uji minimal. Konten labirin fiktif.
+- UI jujur: label "Data simulasi lab" di lab, dan "Trafik nyata (produksi)" hanya di mode
+  produksi.
 
 ## Struktur
 
 ```
-apps/sensor      reverse proxy, deteksi, labirin, canary, MCP, rules, intel, API admin
+apps/sensor      reverse proxy, deteksi, labirin, canary, MCP, rules, intel, API admin, akun, tagihan
 apps/dashboard   Dashboard (React + Vite + Tailwind, UI flat + animasi)
 apps/desktop     shell Electron + installer NSIS
 packages/shared  skema API bersama (zod)
 lab/             target fiktif + agen penyerang uji (tidak ikut build produksi)
-deploy/          Docker Compose, Suricata (sidecar & WSL)
+deploy/          Docker Compose, image Railway, Suricata (sidecar & WSL)
 scripts/         lab, demo, metrik, screenshot, thumbnail
 docs/            arsitektur, instalasi, metrik, interogasi, audit, prior art, versi
 ```

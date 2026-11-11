@@ -2,7 +2,8 @@
 
 Dua jalur menjalankan lab: **Docker Compose** (direkomendasikan bila Docker tersedia) atau
 **mode lokal** (proses Node langsung di host, Suricata opsional lewat WSL). `pnpm lab:up`
-memilih otomatis: Docker bila engine hidup, selain itu mode lokal.
+memilih otomatis: Docker bila engine hidup, selain itu mode lokal. Deploy produksi (Railway)
+ada di [§11](#11-produksi-di-railway).
 
 ## 1. Prasyarat
 
@@ -29,8 +30,9 @@ pnpm install
 pnpm env:init
 ```
 
-Membuat `.env` dari `.env.example` tanpa menimpa nilai yang sudah ada. `DASHBOARD_TOKEN` dan
-`SURICATA_CONTROL_TOKEN` diisi acak; nilainya tidak pernah dicetak. Isi bila perlu:
+Membuat `.env` dari `.env.example` tanpa menimpa nilai yang sudah ada. `SETUP_TOKEN`,
+`AUTH_SECRET`, `DASHBOARD_TOKEN`, dan `SURICATA_CONTROL_TOKEN` diisi acak; nilainya tidak pernah
+dicetak. Isi bila perlu:
 
 - `DEEPSEEK_API_KEY`: intel pasca-sesi lewat model (tanpa key, intel dibuat heuristik).
 - `ATTACKER_LLM_API_KEY`: agen uji berbasis LLM (tanpa key, agen berjalan dalam mode skrip).
@@ -86,11 +88,18 @@ sampai tervalidasi (AGENTS.md §2.5). Dashboard menampilkan jumlah draf yang mas
 - Browser: <http://127.0.0.1:8081>
 - Aplikasi desktop: `pnpm desktop`, atau pasang installer (langkah 8).
 
-Token login = `DASHBOARD_TOKEN`. Salin tanpa menampilkannya:
+Pertama kali dibuka, dashboard meminta **token penyiapan** untuk membuat akun pemilik (peran
+Admin). Token penyiapan adalah `SETUP_TOKEN`; di lab, bila kosong, dipakai `DASHBOARD_TOKEN`.
+Salin tanpa menampilkannya:
 
 ```bash
 pnpm token
 ```
+
+Setelah itu masuk dengan email dan kata sandi. Pengguna lain ditambahkan lewat menu
+**Pengguna** dengan tautan undangan sekali pakai yang berlaku 72 jam. Perintah
+`pnpm token -- service` menyalin `DASHBOARD_TOKEN`, yaitu token layanan (bearer, setara Admin)
+untuk skrip lab.
 
 ## 6. Jalankan serangan uji
 
@@ -156,11 +165,77 @@ pnpm typecheck && pnpm lint && pnpm test
 pnpm lab:down
 ```
 
+## 11. Produksi di Railway
+
+Mode produksi (`NEXA_MODE=production`) membuka port admin ke internet lewat HTTPS dengan login
+akun penuh. Di mode ini label data menjadi "Trafik nyata (produksi)". Topologi demo live:
+
+| Service Railway | Dibangun dari | Jaringan |
+|---|---|---|
+| `sensor` | `deploy/railway/sensor.Dockerfile` (sensor + dashboard + Suricata 7) | Domain dashboard → port 8081, domain portal → port 8080, volume `/data` |
+| `portal` | `lab/target-app/Dockerfile` (portal fiktif BAYU-7) | Hanya privat: `portal.railway.internal:3000`, tanpa domain publik |
+
+Agen uji (`lab/attacker-agent`) tidak pernah di-deploy. Portal hanya bisa dijangkau lewat
+sensor, sehingga setiap pengunjung melewati deteksi NEXA.
+
+Variabel service `sensor` (bukan secret):
+
+| Variabel | Nilai |
+|---|---|
+| `NEXA_MODE` | `production` |
+| `SENSOR_HOST`, `ADMIN_HOST` | `::` |
+| `SENSOR_PORT`, `ADMIN_PORT` | `8080`, `8081` |
+| `PORT` | `8081` (healthcheck Railway ke `/healthz` memakai `PORT`) |
+| `TRUST_PROXY`, `CLIENT_IP_HEADER` | `true`, `x-real-ip` |
+| `UPSTREAM_URL` | `http://portal.railway.internal:3000` |
+| `DASHBOARD_ORIGIN` | `https://<domain dashboard>` |
+| `DATABASE_PATH`, `SURICATA_RULES_DIR` | `/data/nexa.db`, `/data/rules` |
+| `SURICATA_RUNNER`, `SURICATA_EXEC` | `exec`, `bash /opt/nexa/nexa-suricata.sh` |
+
+Variabel service `portal`: `HOST=::` dan `PORT=3000`. Healthcheck service `sensor` di
+`/healthz`, service `portal` di `/`.
+
+`X-Real-IP` diisi edge Railway dengan IP klien. Uji pasca-deploy mengirim `X-Real-IP` dan
+`X-Forwarded-For` palsu yang berbeda-beda: ketiga request tetap tercatat sebagai satu sesi
+dengan IP asli pengirim.
+
+Secret diisi sendiri di tab **Variables** service `sensor`, tidak pernah di repo:
+
+- `SETUP_TOKEN` (wajib untuk penyiapan, minimal 16 karakter acak): dipakai sekali untuk
+  membuat akun pemilik. Setelah ada akun, penyiapan ditutup dan variabel ini boleh dihapus.
+- `DEEPSEEK_API_KEY` (opsional): intel pasca-sesi lewat model. Tanpa key, intel dibuat
+  heuristik.
+- `AUTH_SECRET` tidak perlu diisi. Sensor membuatnya sekali di `/data/auth-secret` (izin 0600)
+  dan menyimpannya di volume.
+
+Deploy dari checkout lokal dengan Railway CLI, atau hubungkan repo GitHub ke tiap service:
+
+```bash
+railway up --service portal --environment production
+```
+
+```bash
+railway up --service sensor --environment production
+```
+
+Image sensor menjalankan entrypoint sebagai root hanya untuk menyiapkan `/data`, lalu turun ke
+user `node`. Suricata berjalan di container yang sama dalam mode unix-socket tanpa capture
+trafik, sama seperti di lab. Ia memvalidasi draf (`suricata -T`) dan memuat aturan yang sudah
+disetujui. Karena tidak berada di jalur paket, penegakan di jaringan organisasi dilakukan
+dengan mengekspor aturan (halaman **Aturan** → Ekspor) ke IDS/IPS milik organisasi.
+
+Setelah deploy, buka domain dashboard, tempel `SETUP_TOKEN`, lalu buat akun pemilik. Mode
+produksi memakai cookie `__Host-nexa_session` (Secure, HttpOnly, SameSite=Strict), menolak
+permintaan lintas-origin yang mengubah data, dan mengirim HSTS. `DASHBOARD_TOKEN` (bearer
+statis) sebaiknya tidak di-set di produksi.
+
 ## Masalah umum
 
 | Gejala | Penyebab / solusi |
 |---|---|
-| "Token ditolak oleh sensor" | Nilai yang ditempel tidak sama dengan `DASHBOARD_TOKEN`. Pakai `pnpm token`. |
-| "Terlalu banyak token salah" | 20 token salah dalam semenit; tunggu 1 menit. |
+| "Token penyiapan salah." | Nilai yang ditempel bukan `SETUP_TOKEN`. Pakai `pnpm token` (lab) atau salin dari tab Variables (Railway). |
+| "SETUP_TOKEN belum di-set di environment sensor." | Mode produksi tidak memakai `DASHBOARD_TOKEN` sebagai token penyiapan. Isi `SETUP_TOKEN`, lalu deploy ulang. |
+| "Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit." | Akun terkunci setelah 5 kali salah kata sandi. Tunggu 15 menit atau minta Admin membuat tautan reset. |
+| "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi." | Batas per IP, misalnya 20 login gagal per 10 menit. Tunggu sebentar. |
 | Desktop menampilkan "Sensor tidak terjangkau" | Sensor belum jalan (`pnpm lab:up`). Jendela mencoba lagi tiap 5 detik. |
 | `pnpm lab:up` memakai mode lokal padahal Docker terpasang | Engine Docker tidak merespons (`docker info`). Mode lokal tetap bisa dipakai. |

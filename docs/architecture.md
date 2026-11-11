@@ -21,10 +21,10 @@ flowchart LR
     C["canary/<br/>terbitkan & deteksi token"]
     M["mcp/decoy.ts<br/>MCP umpan"]
     I["interrogate/ (eksperimental)<br/>umpan teks kalibrasi"]
-    DB[("SQLite<br/>sessions, events, canaries,<br/>rules, intel, llm_budget")]
+    DB[("SQLite<br/>sessions, events, canaries,<br/>rules, intel, llm_budget,<br/>users, audit_log, invoices")]
     R["rules/<br/>draf → suricata -T → approval → deploy"]
     Q["intel/ (pasca-sesi)<br/>dosir → redaksi → budget → LLM"]
-    ADM["Port admin :8081 (127.0.0.1)<br/>REST + SSE + MCP intel + dashboard"]
+    ADM["Port admin :8081<br/>login akun + REST + SSE<br/>+ MCP intel + dashboard"]
   end
 
   T["lab/target-app<br/>aplikasi asli (fiktif)"]
@@ -57,8 +57,11 @@ Batas kepercayaan:
   menjawab request; tidak pernah menghubungi alamat penyerang (AGENTS.md §2.1–2.2).
 - **Pasca-sesi:** satu-satunya tempat model dipanggil, lewat `intel/llm.ts`, setelah
   `intel/redact.ts`, dengan budget harian (§2.3–2.4).
-- **Port admin** hanya di `127.0.0.1` dan wajib token. Dashboard dan Electron tidak pernah
-  memegang secret selain token sesi yang diketik operator (§2.6).
+- **Port admin** wajib login akun. Di lab hanya terikat ke `127.0.0.1`. Di produksi
+  (`NEXA_MODE=production`) ia terbuka lewat HTTPS. Setiap rute `/api` selain status, login,
+  keluar, penyiapan, undangan, dan reset sandi butuh sesi akun (cookie HttpOnly) atau token
+  API. Permintaan yang mengubah data wajib berasal dari origin yang sama. Dashboard dan
+  Electron tidak pernah memegang secret sensor (§2.6).
 
 ## Alur satu sesi penyerang
 
@@ -112,7 +115,11 @@ sequenceDiagram
 | `rules/` | Draf template + usulan LLM, validasi `suricata -T`, gerbang approval, deploy atomik + reload |
 | `intel/` | Antrean pasca-sesi, redaksi, budget harian, satu pintu ke model |
 | `mcp/intel.ts` | Server MCP baca-saja untuk analis (`/api/mcp`) |
-| `api/` | REST, SSE (throttle 750 ms), auth token, harga & estimasi biaya |
+| `api/` | REST, SSE (throttle 750 ms), rute akun & admin, penjaga Origin, harga & estimasi biaya |
+| `auth/` | Akun (scrypt), sesi login (cookie, idle & batas mutlak), kunci akun, 2FA TOTP (secret terenkripsi AES-256-GCM), undangan & reset sekali pakai, token API `nxa_…`, rate limit per IP |
+| `audit/` | Log audit (login, pengguna, pengaturan, tagihan, keputusan aturan) tanpa secret |
+| `settings/` | Pengaturan organisasi, keamanan sesi, ambang deteksi, budget intel (berlaku tanpa restart) |
+| `billing/` | Paket (`config/plans.json`), periode bulan WIB, kuota, invoice, upgrade prorata, pembayaran manual |
 
 ## Aplikasi lain
 
@@ -123,7 +130,7 @@ sequenceDiagram
 | `packages/shared` | Skema zod API bersama + enum |
 | `lab/target-app` | Portal fiktif "Satuan Latihan BAYU-7" dengan honeylink tersembunyi |
 | `lab/attacker-agent` | Agen uji minimal (ReAct, tool HTTP saja, allowlist lab) |
-| `deploy/` | Docker Compose (target, sensor, Suricata sidecar, agen uji di profil `attack`), skrip Suricata WSL |
+| `deploy/` | Docker Compose (target, sensor, Suricata sidecar, agen uji di profil `attack`), image produksi Railway (`deploy/railway/`), skrip Suricata WSL |
 
 ## Data
 
@@ -131,3 +138,35 @@ Semua timestamp dalam epoch ms. Tabel utama: `sessions` (skor, alasan, status, s
 `events` (per request: jenis, karakter, estimasi token, meta), `canaries`, `bandit_arms`,
 `rules` (status, validasi, keputusan operator, deploy), `intel` (ringkasan, dugaan model,
 tangkapan interogasi), `llm_budget` (pemakaian per hari WIB).
+
+Tabel akun dan administrasi: `users` (peran, status, hash scrypt, 2FA), `login_sessions` (hanya
+sha256 token), `one_time_tokens` (undangan dan reset), `api_tokens` (hanya sha256), `audit_log`,
+`settings`, `subscription`, dan `invoices`.
+
+## Akun, peran, dan produksi
+
+| Izin | Admin | Operator | Analis | Pemantau |
+|---|---|---|---|---|
+| Lihat Dashboard, Sesi, Intelijen, Aturan | ✓ | ✓ | ✓ | ✓ |
+| Setujui / Tolak aturan | ✓ | ✓ | | |
+| Ekspor aturan, token API pribadi | ✓ | ✓ | ✓ | |
+| Pengguna, Pengaturan, Tagihan, Audit | ✓ | | | |
+
+Akun pertama (pemilik) dibuat dengan `SETUP_TOKEN` dan tidak bisa diturunkan atau dinonaktifkan.
+Harus selalu ada minimal satu Admin aktif. Bila pengaturan mewajibkan 2FA untuk Admin, Admin
+tanpa 2FA hanya bisa membuka halaman Akun sampai 2FA aktif.
+
+Topologi produksi (Railway, region Singapura):
+
+```mermaid
+flowchart LR
+  V["Pengunjung / agen penyerang"] -- HTTPS --> E["Edge Railway<br/>(mengisi X-Real-IP)"]
+  O["Operator"] -- "HTTPS + login" --> E
+  E -- "domain portal → :8080" --> S["service sensor<br/>NEXA + dashboard + Suricata 7"]
+  E -- "domain dashboard → :8081" --> S
+  S -- "jaringan privat :3000" --> P["service portal<br/>BAYU-7 fiktif"]
+  S --- VOL[("volume /data<br/>SQLite, rules, auth-secret")]
+```
+
+Portal tidak punya domain publik, jadi setiap pengunjung melewati deteksi NEXA. Agen uji tidak
+pernah di-deploy. Langkahnya ada di [install.md §11](install.md#11-produksi-di-railway).
