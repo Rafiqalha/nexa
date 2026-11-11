@@ -63,6 +63,19 @@ describe('DESIGN.md: token warna', () => {
     }
     expect(css).toMatch(/--radius-xs:\s*2px/);
   });
+
+  it('gerak: hanya keyframe nx-* sendiri, dan dimatikan untuk prefers-reduced-motion', () => {
+    const css = readFileSync(join(SRC, 'styles', 'index.css'), 'utf8');
+    const keyframes = [...css.matchAll(/@keyframes\s+([a-z0-9-]+)/g)].map((m) => m[1]);
+    expect(keyframes.length).toBeGreaterThan(5);
+    for (const k of keyframes) expect(k).toMatch(/^nx-/);
+    // Tetap flat: keyframe tidak memakai bayangan, blur, atau gradien.
+    // (reset `--text-shadow-*: initial` bukan pemakaian; yang dicari properti sungguhan)
+    expect(css).not.toMatch(/(?<![-\w])(?:box|text)-shadow\s*:|filter:\s*blur|gradient\(/);
+    const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
+    expect(reduced).toMatch(/animation:\s*none\s*!important/);
+    expect(reduced).toMatch(/transition:\s*none\s*!important/);
+  });
 });
 
 describe('DESIGN.md: komponen', () => {
@@ -96,11 +109,13 @@ describe('DESIGN.md: komponen', () => {
     },
   );
 
-  it('aksen hanya untuk nav aktif, biaya NEXA, dan tombol primer', () => {
+  it('aksen hanya untuk identitas, status sensor, nav aktif, biaya NEXA, dan tombol primer', () => {
     const allowed = new Set([
       'components/Sidebar.tsx',
       'components/CostMeter.tsx',
       'components/ui/button.tsx',
+      'components/LogoMark.tsx',
+      'components/LiveDot.tsx',
     ]);
     const users = files
       .filter((f) => /\b(?:text|bg|border)-accent\b/.test(readFileSync(f, 'utf8')))

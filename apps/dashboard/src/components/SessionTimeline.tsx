@@ -1,6 +1,7 @@
 import type { TimelineEvent } from '@nexa/shared';
 import { formatDelta, formatInt, formatTimeWib } from '../lib/format';
 import { ARM, EVENT_KIND } from '../lib/labels';
+import { staggerStyle } from '../lib/motion';
 import { cn } from '../lib/utils';
 
 function kindClass(kind: TimelineEvent['kind']): string {
@@ -39,7 +40,8 @@ export function SessionTimeline({ events }: { events: readonly TimelineEvent[] }
         return (
           <li
             key={e.id}
-            className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-1 border-b border-line-subtle py-[14px] sm:grid-cols-[88px_minmax(0,1fr)_auto]"
+            className="nx-row grid grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-1 border-b border-line-subtle py-[14px] transition-colors duration-200 hover:bg-line-subtle sm:grid-cols-[88px_minmax(0,1fr)_auto]"
+            style={staggerStyle(i)}
           >
             <div className="font-mono text-[12px] text-muted">
               <span className="text-fg-2">{String(i + 1).padStart(2, '0')}</span>{' '}

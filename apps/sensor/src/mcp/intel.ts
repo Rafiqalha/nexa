@@ -37,7 +37,7 @@ export function createIntelMcpServer(db: Db): McpServer {
   const server = new McpServer(
     { name: 'nexa-intel', version: '0.1.0' },
     {
-      instructions: `Intel NEXA (baca-saja). ${LAB_LABEL}. Persetujuan rule hanya lewat dashboard Pos Komando.`,
+      instructions: `Intel NEXA (baca-saja). ${LAB_LABEL}. Persetujuan rule hanya lewat Dashboard NEXA.`,
     },
   );
 

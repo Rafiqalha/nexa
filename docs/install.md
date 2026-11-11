@@ -81,7 +81,7 @@ SURICATA_EXEC=wsl.exe -d <distro> -- bash /home/<user>/nexa-suricata/nexa-surica
 Tanpa Suricata (`SURICATA_RUNNER=none`), draf rule tetap dibuat tetapi tidak ditampilkan
 sampai tervalidasi (AGENTS.md §2.5). Dashboard menampilkan jumlah draf yang masih divalidasi.
 
-## 5. Buka Pos Komando
+## 5. Buka Dashboard
 
 - Browser: <http://127.0.0.1:8081>
 - Aplikasi desktop: `pnpm desktop`, atau pasang installer (langkah 8).
@@ -128,7 +128,7 @@ menjalankan `lab:attack`. Setelah itu skrip menunggu draf aturan siap ditinjau.
 pnpm desktop:installer
 ```
 
-Hasilnya `apps/desktop/release/NEXA-Pos-Komando-Setup-<versi>.exe`: per pengguna, tanpa admin.
+Hasilnya `apps/desktop/release/NEXA-Dashboard-Setup-<versi>.exe`: per pengguna, tanpa admin.
 Installer belum ditandatangani, jadi SmartScreen meminta konfirmasi ("More info" → "Run
 anyway"). Untuk sensor di mesin lain, tambahkan `--sensor-url=http://<host>:8081/` di target
 shortcut.

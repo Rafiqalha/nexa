@@ -1,24 +1,29 @@
 import { LAB_LABEL } from '@nexa/shared';
+import { LoaderCircle, LogIn } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
+import { LogoMark } from '../components/LogoMark';
 import { Button } from '../components/ui/button';
 import { probeStatus } from '../lib/api';
 import { signIn, signInViaProxy } from '../lib/auth';
 import { loginErrorMessage, normalizeToken } from '../lib/token';
 
 const inputClass =
-  'mt-2 block min-h-11 w-full border border-line-strong bg-bg px-3 font-mono text-[13px] text-fg placeholder:text-muted';
+  'mt-2 block min-h-11 w-full border border-line-strong bg-bg px-3 font-mono text-[13px] text-fg transition-colors duration-200 placeholder:text-muted hover:border-muted focus:border-fg-2';
 
 export function Login({ proxyAuth = false }: { proxyAuth?: boolean }) {
   const [token, setToken] = useState('');
   const [operator, setOperator] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Naik setiap percobaan gagal agar animasi getar pesan error diputar ulang.
+  const [attempt, setAttempt] = useState(0);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     if (operator.trim().length < 2) {
       setError('Isi nama operator (minimal 2 karakter); dicatat pada setiap keputusan aturan.');
+      setAttempt((a) => a + 1);
       return;
     }
     if (proxyAuth) {
@@ -31,15 +36,19 @@ export function Login({ proxyAuth = false }: { proxyAuth?: boolean }) {
     setBusy(false);
     if (status !== 200) {
       setError(loginErrorMessage(status, window.location.origin));
+      setAttempt((a) => a + 1);
       return;
     }
     signIn(clean, operator.trim());
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[420px] flex-col justify-center px-6 py-14">
-      <p className="font-sans text-[20px] font-semibold tracking-[0.12em] text-fg">NEXA</p>
-      <h1 className="mt-6 text-[28px] font-medium tracking-[-0.01em]">Masuk Pos Komando</h1>
+    <main className="nx-page mx-auto flex min-h-screen max-w-[420px] flex-col justify-center px-6 py-14">
+      <div className="flex items-center gap-3">
+        <LogoMark size={36} />
+        <p className="font-sans text-[20px] font-semibold tracking-[0.16em] text-fg">NEXA</p>
+      </div>
+      <h1 className="mt-8 text-[28px] font-medium tracking-[-0.01em]">Masuk ke Dashboard</h1>
       <p className="meta mt-2">{LAB_LABEL}</p>
       <form className="mt-10 space-y-6" onSubmit={submit}>
         {proxyAuth ? (
@@ -69,11 +78,16 @@ export function Login({ proxyAuth = false }: { proxyAuth?: boolean }) {
           />
         </label>
         {error ? (
-          <p role="alert" className="text-[13px] text-status-trapped">
+          <p key={attempt} role="alert" className="nx-shake text-[13px] text-status-trapped">
             {error}
           </p>
         ) : null}
         <Button type="submit" disabled={busy} className="w-full">
+          {busy ? (
+            <LoaderCircle aria-hidden="true" strokeWidth={2} className="nx-spin size-4" />
+          ) : (
+            <LogIn aria-hidden="true" strokeWidth={2} className="size-4" />
+          )}
           {busy ? 'Memeriksa…' : 'Masuk'}
         </Button>
       </form>

@@ -30,7 +30,7 @@ flowchart LR
   T["lab/target-app<br/>aplikasi asli (fiktif)"]
   S["Suricata 8<br/>nexa.rules"]
   LLM["Penyedia model<br/>(DeepSeek API / on-prem)"]
-  UI["Dashboard Pos Komando<br/>browser / Electron"]
+  UI["Dashboard NEXA<br/>browser / aplikasi desktop"]
 
   A --> P
   H --> P

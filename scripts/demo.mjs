@@ -3,7 +3,7 @@
 //
 //   pnpm demo [-- --desktop] [--wait 15] [--model deepseek-flash] [--scripted]
 //
-// --desktop : buka aplikasi desktop Pos Komando (Electron) sebelum serangan
+// --desktop : buka aplikasi desktop NEXA Dashboard (Electron) sebelum serangan
 // --wait N  : jeda (detik) sebelum serangan agar presenter sempat membuka dashboard
 // Argumen lain diteruskan ke lab:attack. Token dashboard tidak pernah dicetak;
 // pakai `pnpm token` untuk menyalinnya ke clipboard.
@@ -92,7 +92,7 @@ if (desktop) {
     shell: process.platform === 'win32',
   });
   child.unref();
-  console.log('[demo] aplikasi desktop Pos Komando dibuka');
+  console.log('[demo] aplikasi desktop NEXA Dashboard dibuka');
 }
 if (waitSeconds > 0) {
   console.log(`[demo] serangan dimulai dalam ${waitSeconds} detik…`);

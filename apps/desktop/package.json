@@ -1,8 +1,8 @@
 {
   "name": "desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Shell desktop Pos Komando NEXA (Electron). Hanya memuat dashboard dari port admin sensor; tanpa akses DB, tanpa secret.",
+  "description": "Aplikasi desktop NEXA Dashboard (Electron). Hanya memuat dashboard dari port admin sensor; tanpa akses DB, tanpa secret.",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {

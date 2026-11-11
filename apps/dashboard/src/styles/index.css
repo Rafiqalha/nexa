@@ -80,6 +80,12 @@
     background: var(--line-strong);
   }
 
+  /* Scrollbar tipis berwarna token (menggantikan scrollbar bawaan Windows). */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -92,7 +98,239 @@
   }
 }
 
+/*
+ * Gerak (motion). Semua animasi memakai keyframe `nx-*` sendiri (bukan animasi bawaan
+ * Tailwind), hanya transform/opacity/warna: tetap flat, tanpa bayangan atau gradien.
+ * Pengguna dengan `prefers-reduced-motion` mendapat UI statis (blok di @layer base).
+ */
+@keyframes nx-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nx-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nx-flash {
+  from {
+    background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@keyframes nx-live {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+@keyframes nx-ripple {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.32;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes nx-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes nx-tick {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes nx-camo-in {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes nx-camo-blink {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes nx-scan {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(1700%);
+  }
+}
+
+@keyframes nx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nx-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @layer components {
+  /* Area judul aplikasi desktop (Window Controls Overlay): bisa diseret, kontrol tidak. */
+  .app-drag {
+    app-region: drag;
+  }
+  .app-no-drag {
+    app-region: no-drag;
+  }
+
+  /* Konten halaman masuk saat berpindah rute. */
+  .nx-page {
+    animation: nx-fade-up 340ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  /* Baris tabel/linimasa masuk berurutan; --i = indeks (dibatasi agar daftar panjang tetap cepat). */
+  .nx-row {
+    animation: nx-row-in 300ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(min(var(--i, 0), 16) * 28ms);
+  }
+
+  /* Penanda data baru dari sensor (SSE). */
+  .nx-flash {
+    animation: nx-flash 1400ms ease-out;
+  }
+
+  .nx-tick {
+    display: inline-block;
+    animation: nx-tick 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .nx-shake {
+    animation: nx-shake 420ms ease-in-out;
+  }
+
+  .nx-spin {
+    animation: nx-spin 900ms linear infinite;
+  }
+
+  /* Titik status langsung: inti tetap, cincin mengembang. */
+  .nx-live {
+    position: relative;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+  .nx-live::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: currentColor;
+    animation: nx-live 1800ms cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .nx-live[data-static]::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  /* Riak klik pada tombol. */
+  .nx-ripple {
+    position: absolute;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: currentColor;
+    animation: nx-ripple 560ms ease-out forwards;
+  }
+
+  /* Ikon centang yang "tergambar". */
+  .nx-draw path,
+  .nx-draw polyline {
+    stroke-dasharray: 24;
+    animation: nx-draw 420ms ease-out both;
+  }
+
+  /* Loreng digital hidup: sel muncul bertahap, sebagian berkedip pelan, garis pindai menyapu. */
+  .nx-loreng rect {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .nx-loreng .cell {
+    animation: nx-camo-in 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    transition: fill 1100ms ease-out;
+  }
+  .nx-loreng .cell:hover {
+    fill: var(--line-strong);
+    transition-duration: 60ms;
+  }
+  .nx-loreng .shimmer {
+    pointer-events: none;
+    animation: nx-camo-blink 7s ease-in-out infinite both;
+  }
+  .nx-loreng .scan {
+    pointer-events: none;
+    opacity: 0.35;
+    animation: nx-scan 9s linear infinite;
+  }
+
   /* Label kapital kecil (DESIGN.md §3.1). */
   .label-caps {
     font-size: 12px;

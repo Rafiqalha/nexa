@@ -1,4 +1,4 @@
-// Shell desktop Pos Komando NEXA. Memuat dashboard dari port admin sensor dan tidak
+// Shell desktop Dashboard NEXA. Memuat dashboard dari port admin sensor dan tidak
 // melakukan hal lain: tidak membuka DB, tidak membaca .env, tidak menyimpan token
 // (operator memasukkan token di layar login; dashboard menyimpannya di sessionStorage).
 import { app, BrowserWindow, session } from 'electron';

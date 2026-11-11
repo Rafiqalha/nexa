@@ -4,6 +4,7 @@ import { PageHeader } from '../components/PageHeader';
 import { RuleItem } from '../components/RuleItem';
 import { useRuleDecision } from '../components/RulesPanel';
 import { ApiError, apiGet } from '../lib/api';
+import { navItem } from '../lib/nav';
 import { setRules, useAppState } from '../lib/store';
 
 /** Aturan (DESIGN.md §7.4): semua draf, status validasi, riwayat setuju/tolak, siapa & kapan. */
@@ -24,7 +25,7 @@ export function Aturan() {
 
   return (
     <div className="flex flex-col gap-12">
-      <PageHeader title="Aturan" />
+      <PageHeader title={navItem('aturan').title} icon={navItem('aturan').icon} />
       {error ? <p className="text-status-trapped">{error}</p> : null}
       {decisionError ? <p className="text-status-trapped">{decisionError}</p> : null}
       <section aria-labelledby="pending-title">

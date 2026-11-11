@@ -40,9 +40,9 @@ Dilaporkan apa adanya di [docs/interrogation.md](docs/interrogation.md).
 
 ## Tampilan
 
-| Pos Komando | Linimasa kontak |
+| Dashboard | Linimasa sesi |
 |---|---|
-| ![Pos Komando](docs/submission/screenshots/1-pos-komando.jpg) | ![Linimasa](docs/submission/screenshots/3-linimasa-kontak.jpg) |
+| ![Dashboard](docs/submission/screenshots/1-dashboard.jpg) | ![Linimasa sesi](docs/submission/screenshots/3-linimasa-sesi.jpg) |
 | **Aturan (gerbang persetujuan)** | **Intel pasca-sesi** |
 | ![Aturan](docs/submission/screenshots/4-aturan.jpg) | ![Intel](docs/submission/screenshots/5-intel.jpg) |
 
@@ -59,7 +59,7 @@ pnpm demo
 `pnpm env:init` membuat `.env` dengan token acak. `pnpm demo` membangun dashboard, menyalakan
 lab, menjalankan agen uji, lalu menunggu draf aturan siap.
 
-Dashboard Pos Komando: <http://127.0.0.1:8081>. Token login disalin (tanpa ditampilkan) dengan:
+Dashboard NEXA: <http://127.0.0.1:8081>. Token login disalin (tanpa ditampilkan) dengan:
 
 ```bash
 pnpm token
@@ -69,7 +69,7 @@ pnpm token
 |---|---|
 | `pnpm lab:up` / `pnpm lab:down` | Nyalakan/matikan lab (Docker Compose bila tersedia, selain itu proses lokal) |
 | `pnpm lab:attack [-- --model deepseek-v4-pro \| --baseline \| --scripted]` | Jalankan agen uji |
-| `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop Pos Komando / installer Windows |
+| `pnpm desktop` / `pnpm desktop:installer` | Aplikasi desktop NEXA Dashboard / installer Windows |
 | `pnpm lab:human`, `pnpm lab:metrics`, `pnpm lab:interrogation` | Simulasi manusia, tabel metrik, laporan interogasi |
 | `pnpm typecheck && pnpm lint && pnpm test` | Verifikasi (331+ test) |
 
@@ -93,7 +93,7 @@ Ditegakkan oleh kode dan test regresi, dengan bukti per batasan di
 
 ```
 apps/sensor      reverse proxy, deteksi, labirin, canary, MCP, rules, intel, API admin
-apps/dashboard   Pos Komando (React + Vite + Tailwind, UI flat)
+apps/dashboard   Dashboard (React + Vite + Tailwind, UI flat + animasi)
 apps/desktop     shell Electron + installer NSIS
 packages/shared  skema API bersama (zod)
 lab/             target fiktif + agen penyerang uji (tidak ikut build produksi)

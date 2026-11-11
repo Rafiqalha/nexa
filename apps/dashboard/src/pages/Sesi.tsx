@@ -1,4 +1,5 @@
 import { SessionDetailSchema, SessionListSchema, type SessionSummary } from '@nexa/shared';
+import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ContactsTable } from '../components/ContactsTable';
 import { PageHeader } from '../components/PageHeader';
@@ -9,6 +10,8 @@ import { StatusText } from '../components/StatusText';
 import { ApiError, apiGet } from '../lib/api';
 import { formatDateTimeWib, formatDuration, formatInt, formatScore } from '../lib/format';
 import { CLASSIFICATION, REASONS } from '../lib/labels';
+import { navItem } from '../lib/nav';
+import { HREF } from '../lib/router';
 import { setDetail, setSessions, useAppState } from '../lib/store';
 
 function SessionList() {
@@ -31,7 +34,7 @@ function SessionList() {
   );
 
   return (
-    <section aria-label="Daftar kontak" className="flex flex-col gap-4">
+    <section aria-label="Daftar sesi" className="flex flex-col gap-4">
       <label className="flex min-h-11 items-center gap-3 text-[13px] text-fg-2">
         <input
           type="checkbox"
@@ -42,7 +45,7 @@ function SessionList() {
         Tampilkan juga sesi sah
       </label>
       {error ? <p className="text-status-trapped">{error}</p> : null}
-      <ContactsTable sessions={list} empty="Belum ada kontak." />
+      <ContactsTable sessions={list} empty="Belum ada sesi terdeteksi." />
     </section>
   );
 }
@@ -174,13 +177,22 @@ function SessionDetailView({ id }: { id: string }) {
   );
 }
 
-export function Kontak({ id }: { id: string | null }) {
+export function Sesi({ id }: { id: string | null }) {
+  const nav = navItem('sesi');
   return (
     <div className="flex flex-col gap-12">
-      <PageHeader title={id ? 'Linimasa kontak' : 'Kontak'}>
+      <PageHeader title={id ? 'Linimasa sesi' : nav.title} icon={nav.icon}>
         {id ? (
-          <a href="#/kontak" className="min-h-11 py-3 text-[13px] text-fg-2 hover:text-fg">
-            ← Semua kontak
+          <a
+            href={HREF.sesi}
+            className="group flex min-h-11 items-center gap-2 py-3 text-[13px] text-fg-2 transition-colors hover:text-fg"
+          >
+            <ArrowLeft
+              aria-hidden="true"
+              strokeWidth={1.75}
+              className="size-4 transition-transform duration-200 group-hover:-translate-x-1"
+            />
+            Semua sesi
           </a>
         ) : null}
       </PageHeader>

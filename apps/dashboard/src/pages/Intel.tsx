@@ -4,6 +4,9 @@ import { PageHeader } from '../components/PageHeader';
 import { ApiError, apiGet } from '../lib/api';
 import { formatDateTimeWib, formatInt } from '../lib/format';
 import { CLASSIFICATION } from '../lib/labels';
+import { staggerStyle } from '../lib/motion';
+import { navItem } from '../lib/nav';
+import { sessionHref } from '../lib/router';
 import { useAppState } from '../lib/store';
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
@@ -28,7 +31,7 @@ export function Intel() {
 
   return (
     <div className="flex flex-col gap-12">
-      <PageHeader title="Intel" />
+      <PageHeader title={navItem('intel').title} icon={navItem('intel').icon} />
       {data ? (
         <p className="meta -mt-8">
           Budget LLM hari ini ({data.budget.date}): {formatInt(data.budget.tokensUsed)} /{' '}
@@ -43,13 +46,17 @@ export function Intel() {
         </p>
       ) : null}
       <div className="border-t border-line">
-        {data?.items.map(({ intel, session }) => {
+        {data?.items.map(({ intel, session }, i) => {
           const status = STATUS_LABEL[intel.status] ?? STATUS_LABEL.done;
           return (
-            <article key={intel.id} className="border-b border-line py-6">
+            <article
+              key={intel.id}
+              className="nx-row border-b border-line py-6"
+              style={staggerStyle(i)}
+            >
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <a
-                  href={`#/kontak/${session.id}`}
+                  href={sessionHref(session.id)}
                   className="font-mono text-[13px] text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg"
                 >
                   {session.sourceIp} · sesi {session.id.slice(0, 8)}

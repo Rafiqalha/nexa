@@ -4,11 +4,14 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  BG,
   DEFAULT_SENSOR_URL,
   isAllowedNavigation,
   offlinePage,
   resolveSensorUrl,
   sensorUrlInput,
+  TEXT_2,
+  TITLEBAR_HEIGHT,
   windowOptions,
 } from './security';
 
@@ -37,6 +40,17 @@ describe('desktop: opsi jendela', () => {
 
   it('tanpa preload (tidak ada jembatan ke proses main)', () => {
     expect(prefs.preload).toBeUndefined();
+  });
+
+  it('bilah judul kustom: bawaan Windows disembunyikan, tombol sistem jadi overlay berwarna token', () => {
+    const opts = windowOptions({ devTools: false, show: true });
+    expect(opts.titleBarStyle).toBe('hidden');
+    expect(opts.titleBarOverlay).toEqual({
+      color: BG,
+      symbolColor: TEXT_2,
+      height: TITLEBAR_HEIGHT,
+    });
+    expect(opts.title).toBe('NEXA — Dashboard');
   });
 });
 
@@ -75,6 +89,16 @@ describe('desktop: URL sensor & navigasi', () => {
     expect(page).not.toContain('<script>');
     expect(page).toContain('&lt;script&gt;');
     expect(page).toContain("default-src 'none'");
+    // Bilah judul disembunyikan, jadi halaman offline punya area seret sendiri.
+    expect(page).toContain('app-region:drag');
+  });
+
+  it('tinggi bilah judul sama dengan dashboard', () => {
+    const dashboard = readFileSync(
+      join(APP, '..', 'dashboard', 'src', 'lib', 'windowControls.ts'),
+      'utf8',
+    );
+    expect(dashboard).toContain(`TITLEBAR_HEIGHT = ${TITLEBAR_HEIGHT};`);
   });
 });
 

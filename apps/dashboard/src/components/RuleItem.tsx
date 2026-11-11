@@ -1,5 +1,9 @@
 import type { Rule } from '@nexa/shared';
+import { Check, X } from 'lucide-react';
 import { formatDateTimeWib } from '../lib/format';
+import { useChangeCount } from '../lib/motion';
+import { sessionHref } from '../lib/router';
+import { cn } from '../lib/utils';
 import { Button } from './ui/button';
 
 const STATUS_LABEL: Record<Rule['status'], { label: string; className: string }> = {
@@ -32,8 +36,16 @@ export function RuleItem({
   const v = validationText(rule);
   const status = STATUS_LABEL[rule.status];
   const canDecide = rule.status === 'draft' && onApprove && onReject;
+  // Keputusan operator (setujui/tolak/deploy) ditandai kedipan singkat pada blok rule.
+  const decided = useChangeCount(rule.status);
   return (
-    <article className="border-b border-line py-5">
+    <article
+      key={decided}
+      className={cn(
+        'border-b border-line py-5 transition-colors duration-200',
+        decided > 0 && 'nx-flash',
+      )}
+    >
       <p className="text-[14px] text-fg">{rule.title || `Draf rule #${rule.id}`}</p>
       <pre className="mt-3 font-mono text-[12px] leading-relaxed whitespace-pre-wrap text-fg-2 [overflow-wrap:anywhere]">
         {rule.body}
@@ -41,7 +53,7 @@ export function RuleItem({
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="meta">
           {rule.sessionId ? (
-            <a href={`#/kontak/${rule.sessionId}`} className="hover:text-fg">
+            <a href={sessionHref(rule.sessionId)} className="transition-colors hover:text-fg">
               sesi {rule.sessionId.slice(0, 8)}
             </a>
           ) : (
@@ -67,9 +79,11 @@ export function RuleItem({
                   : undefined
               }
             >
+              <Check aria-hidden="true" strokeWidth={2} className="nx-draw size-4" />
               Setujui
             </Button>
             <Button variant="secondary" disabled={busy} onClick={() => onReject?.(rule)}>
+              <X aria-hidden="true" strokeWidth={2} className="size-4" />
               Tolak
             </Button>
           </div>

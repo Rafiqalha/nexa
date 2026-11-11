@@ -13,14 +13,18 @@ const session = flag(args, '--session', null);
 const outDir = resolve(ROOT, flag(args, '--out', 'docs/screenshots'));
 mkdirSync(outDir, { recursive: true });
 
+const extra = args.includes('--scrolled')
+  ? [{ hash: '#/', file: '0-dashboard-digulir.jpg', scrollY: 900, waitMs: 4_000 }]
+  : [];
 const routes = [
-  { hash: '#/', file: '1-pos-komando.jpg' },
-  { hash: '#/kontak', file: '2-kontak.jpg' },
+  ...extra,
+  { hash: '#/', file: '1-dashboard.jpg', waitMs: 4_000 },
+  { hash: '#/sesi', file: '2-sesi.jpg' },
   ...(session
     ? [
         {
-          hash: `#/kontak/${session}`,
-          file: '3-linimasa-kontak.jpg',
+          hash: `#/sesi/${session}`,
+          file: '3-linimasa-sesi.jpg',
           scrollText: 'Balasan interogasi',
         },
       ]
@@ -39,6 +43,7 @@ const r = spawnSync(electron, [join(ROOT, 'scripts', 'lib', 'capture-main.cjs')]
     CAPTURE_BASE: flag(args, '--base', 'http://localhost:5173/'),
     CAPTURE_OUT: outDir,
     CAPTURE_ROUTES: JSON.stringify(routes),
+    CAPTURE_OVERLAY: args.includes('--overlay') ? '1' : '0',
   },
 });
 process.exit(r.status ?? 1);

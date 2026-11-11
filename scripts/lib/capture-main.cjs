@@ -24,10 +24,28 @@ app.whenReady().then(async () => {
     height: 900,
     useContentSize: true,
     autoHideMenuBar: true,
-    show: false,
+    // Jendela "tampil" tetapi transparan penuh, tanpa taskbar/fokus: Chromium tetap
+    // merender area yang digulir (jendela tersembunyi tidak me-raster ulang).
+    show: true,
+    opacity: 0,
+    skipTaskbar: true,
+    focusable: false,
     paintWhenInitiallyHidden: true,
     backgroundColor: '#0c0f0d',
-    webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
+    // Sama dengan aplikasi desktop: bilah judul kustom lewat Window Controls Overlay.
+    ...(process.env.CAPTURE_OVERLAY === '1'
+      ? {
+          titleBarStyle: 'hidden',
+          titleBarOverlay: { color: '#0c0f0d', symbolColor: '#b9bdb0', height: 40 },
+        }
+      : {}),
+    webPreferences: {
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+      // Jendela tersembunyi: jangan tahan transisi/animasi agar tangkapan tidak "basi".
+      backgroundThrottling: false,
+    },
   });
   win.removeMenu();
   win.webContents.setZoomFactor(1);
@@ -55,6 +73,15 @@ app.whenReady().then(async () => {
           return true; })()`,
       );
       await sleep(800);
+    }
+    if (r.scrollY) {
+      scrolled = await win.webContents.executeJavaScript(
+        `(() => { window.scrollTo(0, ${Number(r.scrollY)}); const a = document.querySelector('aside');
+          return { y: window.scrollY, h: document.scrollingElement.scrollHeight,
+            asideTop: a ? Math.round(a.getBoundingClientRect().top) : null,
+            asidePos: a ? getComputedStyle(a).position : null }; })()`,
+      );
+      await sleep(900);
     }
     const img = await win.webContents.capturePage();
     const size = img.getSize();
