@@ -6,7 +6,15 @@ import type { LlmClient } from './llm';
 import type { RedactedText } from './redact';
 
 /** String dari model dipotong (bukan ditolak) agar output yang sedikit kepanjangan tetap terpakai. */
-const clip = (max: number) => z.coerce.string().transform((v) => v.trim().slice(0, max));
+/** Potong rapi di batas kata dengan elipsis bila output model kepanjangan (panjang ≤ max). */
+export function clipText(value: string, max: number): string {
+  const t = value.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const space = cut.lastIndexOf(' ');
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}
+const clip = (max: number) => z.coerce.string().transform((v) => clipText(v, max));
 const clipList = <T extends z.ZodType>(item: T, max: number) =>
   z.array(item).transform((v) => v.slice(0, max));
 

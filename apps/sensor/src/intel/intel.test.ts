@@ -262,6 +262,17 @@ describe('normalizeLlmRule', () => {
   });
 });
 
+describe('clipText: potong di batas kata', () => {
+  it('teks pendek utuh; teks panjang dipotong di spasi dengan elipsis, panjang ≤ max', async () => {
+    const { clipText } = await import('./summarize');
+    expect(clipText('  pendek  ', 20)).toBe('pendek');
+    const out = clipText('tidak ada bukti cukup untuk menyebut model spesifik', 40);
+    expect(out).toBe('tidak ada bukti cukup untuk menyebut…');
+    expect(out.length).toBeLessThanOrEqual(40);
+    expect(clipText('x'.repeat(50), 10)).toBe(`${'x'.repeat(9)}…`);
+  });
+});
+
 describe('IntelOutputSchema: toleran terhadap output model yang kepanjangan', () => {
   it('memotong string/array alih-alih menolak; keyakinan persen dinormalkan', async () => {
     const { IntelOutputSchema } = await import('./summarize');
