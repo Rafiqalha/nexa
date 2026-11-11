@@ -31,9 +31,10 @@ menjaganya, dan perbaikan dari audit ini. Semua test berjalan di `pnpm test`.
 - **Jalur Docker belum terverifikasi di mesin ini.** Docker Desktop rusak (soket AF_UNIX tidak
   dapat diakses), sehingga image dan compose hanya divalidasi lewat `docker compose config`. Lab
   dijalankan dalam mode lokal: proses Node ditambah Suricata 8.0.6 di WSL.
-- **`lab/attacker-agent/Dockerfile` belum menyalin manifest `apps/dashboard` dan `apps/desktop`**
-  yang diperlukan `--frozen-lockfile`. Perubahan di `lab/attacker-agent` butuh persetujuan pemilik
-  proyek (CLAUDE.md §4).
+- Ketiga Dockerfile (sensor, target, agen uji) kini menyalin manifest semua paket workspace untuk
+  `--frozen-lockfile`. Perubahan di `lab/attacker-agent` sudah disetujui pemilik proyek, dan
+  `apps/sensor/test/docker-manifests.test.ts` menjaganya. Build image tetap belum diuji karena
+  Docker tidak tersedia (lihat butir pertama).
 - Installer desktop **belum ditandatangani**, sehingga Windows SmartScreen memperingatkan saat
   pertama dijalankan.
 - Port admin terikat ke `127.0.0.1`. Bila dibuka ke jaringan, pasang TLS di depannya; token

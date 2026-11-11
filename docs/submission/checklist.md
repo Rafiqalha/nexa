@@ -33,7 +33,7 @@ memakai API DeepSeek.
 
 - Jalur Docker belum diverifikasi di mesin pengembang (Docker Desktop rusak); demo memakai mode
   lokal ditambah Suricata 8.0.6 di WSL.
-- `lab/attacker-agent/Dockerfile` belum menyalin manifest `apps/dashboard` dan `apps/desktop`
-  (butuh persetujuan pemilik proyek untuk mengubah `lab/attacker-agent`).
+- Dockerfile ketiga image sudah lengkap manifest-nya (dijaga test), tetapi build image belum
+  diuji karena Docker tidak tersedia di mesin pengembang.
 - Installer belum ditandatangani (peringatan SmartScreen).
 - Sampel metrik kecil (3–6 run per kondisi); angka adalah median lab, bukan jaminan lapangan.
