@@ -9,3 +9,5 @@ data
 **/*.db
 lab/output
 deploy/suricata/rules/*.rules
+**/release
+apps/desktop/build/*.py

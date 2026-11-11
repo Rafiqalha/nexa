@@ -8,6 +8,8 @@ FROM base AS deps
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/sensor/package.json apps/sensor/
+COPY apps/dashboard/package.json apps/dashboard/
+COPY apps/desktop/package.json apps/desktop/
 COPY lab/target-app/package.json lab/target-app/
 COPY lab/attacker-agent/package.json lab/attacker-agent/
 RUN pnpm install --frozen-lockfile --prod --filter target-app...
