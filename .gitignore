@@ -28,3 +28,6 @@ Thumbs.db
 
 # Konfigurasi lokal Claude Code
 .claude/
+
+# Vercel CLI (tautan proyek & output build lokal)
+.vercel

@@ -84,10 +84,11 @@ Langkah lengkap, termasuk Docker Compose, Suricata di WSL, dan produksi di Railw
 ## Produksi
 
 Selain lab, NEXA bisa dijalankan dalam mode produksi (`NEXA_MODE=production`). Demo live
-berjalan di Railway (region Singapura):
+berjalan di Railway (region Singapura), dan landing page statis di Vercel:
 
 | Layanan | Alamat |
 |---|---|
+| Landing page (Vercel, statis dari `apps/landing`) | <https://nexa-deception.vercel.app> |
 | Dashboard NEXA (wajib login) | <https://nexa-console.up.railway.app> |
 | Daftar akun (langsung masuk sebagai Pemantau) | <https://nexa-console.up.railway.app/#/daftar> |
 | Portal demo BAYU-7 (dilindungi NEXA) | <https://portal-bayu7.up.railway.app> |

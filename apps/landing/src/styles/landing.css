@@ -416,10 +416,23 @@ input {
 }
 
 /* Kata yang berganti: blok solid menyapu seperti redaksi, lalu kata baru muncul. */
+/* Semua frasa ditumpuk di satu sel grid: tinggi dan lebar mengikuti frasa terpanjang, jadi
+   tata letak tidak melompat saat kata berganti (frasa panjang boleh dua baris di ponsel). */
 .rotator {
   position: relative;
-  display: inline-block;
+  display: inline-grid;
+  vertical-align: top;
   color: var(--accent);
+}
+.rotator__word {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+.rotator__word.is-on {
+  visibility: visible;
+}
+.rotator__dot {
+  color: var(--text);
 }
 .rotator::after {
   content: "";

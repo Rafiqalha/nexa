@@ -1,14 +1,18 @@
-// Kata terakhir judul hero berganti: blok aksen menyapu seperti redaksi, kata baru muncul di
-// baliknya. Berhenti saat tak terlihat/tab tersembunyi; reduced-motion: kata pertama saja.
+// Frasa terakhir judul hero berganti: blok aksen menyapu seperti redaksi, frasa baru muncul di
+// baliknya. Semua frasa sudah ada di HTML (ditumpuk), jadi yang berganti hanya visibilitas,
+// bukan tata letak. Berhenti saat tak terlihat/tab tersembunyi; reduced-motion: frasa pertama.
 import { reducedMotion } from '../lib/motion';
 
 const PERIOD_MS = 2800;
 const SWAP_AT_MS = 320;
 
 export function initRotator(el: HTMLElement): void {
-  const words = (el.dataset.words ?? '').split('|').filter(Boolean);
+  const words = [...el.querySelectorAll<HTMLElement>('.rotator__word')];
   if (words.length < 2 || reducedMotion()) return;
-  let index = 0;
+  let index = Math.max(
+    0,
+    words.findIndex((w) => w.classList.contains('is-on')),
+  );
   let visible = true;
   new IntersectionObserver((entries) => {
     visible = entries.some((e) => e.isIntersecting);
@@ -20,7 +24,9 @@ export function initRotator(el: HTMLElement): void {
     el.classList.add('is-wiping');
     window.setTimeout(() => {
       index = (index + 1) % words.length;
-      el.textContent = words[index] ?? '';
+      words.forEach((w, i) => {
+        w.classList.toggle('is-on', i === index);
+      });
     }, SWAP_AT_MS);
   }, PERIOD_MS);
 }
