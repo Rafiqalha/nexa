@@ -13,7 +13,8 @@
       "!**/out",
       "!**/coverage",
       "!**/src/db/migrations",
-      "!**/*.md"
+      "!**/*.md",
+      "!docs/*.json"
     ]
   },
   "formatter": {
