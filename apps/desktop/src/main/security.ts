@@ -3,8 +3,15 @@
 // tanpa preload, renderer ter-sandbox dengan contextIsolation.
 import type { BrowserWindowConstructorOptions } from 'electron';
 
-/** Port admin sensor (dashboard + API) pada mesin operator. */
-export const DEFAULT_SENSOR_URL = 'http://127.0.0.1:8081/';
+/** Dashboard NEXA live (produksi): aplikasi terpasang langsung ke layar masuk/daftar. */
+export const LIVE_SENSOR_URL = 'https://nexa-console.up.railway.app/';
+/** Port admin sensor lab di mesin operator (dipakai saat dijalankan dari repo). */
+export const LOCAL_SENSOR_URL = 'http://127.0.0.1:8081/';
+
+/** Aplikasi terpasang (installer) membuka NEXA live; dari repo (`pnpm desktop`) ke lab lokal. */
+export function defaultSensorUrl(isPackaged: boolean): string {
+  return isPackaged ? LIVE_SENSOR_URL : LOCAL_SENSOR_URL;
+}
 
 /** Warna dari DESIGN.md (--bg, --text, --text-2, --text-muted, --line); UI flat. */
 export const BG = '#0c0f0d';
@@ -18,7 +25,7 @@ export const TITLEBAR_HEIGHT = 40;
 
 /**
  * Sumber URL sensor: argumen `--sensor-url=<url>` (atau `--sensor-url <url>`) lebih dulu,
- * lalu variabel lingkungan NEXA_SENSOR_URL. Bukan secret; token tetap diketik operator.
+ * lalu variabel lingkungan NEXA_SENSOR_URL. Bukan secret; login tetap lewat dashboard.
  */
 export function sensorUrlInput(
   argv: readonly string[],
@@ -33,8 +40,8 @@ export function sensorUrlInput(
 }
 
 /** URL dashboard sensor: http(s) saja, tanpa kredensial di URL. */
-export function resolveSensorUrl(raw: string | undefined): URL {
-  const url = new URL(raw?.trim() || DEFAULT_SENSOR_URL);
+export function resolveSensorUrl(raw: string | undefined, fallback = LOCAL_SENSOR_URL): URL {
+  const url = new URL(raw?.trim() || fallback);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new Error('NEXA_SENSOR_URL harus http atau https');
   }

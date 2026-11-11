@@ -1,8 +1,10 @@
 // Shell desktop Dashboard NEXA. Memuat dashboard dari port admin sensor dan tidak
-// melakukan hal lain: tidak membuka DB, tidak membaca .env, tidak menyimpan token
-// (operator memasukkan token di layar login; dashboard menyimpannya di sessionStorage).
+// melakukan hal lain: tidak membuka DB, tidak membaca .env, tidak menyimpan kredensial
+// (login/daftar terjadi di dashboard; sesi berupa cookie httpOnly dari sensor).
+// Aplikasi terpasang membuka NEXA live; dari repo (`pnpm desktop`) membuka sensor lab lokal.
 import { app, BrowserWindow, session } from 'electron';
 import {
+  defaultSensorUrl,
   isAllowedNavigation,
   offlinePage,
   resolveSensorUrl,
@@ -13,7 +15,10 @@ import {
 const RETRY_SECONDS = 5;
 /** Mode uji asap: jendela tersembunyi, cetak hasil muat sebagai JSON lalu keluar. */
 const smokeTest = process.argv.includes('--smoke-test');
-const sensorUrl = resolveSensorUrl(sensorUrlInput(process.argv, process.env));
+const sensorUrl = resolveSensorUrl(
+  sensorUrlInput(process.argv, process.env),
+  defaultSensorUrl(app.isPackaged),
+);
 
 app.enableSandbox();
 

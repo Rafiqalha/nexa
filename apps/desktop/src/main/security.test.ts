@@ -5,8 +5,10 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   BG,
-  DEFAULT_SENSOR_URL,
+  defaultSensorUrl,
   isAllowedNavigation,
+  LIVE_SENSOR_URL,
+  LOCAL_SENSOR_URL,
   offlinePage,
   resolveSensorUrl,
   sensorUrlInput,
@@ -55,9 +57,18 @@ describe('desktop: opsi jendela', () => {
 });
 
 describe('desktop: URL sensor & navigasi', () => {
-  it('default ke port admin lokal; hanya http(s) tanpa kredensial', () => {
-    expect(resolveSensorUrl(undefined).href).toBe(DEFAULT_SENSOR_URL);
-    expect(resolveSensorUrl('  ').href).toBe(DEFAULT_SENSOR_URL);
+  it('terpasang: NEXA live (https); dari repo: lab lokal', () => {
+    expect(defaultSensorUrl(true)).toBe(LIVE_SENSOR_URL);
+    expect(new URL(LIVE_SENSOR_URL).protocol).toBe('https:');
+    expect(defaultSensorUrl(false)).toBe(LOCAL_SENSOR_URL);
+    expect(resolveSensorUrl(undefined, defaultSensorUrl(true)).href).toBe(LIVE_SENSOR_URL);
+    // Argumen/ENV tetap menang atas default (mis. sensor lab di mesin lain).
+    expect(resolveSensorUrl('http://127.0.0.1:8081/', LIVE_SENSOR_URL).href).toBe(LOCAL_SENSOR_URL);
+  });
+
+  it('tanpa input: port admin lokal; hanya http(s) tanpa kredensial', () => {
+    expect(resolveSensorUrl(undefined).href).toBe(LOCAL_SENSOR_URL);
+    expect(resolveSensorUrl('  ').href).toBe(LOCAL_SENSOR_URL);
     expect(resolveSensorUrl('http://localhost:5173').origin).toBe('http://localhost:5173');
     for (const bad of ['file:///C:/x', 'javascript:alert(1)', 'http://u:p@127.0.0.1:8081/']) {
       expect(() => resolveSensorUrl(bad)).toThrow();
