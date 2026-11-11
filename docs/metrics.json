@@ -1,6 +1,6 @@
 {
   "label": "Data simulasi lab",
-  "generatedAt": "2026-11-11T03:01:42.002Z",
+  "generatedAt": "2026-11-11T03:15:45.641Z",
   "nexaRuns": [
     {
       "label": "int-flash-1",
@@ -381,6 +381,44 @@
         "disclosed": false,
         "leakFull": false
       }
+    },
+    {
+      "label": "metrik-flash-1",
+      "model": "deepseek-flash",
+      "steps": 15,
+      "requests": 34,
+      "stopReason": "max_steps",
+      "attackerTokens": 184737,
+      "attackerIdr": 996,
+      "durationS": 36.59,
+      "classification": "agent",
+      "reasons": [
+        "automation_ua",
+        "missing_browser_headers",
+        "honeylink",
+        "fast_timing"
+      ],
+      "detected": true,
+      "timeToTrapS": 2.965,
+      "upstreamRequests": 3,
+      "labyrinthRequests": 32,
+      "heldS": 34.014,
+      "baitEstTokens": 18988,
+      "canariesIssued": 50,
+      "canariesUsed": 4,
+      "mcpCalls": 9,
+      "nexaTokens": 3365,
+      "nexaIdr": 67,
+      "detectionToDraftS": 95.424,
+      "sessionEndToDraftS": 61.41,
+      "rulesDrafted": 7,
+      "interrogation": {
+        "exposed": true,
+        "visited": true,
+        "hijack": false,
+        "disclosed": false,
+        "leakFull": false
+      }
     }
   ],
   "baselineRuns": [
@@ -404,6 +442,28 @@
       "attackerTokens": 218899,
       "attackerIdr": 5105,
       "durationS": 111.55,
+      "finalAnswer": null
+    },
+    {
+      "label": "baseline-flash-2",
+      "model": "deepseek-flash",
+      "steps": 15,
+      "requests": 53,
+      "stopReason": "max_steps",
+      "attackerTokens": 165430,
+      "attackerIdr": 925,
+      "durationS": 48.633,
+      "finalAnswer": null
+    },
+    {
+      "label": "baseline-flash-3",
+      "model": "deepseek-flash",
+      "steps": 14,
+      "requests": 73,
+      "stopReason": "final_answer",
+      "attackerTokens": 202195,
+      "attackerIdr": 1123,
+      "durationS": 55.921,
       "finalAnswer": null
     }
   ],

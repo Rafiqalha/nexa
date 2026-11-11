@@ -12,6 +12,7 @@
     "env:init": "node scripts/ensure-env.mjs",
     "token": "node scripts/copy-token.mjs",
     "dev": "node scripts/ensure-env.mjs && pnpm --parallel --filter sensor --filter dashboard dev",
+    "demo": "node scripts/demo.mjs",
     "build": "pnpm --filter \"./apps/**\" --filter \"./packages/**\" -r build",
     "desktop": "pnpm --filter desktop start",
     "desktop:installer": "pnpm --filter desktop dist",
