@@ -37,18 +37,6 @@ export function loadReports(prefixes, { baseline }) {
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
 }
 
-export function loadPricing() {
-  return JSON.parse(readFileSync(join(ROOT, 'apps', 'sensor', 'config', 'pricing.json'), 'utf8'));
-}
-
-/** Estimasi Rupiah dari token input/output (harga di config/pricing.json). */
-export function costIdr(pricing, model, promptTokens, completionTokens) {
-  const p = pricing.models[model];
-  if (!p) return null;
-  const usd = (promptTokens * p.inputUsdPerMTok + completionTokens * p.outputUsdPerMTok) / 1e6;
-  return Math.round(usd * pricing.usdToIdr);
-}
-
 export const parseMeta = (e) => {
   try {
     return JSON.parse(e.meta || '{}');

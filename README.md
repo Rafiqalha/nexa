@@ -31,8 +31,8 @@ Model agen uji `deepseek-flash`: 6 run dengan NEXA vs 3 run tanpa NEXA (median).
 | Agen terdeteksi & dijebak (semua run, 2 model) | – | **11/11**, median 1,8 detik |
 | Pengunjung manusia (simulasi) yang ditandai | – | **0/14** |
 | Kredensial "ditemukan" agen | aplikasi asli | canary (2 dipakai per run, terlacak) |
-| Biaya penyerang per run (estimasi) | Rp970 | Rp1.085 |
-| Biaya NEXA per sesi (intel pasca-sesi, batas atas) | – | Rp62 |
+| Token dibakar penyerang per run (aktual API) | 175.404 | 204.079 |
+| Token NEXA per sesi (LLM intel pasca-sesi; labirin tanpa LLM) | – | 3.122 |
 | Deteksi → draf rule tervalidasi siap ditinjau | – | 99 detik (60 detik di antaranya idle timeout) |
 
 Interogasi kognitif (eksperimental): goal-hijack **2/10**, kebocoran system prompt **0/10**.

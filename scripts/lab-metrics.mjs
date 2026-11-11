@@ -7,9 +7,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import {
-  costIdr,
   flag,
-  loadPricing,
   loadReports,
   median,
   OUTPUT_DIR,
@@ -27,8 +25,6 @@ const outMd = flag(args, '--out-md', null);
 const outJson = flag(args, '--out-json', null);
 
 const db = openDb();
-const pricing = loadPricing();
-const nexaModel = 'deepseek-flash';
 const rulesOf = db.prepare('select * from rules where session_id = ? order by id');
 const intelOf = db.prepare('select * from intel where session_id = ? order by updated_at desc');
 const canariesOf = db.prepare('select * from canaries where session_id = ?');
@@ -59,7 +55,6 @@ const nexaRuns = loadReports(nexaPrefixes, { baseline: false }).map((r) => {
     requests: r.tools.requests,
     stopReason: r.stopReason,
     attackerTokens: r.llm.totalTokens,
-    attackerIdr: costIdr(pricing, r.model, r.llm.promptTokens, r.llm.completionTokens),
     durationS: r.durationMs / 1000,
     classification: trapped?.classification ?? sessions[0]?.classification ?? 'tidak tercatat',
     reasons: [...new Set(sessions.flatMap((s) => JSON.parse(s.reasons || '[]')))],
@@ -73,7 +68,6 @@ const nexaRuns = loadReports(nexaPrefixes, { baseline: false }).map((r) => {
     canariesUsed: cans.filter((c) => c.triggered_at !== null).length,
     mcpCalls: events.filter((e) => parseMeta(e).channel === 'mcp').length,
     nexaTokens: sum(intel.map((i) => i.tokens_used)),
-    nexaIdr: costIdr(pricing, nexaModel, 0, sum(intel.map((i) => i.tokens_used))),
     detectionToDraftS: readyAt && trappedAt ? (readyAt - trappedAt) / 1000 : null,
     sessionEndToDraftS: readyAt ? (readyAt - lastSeen) / 1000 : null,
     rulesDrafted: rules.length,
@@ -97,7 +91,6 @@ const baselineRuns = loadReports(baselinePrefixes, { baseline: true }).map((r) =
   requests: r.tools.requests,
   stopReason: r.stopReason,
   attackerTokens: r.llm.totalTokens,
-  attackerIdr: costIdr(pricing, r.model, r.llm.promptTokens, r.llm.completionTokens),
   durationS: r.durationMs / 1000,
   finalAnswer: r.finalAnswer ? String(r.finalAnswer).slice(0, 300) : null,
 }));
@@ -138,7 +131,7 @@ const out = (s = '') => lines.push(s);
 out('# Metrik Lab NEXA (PRD §9)');
 out();
 out(
-  `> **Data simulasi lab.** Dihasilkan ${new Date().toISOString()} oleh \`scripts/lab-metrics.mjs\` dari run nyata: target fiktif \`lab/target-app\`, agen uji \`lab/attacker-agent\` (model DeepSeek lewat API). Nilai = median per run; token penyerang = angka aktual dari respons API, Rupiah = estimasi (harga & kurs di \`apps/sensor/config/pricing.json\`, kurs asumsi Rp${fmt(pricing.usdToIdr)}/USD).`,
+  `> **Data simulasi lab.** Dihasilkan ${new Date().toISOString()} oleh \`scripts/lab-metrics.mjs\` dari run nyata: target fiktif \`lab/target-app\`, agen uji \`lab/attacker-agent\` (model DeepSeek lewat API). Nilai = median per run, semua dalam token: token penyerang = angka aktual dari respons API, token konten umpan = estimasi sensor, token NEXA = pemakaian LLM intel pasca-sesi yang tercatat.`,
 );
 out();
 out('## Dengan vs tanpa NEXA');
@@ -161,12 +154,8 @@ for (const model of models) {
   out(
     `| Token dibakar penyerang (aktual API) | ${fmt(med(b, 'attackerTokens'))} | ${fmt(med(n, 'attackerTokens'))} |`,
   );
-  out(
-    `| Estimasi biaya penyerang (Rp) | ${fmt(med(b, 'attackerIdr'))} | ${fmt(med(n, 'attackerIdr'))} |`,
-  );
   out(`| Estimasi token konten umpan (sensor) | - | ${fmt(med(n, 'baitEstTokens'))} |`);
-  out(`| Biaya NEXA: token intel pasca-sesi | 0 | ${fmt(med(n, 'nexaTokens'))} |`);
-  out(`| Biaya NEXA (Rp, batas atas) | 0 | ${fmt(med(n, 'nexaIdr'))} |`);
+  out(`| Token NEXA (LLM intel pasca-sesi) | 0 | ${fmt(med(n, 'nexaTokens'))} |`);
   out(
     `| Canary diberikan / dipakai penyerang | - | ${fmt(med(n, 'canariesIssued'))} / ${fmt(med(n, 'canariesUsed'))} |`,
   );
@@ -186,7 +175,7 @@ out(
   '- Token aktual penyerang jauh lebih besar dari estimasi sensor karena agen mengirim ulang seluruh riwayat percakapan setiap langkah; estimasi sensor (karakter disajikan ÷ 4) adalah batas bawah.',
 );
 out(
-  '- Biaya NEXA = token LLM intel pasca-sesi (dibatasi budget harian), dihargai dengan tarif output sebagai batas atas. Labirin sendiri tidak memakai LLM.',
+  '- Token NEXA = token LLM intel pasca-sesi (dibatasi budget harian). Labirin sendiri tidak memakai LLM, jadi selama agen tertahan NEXA tidak memakai token sama sekali.',
 );
 out();
 

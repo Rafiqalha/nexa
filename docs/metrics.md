@@ -1,6 +1,6 @@
 # Metrik Lab NEXA (PRD §9)
 
-> **Data simulasi lab.** Dihasilkan 2026-11-11T03:15:45.629Z oleh `scripts/lab-metrics.mjs` dari run nyata: target fiktif `lab/target-app`, agen uji `lab/attacker-agent` (model DeepSeek lewat API). Nilai = median per run; token penyerang = angka aktual dari respons API, Rupiah = estimasi (harga & kurs di `apps/sensor/config/pricing.json`, kurs asumsi Rp16.500/USD).
+> **Data simulasi lab.** Dihasilkan 2026-11-11T04:07:29.702Z oleh `scripts/lab-metrics.mjs` dari run nyata: target fiktif `lab/target-app`, agen uji `lab/attacker-agent` (model DeepSeek lewat API). Nilai = median per run, semua dalam token: token penyerang = angka aktual dari respons API, token konten umpan = estimasi sensor, token NEXA = pemakaian LLM intel pasca-sesi yang tercatat.
 
 ## Dengan vs tanpa NEXA
 
@@ -15,10 +15,8 @@
 | Waktu tertahan di labirin (detik) | 0 | 34 |
 | Durasi run agen (detik) | 49 | 37 |
 | Token dibakar penyerang (aktual API) | 175.404 | 204.079 |
-| Estimasi biaya penyerang (Rp) | 970 | 1.085 |
 | Estimasi token konten umpan (sensor) | - | 20.456 |
-| Biaya NEXA: token intel pasca-sesi | 0 | 3.122 |
-| Biaya NEXA (Rp, batas atas) | 0 | 62 |
+| Token NEXA (LLM intel pasca-sesi) | 0 | 3.122 |
 | Canary diberikan / dipakai penyerang | - | 36 / 2 |
 | Panggilan MCP umpan | - | 10 |
 
@@ -33,10 +31,8 @@
 | Waktu tertahan di labirin (detik) | 0 | 58 |
 | Durasi run agen (detik) | 112 | 62 |
 | Token dibakar penyerang (aktual API) | 218.899 | 263.683 |
-| Estimasi biaya penyerang (Rp) | 5.105 | 6.039 |
 | Estimasi token konten umpan (sensor) | - | 17.526 |
-| Biaya NEXA: token intel pasca-sesi | 0 | 2.837 |
-| Biaya NEXA (Rp, batas atas) | 0 | 56 |
+| Token NEXA (LLM intel pasca-sesi) | 0 | 2.837 |
 | Canary diberikan / dipakai penyerang | - | 31 / 3 |
 | Panggilan MCP umpan | - | 13 |
 
@@ -45,7 +41,7 @@
 - Agen uji dibatasi **15 langkah dan 250 ribu token per run** (`lab/attacker-agent`). Waktu tertahan dan token yang dibakar dibatasi anggaran agen itu, bukan oleh NEXA; agen sungguhan tanpa batas bisa tertahan lebih lama.
 - Yang berubah adalah **ke mana usaha agen pergi**: tanpa NEXA seluruh permintaan sampai ke aplikasi asli; dengan NEXA, setelah agen terdeteksi hampir semua permintaan dan token habis untuk konten palsu, dan "kredensial" yang ia temukan adalah canary.
 - Token aktual penyerang jauh lebih besar dari estimasi sensor karena agen mengirim ulang seluruh riwayat percakapan setiap langkah; estimasi sensor (karakter disajikan ÷ 4) adalah batas bawah.
-- Biaya NEXA = token LLM intel pasca-sesi (dibatasi budget harian), dihargai dengan tarif output sebagai batas atas. Labirin sendiri tidak memakai LLM.
+- Token NEXA = token LLM intel pasca-sesi (dibatasi budget harian). Labirin sendiri tidak memakai LLM, jadi selama agen tertahan NEXA tidak memakai token sama sekali.
 
 ## Deteksi dan false-positive
 
