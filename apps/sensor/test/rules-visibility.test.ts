@@ -1,6 +1,7 @@
 // Regresi AGENTS.md §2.5: draf rule yang belum divalidasi `suricata -T` tidak pernah
 // ditampilkan (API daftar rule, detail sesi, overview, MCP intel memakai listRules).
 import { randomUUID } from 'node:crypto';
+import { LAB_LABEL } from '@nexa/shared';
 import { describe, expect, it } from 'vitest';
 import { loadPricing } from '../src/api/pricing';
 import { computeOverview, isReviewableRule, listRules, sessionDetail } from '../src/api/queries';
@@ -60,6 +61,7 @@ describe('§2.5 draf belum tervalidasi tidak ditampilkan', () => {
       expect(detail?.rules.map((r) => r.id).sort()).toEqual([valid.id, invalid.id].sort());
 
       const overview = computeOverview(handle.db, {
+        label: LAB_LABEL,
         pricing: loadPricing(),
         charsPerToken: 4,
         llmBaseUrl: 'https://api.deepseek.com',

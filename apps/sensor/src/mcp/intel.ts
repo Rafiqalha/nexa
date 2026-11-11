@@ -1,8 +1,7 @@
 // Server MCP intel (FR-19): analis/agen SOC menarik intelijen dari NEXA.
 // BACA-SAJA: tidak ada tool yang menulis, menyetujui, menolak, atau men-deploy apa pun;
 // persetujuan rule hanya lewat dashboard oleh operator (AGENTS.md §2.5).
-// Dipasang di port admin (/api/mcp) di belakang token dashboard + validasi Host/Origin.
-import type { HttpBindings } from '@hono/node-server';
+// Dipasang di port admin (/api/mcp) di belakang login/token API + validasi Host/Origin.
 import {
   createMcpHandler,
   hostHeaderValidationResponse,
@@ -12,10 +11,11 @@ import {
   McpServer,
   originValidationResponse,
 } from '@modelcontextprotocol/server';
-import { LAB_LABEL, RULE_STATUSES } from '@nexa/shared';
+import { type DataLabel, LAB_LABEL, RULE_STATUSES } from '@nexa/shared';
 import { asc, desc, eq } from 'drizzle-orm';
 import type { Hono } from 'hono';
 import { z } from 'zod';
+import type { AdminEnv } from '../api/http';
 import { canaryToApi, intelToApi, listRules, listSessions, sessionSummary } from '../api/queries';
 import type { Db } from '../db/client';
 import { canaries, intel } from '../db/schema';
@@ -33,11 +33,11 @@ function asText(value: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }] };
 }
 
-export function createIntelMcpServer(db: Db): McpServer {
+export function createIntelMcpServer(db: Db, label: DataLabel = LAB_LABEL): McpServer {
   const server = new McpServer(
     { name: 'nexa-intel', version: '0.1.0' },
     {
-      instructions: `Intel NEXA (baca-saja). ${LAB_LABEL}. Persetujuan rule hanya lewat Dashboard NEXA.`,
+      instructions: `Intel NEXA (baca-saja). ${label}. Persetujuan rule hanya lewat Dashboard NEXA.`,
     },
   );
 
@@ -54,7 +54,7 @@ export function createIntelMcpServer(db: Db): McpServer {
       annotations: READ_ONLY,
     },
     async ({ limit, termasuk_sah }) =>
-      asText({ label: LAB_LABEL, sesi: listSessions(db, { limit, flagged: !termasuk_sah }) }),
+      asText({ label, sesi: listSessions(db, { limit, flagged: !termasuk_sah }) }),
   );
 
   server.registerTool(
@@ -83,7 +83,7 @@ export function createIntelMcpServer(db: Db): McpServer {
         .all()
         .map(canaryToApi);
       return asText({
-        label: LAB_LABEL,
+        label,
         sesi: session,
         intel: row ? intelToApi(row) : null,
         canary: {
@@ -110,7 +110,7 @@ export function createIntelMcpServer(db: Db): McpServer {
     },
     async ({ status, limit }) =>
       asText({
-        label: LAB_LABEL,
+        label,
         aturan: listRules(db)
           .filter((r) => status === 'semua' || r.status === status)
           .slice(0, limit),
@@ -120,8 +120,8 @@ export function createIntelMcpServer(db: Db): McpServer {
   return server;
 }
 
-export function createIntelMcpHandler(db: Db): McpHttpHandler {
-  return createMcpHandler(() => createIntelMcpServer(db));
+export function createIntelMcpHandler(db: Db, label: DataLabel = LAB_LABEL): McpHttpHandler {
+  return createMcpHandler(() => createIntelMcpServer(db, label));
 }
 
 /**
@@ -129,11 +129,12 @@ export function createIntelMcpHandler(db: Db): McpHttpHandler {
  * Validasi Host/Origin menahan DNS rebinding dari halaman web pihak lain.
  */
 export function registerIntelMcp(
-  api: Hono<{ Bindings: HttpBindings }>,
+  api: Hono<AdminEnv>,
   db: Db,
   extraHosts: readonly string[] = [],
+  label: DataLabel = LAB_LABEL,
 ): McpHttpHandler {
-  const handler = createIntelMcpHandler(db);
+  const handler = createIntelMcpHandler(db, label);
   const hosts = [...localhostAllowedHostnames(), ...extraHosts];
   const origins = [...localhostAllowedOrigins(), ...extraHosts];
   api.all('/mcp', async (c) => {

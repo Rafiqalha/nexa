@@ -66,7 +66,7 @@ describe('API admin: autentikasi', () => {
     async (path) => {
       const res = await fetch(`${admin.url}${path}`);
       expect(res.status).toBe(401);
-      expect(await res.json()).toEqual({ error: 'unauthorized' });
+      expect(await res.json()).toMatchObject({ error: 'unauthorized' });
     },
   );
 

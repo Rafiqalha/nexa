@@ -1,8 +1,8 @@
 // Query baca untuk API dashboard. Semua keluaran dibentuk sesuai skema di @nexa/shared.
 import {
   type Canary,
+  type DataLabel,
   type Intel,
-  LAB_LABEL,
   type Overview,
   OverviewSchema,
   type Rule,
@@ -240,6 +240,8 @@ export function listRules(db: Db, limit = 200): Rule[] {
 }
 
 export interface OverviewContext {
+  /** Label data per mode (lab/produksi), AGENTS.md §2.11. */
+  label: DataLabel;
   pricing: Pricing;
   charsPerToken: number;
   llmBaseUrl: string;
@@ -292,7 +294,7 @@ export function computeOverview(db: Db, ctx: OverviewContext): Overview {
   const nexaPrice = idrPerMTok(ctx.pricing, nexaModel);
 
   return OverviewSchema.parse({
-    label: LAB_LABEL,
+    label: ctx.label,
     generatedAt: ctx.now ?? Date.now(),
     sensor: { startedAt: ctx.startedAt, upstreamHost: ctx.upstreamHost },
     cost: {

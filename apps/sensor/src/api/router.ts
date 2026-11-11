@@ -1,13 +1,14 @@
-// API dashboard (port admin): REST + SSE, wajib token. Tidak pernah dipasang di port jebakan.
+// API dashboard (port admin): REST + SSE di belakang login akun (cookie sesi) atau token
+// API. Tidak pernah dipasang di port jebakan.
 import type { HttpBindings } from '@hono/node-server';
 import type { Overview } from '@nexa/shared';
 import { RuleListSchema, SessionListSchema, type StreamMessage } from '@nexa/shared';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
+import { type AuthHttpDeps, authenticate, originGuard } from '../auth/middleware';
 import type { Db } from '../db/client';
 import type { Logger } from '../logger';
-import { clientIp } from '../public/handler';
-import { requireToken } from './auth';
+import type { AdminEnv } from './http';
 import { listRules, listSessions, sessionDetail } from './queries';
 import { SECURITY_HEADERS, serveDashboardFile } from './static';
 import type { StreamHub } from './stream';
@@ -15,12 +16,14 @@ import type { StreamHub } from './stream';
 export interface AdminDeps {
   db: Db;
   logger: Logger;
-  token: string;
+  http: AuthHttpDeps;
   hub: StreamHub;
   buildOverview: () => Overview;
   dashboardDist?: string;
-  /** Rute tambahan dari modul lain (rules, intel) di bawah /api. */
-  extend?: (api: Hono<{ Bindings: HttpBindings }>) => void;
+  /** Rute tanpa login (status, login, penyiapan, undangan) di bawah /api. */
+  registerPublic?: (api: Hono<AdminEnv>) => void;
+  /** Rute tambahan dari modul lain (rules, intel, admin) di bawah /api, sesudah login. */
+  extend?: (api: Hono<AdminEnv>) => void;
 }
 
 const HEARTBEAT_MS = 15_000;
@@ -28,21 +31,28 @@ const HEARTBEAT_MS = 15_000;
 export function createAdminApp(deps: AdminDeps): Hono<{ Bindings: HttpBindings }> {
   const { db, logger } = deps;
   const app = new Hono<{ Bindings: HttpBindings }>();
+  const hsts = deps.http.mode === 'production';
 
   app.use('*', async (c, next) => {
     await next();
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
       if (!c.res.headers.has(k)) c.res.headers.set(k, v);
     }
+    // Produksi selalu di balik HTTPS (Railway): paksa browser tetap memakai HTTPS.
+    if (hsts) c.res.headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
   });
 
   app.get('/healthz', (c) => c.json({ ok: true }));
 
-  const api = new Hono<{ Bindings: HttpBindings }>();
-  api.use(
-    '*',
-    requireToken(deps.token, (c) => clientIp(c, false)),
-  );
+  const api = new Hono<AdminEnv>();
+  api.use('*', async (c, next) => {
+    await next();
+    // Respons API memuat data sesi/akun: jangan disimpan cache peramban atau proxy.
+    c.res.headers.set('cache-control', 'no-store');
+  });
+  api.use('*', originGuard(deps.http));
+  deps.registerPublic?.(api);
+  api.use('*', authenticate(deps.http));
 
   api.get('/overview', (c) => c.json(deps.buildOverview()));
 

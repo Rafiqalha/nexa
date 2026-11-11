@@ -29,9 +29,14 @@ export interface BudgetStatus {
 export class DailyBudget {
   constructor(
     private readonly db: Db,
-    private readonly limit: number,
+    private limit: number,
     private readonly now: () => number = Date.now,
   ) {}
+
+  /** Ubah batas harian saat berjalan (pengaturan admin / batas paket langganan). */
+  setLimit(limit: number): void {
+    this.limit = Math.max(0, Math.round(limit));
+  }
 
   status(): BudgetStatus {
     const date = wibDate(this.now());

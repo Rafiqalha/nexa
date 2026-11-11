@@ -1,0 +1,43 @@
+{
+  "plans": [
+    {
+      "id": "lab",
+      "name": "Lab",
+      "priceIdr": 0,
+      "description": "Uji coba dan latihan tim: satu sensor, intel heuristik plus LLM terbatas.",
+      "limits": { "seats": 3, "intelTokensPerDay": 50000, "trappedSessionsPerMonth": 1000 },
+      "features": [
+        "Deteksi, labirin, dan canary penuh",
+        "Draf aturan Suricata dengan persetujuan operator",
+        "Intel LLM pasca-sesi hingga 50 ribu token per hari",
+        "3 pengguna"
+      ]
+    },
+    {
+      "id": "pro",
+      "name": "Pro",
+      "priceIdr": 4900000,
+      "description": "Untuk unit yang menjaga layanan produksi.",
+      "limits": { "seats": 15, "intelTokensPerDay": 200000, "trappedSessionsPerMonth": 20000 },
+      "features": [
+        "Semua fitur Lab",
+        "Intel LLM pasca-sesi hingga 200 ribu token per hari",
+        "Token API dan MCP intel untuk SOC",
+        "15 pengguna dengan peran dan audit"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "priceIdr": null,
+      "description": "Penerapan on-premise dengan model in-network; harga sesuai kontrak.",
+      "limits": { "seats": null, "intelTokensPerDay": null, "trappedSessionsPerMonth": null },
+      "features": [
+        "Semua fitur Pro",
+        "Model on-premise (Ollama/vLLM) tanpa batas token",
+        "Pengguna tanpa batas",
+        "Dukungan penerapan"
+      ]
+    }
+  ]
+}

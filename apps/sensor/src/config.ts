@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { resolveFromRoot } from './paths';
 
@@ -21,6 +22,15 @@ const EnvSchema = z
   .object({
     NODE_ENV: opt(z.enum(['development', 'production', 'test']).default('development')),
     LOG_LEVEL: opt(z.enum(['debug', 'info', 'warn', 'error']).default('info')),
+    /** lab = data simulasi; production = trafik internet nyata (label & cookie berbeda). */
+    NEXA_MODE: opt(z.enum(['lab', 'production']).default('lab')),
+    ORG_NAME: opt(z.string().trim().min(2).max(80).default('Organisasi NEXA')),
+    /** Kunci turunan auth (enkripsi rahasia 2FA, tanda tangan tantangan login). */
+    AUTH_SECRET: opt(z.string().min(32, 'minimal 32 karakter').optional()),
+    /** Token sekali pakai untuk membuat akun pemilik pertama lewat layar penyiapan. */
+    SETUP_TOKEN: opt(z.string().min(16, 'minimal 16 karakter').optional()),
+    /** Origin publik dashboard di produksi, mis. https://nexa.example.org (CSRF & MCP). */
+    DASHBOARD_ORIGIN: opt(z.url({ protocol: /^https?$/ }).optional()),
 
     SENSOR_HOST: opt(z.string().default('0.0.0.0')),
     SENSOR_PORT: opt(port.default(8080)),
@@ -29,7 +39,8 @@ const EnvSchema = z
 
     ADMIN_HOST: opt(z.string().default('127.0.0.1')),
     ADMIN_PORT: opt(port.default(8081)),
-    DASHBOARD_TOKEN: opt(z.string({ error: 'wajib di-set' }).min(16, 'minimal 16 karakter')),
+    /** Token layanan (lab & skrip). Opsional: kosong = hanya login akun. */
+    DASHBOARD_TOKEN: opt(z.string().min(16, 'minimal 16 karakter').optional()),
     DASHBOARD_DIST: opt(z.string().optional()),
 
     DATABASE_PATH: opt(z.string().min(1).default('./data/nexa.db')),
@@ -78,13 +89,32 @@ const EnvSchema = z
   .refine((e) => e.SURICATA_RUNNER !== 'control' || Boolean(e.SURICATA_CONTROL_TOKEN), {
     path: ['SURICATA_CONTROL_TOKEN'],
     message: 'wajib di-set (min 16 karakter) bila SURICATA_RUNNER=control',
+  })
+  .refine((e) => Boolean(e.AUTH_SECRET) || (e.NEXA_MODE === 'lab' && Boolean(e.DASHBOARD_TOKEN)), {
+    path: ['AUTH_SECRET'],
+    message: 'wajib di-set (min 32 karakter); di lab boleh kosong bila DASHBOARD_TOKEN di-set',
+  })
+  .refine((e) => e.NEXA_MODE !== 'production' || Boolean(e.DASHBOARD_ORIGIN), {
+    path: ['DASHBOARD_ORIGIN'],
+    message: 'wajib di-set di produksi (origin https dashboard)',
   });
 
 export interface Config {
   env: 'development' | 'production' | 'test';
   logLevel: 'debug' | 'info' | 'warn' | 'error';
+  mode: 'lab' | 'production';
+  orgName: string;
   sensor: { host: string; port: number; upstreamUrl: URL; trustProxy: boolean };
-  admin: { host: string; port: number; dashboardToken: string; dashboardDist?: string };
+  admin: {
+    host: string;
+    port: number;
+    /** Token layanan (DASHBOARD_TOKEN); null = nonaktif. */
+    dashboardToken: string | null;
+    dashboardDist?: string;
+    /** Origin publik dashboard (tanpa slash akhir); null = diturunkan dari header Host. */
+    publicOrigin: string | null;
+  };
+  auth: { secret: string; setupToken: string | null };
   db: { path: string };
   llm: { baseUrl: string; model: string; apiKey: string; dailyTokenBudget: number };
   detect: {
@@ -137,13 +167,23 @@ export function loadConfig(
     throw new ConfigError(problems);
   }
   const e = parsed.data;
-  if (e.UPSTREAM_URL === undefined || e.DASHBOARD_TOKEN === undefined) {
+  if (e.UPSTREAM_URL === undefined) {
     // Tidak terjangkau (zod sudah menolak), tapi menjaga tipe tetap ketat.
-    throw new ConfigError(['UPSTREAM_URL/DASHBOARD_TOKEN: wajib di-set']);
+    throw new ConfigError(['UPSTREAM_URL: wajib di-set']);
   }
+  // Lab tanpa AUTH_SECRET: turunkan secara deterministik dari DASHBOARD_TOKEN agar sesi
+  // dan rahasia 2FA tetap valid setelah restart. Produksi wajib AUTH_SECRET sendiri.
+  const authSecret =
+    e.AUTH_SECRET ??
+    createHash('sha256')
+      .update(`nexa-auth:${e.DASHBOARD_TOKEN ?? ''}`)
+      .digest('base64url');
+  const setupToken = e.SETUP_TOKEN ?? (e.NEXA_MODE === 'lab' ? (e.DASHBOARD_TOKEN ?? null) : null);
   return {
     env: e.NODE_ENV,
     logLevel: e.LOG_LEVEL,
+    mode: e.NEXA_MODE,
+    orgName: e.ORG_NAME,
     sensor: {
       host: e.SENSOR_HOST,
       port: e.SENSOR_PORT,
@@ -153,9 +193,11 @@ export function loadConfig(
     admin: {
       host: e.ADMIN_HOST,
       port: e.ADMIN_PORT,
-      dashboardToken: e.DASHBOARD_TOKEN,
+      dashboardToken: e.DASHBOARD_TOKEN ?? null,
       ...(e.DASHBOARD_DIST ? { dashboardDist: e.DASHBOARD_DIST } : {}),
+      publicOrigin: e.DASHBOARD_ORIGIN ? new URL(e.DASHBOARD_ORIGIN).origin : null,
     },
+    auth: { secret: authSecret, setupToken },
     db: { path: resolveFromRoot(e.DATABASE_PATH, baseDir) },
     llm: {
       baseUrl: e.LLM_BASE_URL,

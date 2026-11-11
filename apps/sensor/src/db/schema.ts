@@ -4,9 +4,13 @@ import {
   EVENT_KINDS,
   INTEL_SOURCES,
   INTEL_STATUSES,
+  INVOICE_STATUSES,
+  ROLES,
   RULE_SOURCES,
   RULE_STATUSES,
   SESSION_STATUSES,
+  TOKEN_SCOPES,
+  USER_STATUSES,
 } from '@nexa/shared';
 import { sql } from 'drizzle-orm';
 import { index, integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
@@ -150,6 +154,165 @@ export const llmBudget = sqliteTable('llm_budget', {
   tokensUsed: integer('tokens_used').notNull().default(0),
   limit: integer('limit').notNull(),
 });
+
+// --- Akun, sesi login, dan administrasi (port admin) ---------------------------------
+
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  /** Huruf kecil; unik. */
+  email: text('email').notNull().unique(),
+  name: text('name').notNull(),
+  role: text('role', { enum: ROLES }).notNull().default('viewer'),
+  /** Pemilik organisasi (akun pertama): tidak bisa dinonaktifkan/diturunkan admin lain. */
+  isOwner: integer('is_owner', { mode: 'boolean' }).notNull().default(false),
+  status: text('status', { enum: USER_STATUSES }).notNull().default('active'),
+  /** scrypt$N$r$p$salt$hash; kata sandi asli tidak pernah disimpan. */
+  passwordHash: text('password_hash').notNull(),
+  /** Rahasia TOTP terenkripsi AES-256-GCM (kunci dari AUTH_SECRET). */
+  totpSecretEnc: text('totp_secret_enc'),
+  totpEnabled: integer('totp_enabled', { mode: 'boolean' }).notNull().default(false),
+  /** Langkah waktu TOTP terakhir yang diterima (kode tidak bisa dipakai ulang). */
+  totpLastStep: integer('totp_last_step'),
+  failedLogins: integer('failed_logins').notNull().default(0),
+  lockedUntil: integer('locked_until'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+  lastLoginAt: integer('last_login_at'),
+});
+
+export const loginSessions = sqliteTable(
+  'login_sessions',
+  {
+    /** sha256(token) heksadesimal; token asli hanya ada di cookie pengguna. */
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull(),
+    lastSeenAt: integer('last_seen_at').notNull(),
+    expiresAt: integer('expires_at').notNull(),
+    ip: text('ip').notNull().default(''),
+    userAgent: text('user_agent').notNull().default(''),
+  },
+  (t) => [index('login_sessions_user_idx').on(t.userId)],
+);
+
+/** Tautan sekali pakai: undangan pengguna baru dan reset kata sandi. */
+export const oneTimeTokens = sqliteTable(
+  'one_time_tokens',
+  {
+    /** sha256(token) heksadesimal. */
+    id: text('id').primaryKey(),
+    /** Id publik untuk daftar & pencabutan (bukan token). */
+    publicId: text('public_id').notNull().unique(),
+    kind: text('kind', { enum: ['invite', 'password_reset'] }).notNull(),
+    email: text('email').notNull(),
+    role: text('role', { enum: ROLES }),
+    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    createdBy: text('created_by'),
+    createdByName: text('created_by_name').notNull().default(''),
+    createdAt: integer('created_at').notNull(),
+    expiresAt: integer('expires_at').notNull(),
+    usedAt: integer('used_at'),
+    revokedAt: integer('revoked_at'),
+  },
+  (t) => [index('one_time_tokens_kind_idx').on(t.kind)],
+);
+
+export const apiTokens = sqliteTable(
+  'api_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** sha256(token) heksadesimal. */
+    tokenHash: text('token_hash').notNull().unique(),
+    /** Awalan token untuk dikenali di daftar (bukan rahasia). */
+    prefix: text('prefix').notNull(),
+    scope: text('scope', { enum: TOKEN_SCOPES }).notNull().default('read'),
+    createdAt: integer('created_at').notNull(),
+    lastUsedAt: integer('last_used_at'),
+    expiresAt: integer('expires_at'),
+    revokedAt: integer('revoked_at'),
+  },
+  (t) => [index('api_tokens_user_idx').on(t.userId)],
+);
+
+/** Jejak audit: siapa melakukan apa, kapan, dari mana. Tidak pernah memuat secret. */
+export const auditLog = sqliteTable(
+  'audit_log',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    ts: integer('ts').notNull(),
+    /** Tanpa foreign key agar riwayat tetap utuh walau akun berubah. */
+    actorId: text('actor_id'),
+    actorName: text('actor_name').notNull(),
+    action: text('action').notNull(),
+    target: text('target').notNull().default(''),
+    ip: text('ip').notNull().default(''),
+    meta: text('meta', { mode: 'json' })
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'`),
+  },
+  (t) => [index('audit_log_ts_idx').on(t.ts), index('audit_log_action_idx').on(t.action)],
+);
+
+/** Pengaturan organisasi (key -> JSON). Default berasal dari env saat kunci belum ada. */
+export const settings = sqliteTable('settings', {
+  key: text('key').primaryKey(),
+  value: text('value', { mode: 'json' }).$type<unknown>().notNull(),
+  updatedAt: integer('updated_at').notNull(),
+  updatedBy: text('updated_by'),
+});
+
+/** Langganan organisasi (satu baris, id = 1). Periode = bulan kalender WIB. */
+export const subscription = sqliteTable('subscription', {
+  id: integer('id').primaryKey(),
+  planId: text('plan_id').notNull(),
+  /** Turun paket dijadwalkan untuk periode berikutnya. */
+  scheduledPlanId: text('scheduled_plan_id'),
+  /** Awal periode yang sudah diproses (pergantian bulan memicu invoice baru). */
+  currentPeriodStart: integer('current_period_start').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
+export const invoices = sqliteTable(
+  'invoices',
+  {
+    id: text('id').primaryKey(),
+    number: text('number').notNull().unique(),
+    planId: text('plan_id').notNull(),
+    planName: text('plan_name').notNull(),
+    periodStart: integer('period_start').notNull(),
+    periodEnd: integer('period_end').notNull(),
+    amountIdr: integer('amount_idr').notNull(),
+    status: text('status', { enum: INVOICE_STATUSES }).notNull().default('open'),
+    issuedAt: integer('issued_at').notNull(),
+    dueAt: integer('due_at').notNull(),
+    paidAt: integer('paid_at'),
+    paidBy: text('paid_by'),
+    paidByName: text('paid_by_name'),
+    paymentRef: text('payment_ref'),
+    lines: text('lines', { mode: 'json' })
+      .$type<{ description: string; amountIdr: number }[]>()
+      .notNull()
+      .default(sql`'[]'`),
+  },
+  (t) => [
+    index('invoices_period_idx').on(t.periodStart),
+    index('invoices_status_idx').on(t.status),
+  ],
+);
+
+export type UserRow = typeof users.$inferSelect;
+export type LoginSessionRow = typeof loginSessions.$inferSelect;
+export type OneTimeTokenRow = typeof oneTimeTokens.$inferSelect;
+export type ApiTokenRow = typeof apiTokens.$inferSelect;
+export type AuditRow = typeof auditLog.$inferSelect;
+export type InvoiceRow = typeof invoices.$inferSelect;
 
 export type SessionRow = typeof sessions.$inferSelect;
 export type EventRow = typeof events.$inferSelect;

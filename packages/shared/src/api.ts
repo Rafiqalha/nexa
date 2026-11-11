@@ -1,6 +1,7 @@
 // Kontrak API sensor <-> dashboard. Server memvalidasi setiap respons dengan skema ini
 // sebelum dikirim; klien memvalidasi ulang saat menerima.
 import { z } from 'zod';
+import { DataLabelSchema } from './auth';
 import {
   CanaryKindSchema,
   ClassificationSchema,
@@ -11,8 +12,6 @@ import {
   RuleStatusSchema,
   SessionStatusSchema,
 } from './enums';
-
-export const LAB_LABEL = 'Data simulasi lab';
 
 export const CostSchema = z.object({
   /** Estimasi token yang dibakar penyerang (karakter umpan / rasio karakter-per-token). */
@@ -129,7 +128,7 @@ export const IntelSchema = z.object({
 export type Intel = z.infer<typeof IntelSchema>;
 
 export const OverviewSchema = z.object({
-  label: z.literal(LAB_LABEL),
+  label: DataLabelSchema,
   generatedAt: z.number(),
   sensor: z.object({ startedAt: z.number(), upstreamHost: z.string() }),
   cost: CostSchema,
@@ -160,13 +159,18 @@ export const IntelListSchema = z.object({
 });
 export type IntelList = z.infer<typeof IntelListSchema>;
 
+/**
+ * Keputusan operator. Untuk pengguna yang masuk, nama pencatat diambil dari akun di server
+ * (bukan dari isian klien). `operator` hanya dipakai token layanan lab tanpa akun.
+ */
 export const DecisionInputSchema = z.object({
   operator: z
     .string()
     .trim()
     .min(2, 'nama operator minimal 2 karakter')
     .max(64)
-    .regex(/^[\p{L}\p{N} ._'-]+$/u, 'nama operator mengandung karakter tidak valid'),
+    .regex(/^[\p{L}\p{N} ._'-]+$/u, 'nama operator mengandung karakter tidak valid')
+    .optional(),
 });
 export type DecisionInput = z.infer<typeof DecisionInputSchema>;
 
