@@ -8,3 +8,5 @@ allowBuilds:
   better-sqlite3: true
   esbuild: true
   electron: true
+  # Dependensi target Squirrel electron-builder; installer NEXA memakai NSIS, tidak perlu build.
+  electron-winstaller: false

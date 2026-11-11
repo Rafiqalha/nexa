@@ -8,6 +8,7 @@ import {
   isAllowedNavigation,
   offlinePage,
   resolveSensorUrl,
+  sensorUrlInput,
   windowOptions,
 } from './security';
 
@@ -47,6 +48,18 @@ describe('desktop: URL sensor & navigasi', () => {
     for (const bad of ['file:///C:/x', 'javascript:alert(1)', 'http://u:p@127.0.0.1:8081/']) {
       expect(() => resolveSensorUrl(bad)).toThrow();
     }
+  });
+
+  it('URL sensor dari argumen --sensor-url lebih dulu, lalu NEXA_SENSOR_URL', () => {
+    const env = { NEXA_SENSOR_URL: 'http://10.0.0.5:8081/' };
+    expect(sensorUrlInput(['app.exe', '--sensor-url=http://192.0.2.10:8081/'], env)).toBe(
+      'http://192.0.2.10:8081/',
+    );
+    expect(sensorUrlInput(['app.exe', '--sensor-url', 'http://192.0.2.11:8081/'], env)).toBe(
+      'http://192.0.2.11:8081/',
+    );
+    expect(sensorUrlInput(['app.exe'], env)).toBe('http://10.0.0.5:8081/');
+    expect(sensorUrlInput(['app.exe'], {})).toBeUndefined();
   });
 
   it('navigasi hanya di origin sensor', () => {

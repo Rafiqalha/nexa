@@ -12,7 +12,23 @@ const TEXT = '#e8e6dc';
 const MUTED = '#8e9686';
 const LINE = '#232a24';
 
-/** URL dashboard sensor dari NEXA_SENSOR_URL: http(s) saja, tanpa kredensial di URL. */
+/**
+ * Sumber URL sensor: argumen `--sensor-url=<url>` (atau `--sensor-url <url>`) lebih dulu,
+ * lalu variabel lingkungan NEXA_SENSOR_URL. Bukan secret; token tetap diketik operator.
+ */
+export function sensorUrlInput(
+  argv: readonly string[],
+  env: Readonly<Record<string, string | undefined>>,
+): string | undefined {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] ?? '';
+    if (arg.startsWith('--sensor-url=')) return arg.slice('--sensor-url='.length);
+    if (arg === '--sensor-url') return argv[i + 1];
+  }
+  return env.NEXA_SENSOR_URL;
+}
+
+/** URL dashboard sensor: http(s) saja, tanpa kredensial di URL. */
 export function resolveSensorUrl(raw: string | undefined): URL {
   const url = new URL(raw?.trim() || DEFAULT_SENSOR_URL);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {

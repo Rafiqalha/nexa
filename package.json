@@ -14,6 +14,7 @@
     "dev": "node scripts/ensure-env.mjs && pnpm --parallel --filter sensor --filter dashboard dev",
     "build": "pnpm --filter \"./apps/**\" --filter \"./packages/**\" -r build",
     "desktop": "pnpm --filter desktop start",
+    "desktop:installer": "pnpm --filter desktop dist",
     "test": "vitest run",
     "lint": "biome check .",
     "format": "biome format --write .",

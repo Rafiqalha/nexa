@@ -2,12 +2,18 @@
 // melakukan hal lain: tidak membuka DB, tidak membaca .env, tidak menyimpan token
 // (operator memasukkan token di layar login; dashboard menyimpannya di sessionStorage).
 import { app, BrowserWindow, session } from 'electron';
-import { isAllowedNavigation, offlinePage, resolveSensorUrl, windowOptions } from './security';
+import {
+  isAllowedNavigation,
+  offlinePage,
+  resolveSensorUrl,
+  sensorUrlInput,
+  windowOptions,
+} from './security';
 
 const RETRY_SECONDS = 5;
 /** Mode uji asap: jendela tersembunyi, cetak hasil muat sebagai JSON lalu keluar. */
 const smokeTest = process.argv.includes('--smoke-test');
-const sensorUrl = resolveSensorUrl(process.env.NEXA_SENSOR_URL);
+const sensorUrl = resolveSensorUrl(sensorUrlInput(process.argv, process.env));
 
 app.enableSandbox();
 

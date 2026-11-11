@@ -1,0 +1,41 @@
+# Installer Windows (NSIS) untuk shell desktop Pos Komando NEXA.
+# Isi paket: hanya bundel main (out/) + package.json. Tanpa node_modules, tanpa .env,
+# tanpa DB, tanpa secret. Aplikasi memuat dashboard dari port admin sensor.
+appId: id.nexa.poskomando
+productName: NEXA Pos Komando
+copyright: Tim NEXA, Kartika Cyber Hackathon 2026
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+  - "!**/*.map"
+asar: true
+npmRebuild: false
+nodeGypRebuild: false
+electronLanguages:
+  - id
+  - en-US
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: NEXA Pos Komando
+  uninstallDisplayName: NEXA Pos Komando
+  artifactName: NEXA-Pos-Komando-Setup-${version}.${ext}
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerLanguages:
+    - id_ID
+  language: "1057"
+  deleteAppDataOnUninstall: true
