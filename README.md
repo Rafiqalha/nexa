@@ -148,6 +148,8 @@ docs/            arsitektur, instalasi, metrik, interogasi, audit, prior art, ve
 - [Instalasi](docs/install.md)
 - [Metrik lab](docs/metrics.md) · [Interogasi](docs/interrogation.md)
 - [Audit keamanan](docs/security-audit.md) · [Versi & audit dependensi](docs/versions.md)
+- [Penguatan lanjutan](docs/hardening-followup.md): temuan uji lab F-01–F-13 dan rencana
+  perbaikan · [Stress test v0.3.0](docs/stress-test-v0.3.0.md)
 - [Prior art](docs/prior-art.md): Mantis, Palisade, Cloudflare AI Labyrinth, Nepenthes
 - [Riset landing page](docs/landing-research.md): referensi, keputusan desain, aturan gerak
 - [Checklist submission](docs/submission/checklist.md)

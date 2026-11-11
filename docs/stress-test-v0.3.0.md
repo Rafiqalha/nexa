@@ -12,18 +12,22 @@ Metode: load generator Node native (`fetch`, concurrency pool), tanpa dependensi
 |---|---|---|
 | 8080 | Reverse proxy / deception shield (target penyerang) | sehat |
 | 3000 | Aplikasi asli di belakang sensor | sehat |
-| 8081 | Dashboard & Auth API (Pos Komando) | sehat |
+| 8081 | Dashboard & API auth | sehat |
 
 Tujuan: membuktikan ketahanan beban, ketiadaan kebocoran data asli, efektivitas rate-limit
-auth v0.3.0, dan bahwa deteksi bersifat **berbasis perilaku**, bukan User-Agent.
+auth v0.3.0, dan seberapa jauh deteksi bergantung pada perilaku (honeylink) dibanding
+User-Agent.
 
 ## 2. Ringkasan eksekutif
 
 - **0 crash, 0 error 5xx, 0 `SQLITE_BUSY`, 0 exception** sepanjang pengujian beban.
 - Latensi labirin di bawah beban konkuren: **p50 63 ms · p90 158 ms · p99 412 ms**.
 - RAM sensor: 177 → ~251 MB lalu **stabil** (tidak ada memory leak / OOM).
-- **Spoofing User-Agent tidak menembus deteksi.** Bot yang memalsukan UA Chrome valid —
-  bahkan dengan header browser lengkap — tetap dibelokkan ke labirin saat mengikuti honeylink.
+- **Spoofing User-Agent tidak menyelamatkan klien yang menyentuh honeylink.** Bot yang
+  memalsukan UA Chrome valid, bahkan dengan header browser lengkap, tetap dibelokkan ke labirin
+  begitu mengikuti honeylink. Klien yang memalsukan UA **dan** menghindari honeylink tetap
+  diteruskan (skenario C dan D). Batas ini dibahas di
+  [hardening-followup.md](hardening-followup.md) (F-01, F-02, F-05).
 - Rate-limit auth v0.3.0 bekerja di dua lapis (per-IP dan per-akun).
 - Pembalikan beban ekonomi terkonfirmasi: jutaan karakter/token umpan dibangkitkan prosedural
   (biaya ≈ CPU saja), tanpa pernah memanggil LLM di jalur permintaan penyerang.
@@ -65,12 +69,19 @@ Tiap skenario memakai fingerprint sesi terpisah (fingerprint = IP + UA).
 | D | Chrome valid (spoof) | lengkap | tidak (burst cepat) | diteruskan ke app asli |
 
 **Kesimpulan:** memalsukan UA dari `curl`/`python-requests` menjadi Chrome/Mozilla valid
-**tidak membantu penyerang**. Begitu klien mengikuti honeylink tersembunyi (`display:none`,
-tak terlihat manusia), ia dibelokkan ke labirin — termasuk request `/` berikutnya — dan tidak
-pernah kembali ke port 3000. Skenario D menunjukkan kecepatan tinggi saja (tanpa honeylink)
-tidak cukup untuk menjebak klien yang berperilaku manusiawi (menghindari false positive).
+**tidak membantu penyerang yang mengikuti honeylink**. Begitu klien mengikuti honeylink
+tersembunyi (`display:none`, tak terlihat manusia), ia dibelokkan ke labirin — termasuk request
+`/` berikutnya — dan tidak pernah kembali ke port 3000. Skenario D menunjukkan kecepatan tinggi
+saja (tanpa honeylink) tidak cukup untuk menjebak klien yang berperilaku manusiawi (menghindari
+false positive).
 
-## 4. Mengapa spoofing UA gagal: bobot sinyal
+Sebaliknya, spoofing UA ditambah header lengkap **memang** menurunkan skor klien yang tidak
+menyentuh honeylink. Burst cepat dari `curl` tanpa spoofing mendapat 0,35 + 0,20 + 0,25 = 0,80,
+sudah lewat ambang suspect. Dengan spoofing, yang tersisa hanya 0,25 (skenario D), sehingga
+klien diteruskan ke aplikasi asli. Perbaikannya (reputasi lintas sesi, verifikasi positif,
+honeylink per sesi) dirinci di [hardening-followup.md](hardening-followup.md).
+
+## 4. Mengapa spoofing UA gagal setelah honeylink: bobot sinyal
 
 Deteksi menjumlahkan sinyal per-sesi (ambang: suspect `0.6`, agent `0.85`):
 
@@ -84,7 +95,8 @@ Deteksi menjumlahkan sinyal per-sesi (ambang: suspect `0.6`, agent `0.85`):
 
 Honeylink (0.70) sendiri sudah melewati ambang suspect (0.60) sehingga memicu pembelokan ke
 labirin — independen dari User-Agent. Spoofing UA hanya menghapus bobot 0.35, tak cukup untuk
-mencegah pembelokan. Deteksi ini **berbasis perilaku**, bukan tanda-tangan UA.
+mencegah pembelokan. Jadi begitu honeylink tersentuh, deteksi **berbasis perilaku**, bukan
+tanda-tangan UA. Tanpa sinyal honeylink, UA dan header masih ikut menentukan hasil.
 
 ## 5. Ketahanan sumber daya & integritas data
 
@@ -109,7 +121,8 @@ komputasi, bertahan hampir gratis.
 
 | # | Temuan | Severity | Status |
 |---|---|---|---|
-| 1 | Spoofing UA tidak menembus deteksi (honeylink dominan) | Positif | Terbukti |
+| 1 | Spoofing UA tidak menembus deteksi bila klien menyentuh honeylink (honeylink dominan) | Positif | Terbukti |
+| 1b | Spoofing UA + header lengkap tanpa honeylink tetap diteruskan (skenario C/D) | Batas | Rencana di hardening-followup.md (F-01, F-02, F-05) |
 | 2 | Rate-limit per-IP & lockout per-akun aktif | Positif | Terbukti |
 | 3 | Tidak ada `SQLITE_BUSY`/OOM di bawah beban konkuren | Positif | Terbukti |
 | 4 | Email tak dikenal tidak di-rate-limit per-akun (anti-enumerasi by design) | Info | Diterima |
