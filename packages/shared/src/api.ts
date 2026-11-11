@@ -35,6 +35,8 @@ export const SummarySchema = z.object({
   avgHoldSeconds: z.number().nonnegative(),
   maxDepth: z.number().int().nonnegative(),
   rulesPending: z.number().int().nonnegative(),
+  /** Draf yang masih menunggu `suricata -T`; tidak ditampilkan sampai tervalidasi (§2.5). */
+  rulesValidating: z.number().int().nonnegative(),
 });
 export type Summary = z.infer<typeof SummarySchema>;
 

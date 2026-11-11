@@ -36,7 +36,11 @@ export function SummaryStats({ summary }: { summary: Summary }) {
       <Stat
         label="Aturan menunggu"
         value={formatInt(summary.rulesPending)}
-        meta="draf perlu persetujuan operator"
+        meta={
+          summary.rulesValidating > 0
+            ? `draf tervalidasi perlu persetujuan · ${formatInt(summary.rulesValidating)} masih divalidasi suricata -T`
+            : 'draf tervalidasi perlu persetujuan operator'
+        }
       />
     </section>
   );

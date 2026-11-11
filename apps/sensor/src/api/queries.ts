@@ -11,7 +11,7 @@ import {
   type SessionSummary,
   type TimelineEvent,
 } from '@nexa/shared';
-import { and, asc, desc, eq, inArray, isNotNull, ne, type SQL, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, ne, or, type SQL, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import {
   type CanaryRow,
@@ -64,6 +64,20 @@ export function ruleToApi(row: RuleRow): Rule {
     deployError: row.deployError,
     createdAt: row.createdAt,
   };
+}
+
+/**
+ * AGENTS.md §2.5: draf yang belum selesai divalidasi `suricata -T` tidak pernah ditampilkan
+ * (API, SSE, MCP intel). Draf tervalidasi (valid maupun tidak) dan rule yang sudah
+ * diputuskan tetap tampil.
+ */
+export const REVIEWABLE_RULE: SQL = or(
+  ne(rules.status, 'draft'),
+  isNotNull(rules.syntaxValid),
+) as SQL;
+
+export function isReviewableRule(row: Pick<RuleRow, 'status' | 'syntaxValid'>): boolean {
+  return row.status !== 'draft' || row.syntaxValid !== null;
 }
 
 export function intelToApi(row: IntelRow): Intel {
@@ -192,7 +206,12 @@ export function sessionDetail(db: Db, id: string): SessionDetail | null {
     .where(eq(canaries.sessionId, id))
     .orderBy(asc(canaries.issuedAt))
     .all();
-  const rs = db.select().from(rules).where(eq(rules.sessionId, id)).orderBy(asc(rules.id)).all();
+  const rs = db
+    .select()
+    .from(rules)
+    .where(and(eq(rules.sessionId, id), REVIEWABLE_RULE))
+    .orderBy(asc(rules.id))
+    .all();
   const it = db
     .select()
     .from(intel)
@@ -210,7 +229,14 @@ export function sessionDetail(db: Db, id: string): SessionDetail | null {
 }
 
 export function listRules(db: Db, limit = 200): Rule[] {
-  return db.select().from(rules).orderBy(desc(rules.id)).limit(limit).all().map(ruleToApi);
+  return db
+    .select()
+    .from(rules)
+    .where(REVIEWABLE_RULE)
+    .orderBy(desc(rules.id))
+    .limit(limit)
+    .all()
+    .map(ruleToApi);
 }
 
 export interface OverviewContext {
@@ -245,12 +271,20 @@ export function computeOverview(db: Db, ctx: OverviewContext): Overview {
     .from(sessions)
     .where(isNotNull(sessions.trappedAt))
     .get();
+  // Hanya draf yang sudah divalidasi suricata -T yang ditampilkan untuk ditinjau.
   const pendingRows = db
     .select()
     .from(rules)
-    .where(eq(rules.status, 'draft'))
+    .where(and(eq(rules.status, 'draft'), isNotNull(rules.syntaxValid)))
     .orderBy(desc(rules.createdAt))
     .all();
+  const validating = Number(
+    db
+      .select({ n: sql<number>`count(*)` })
+      .from(rules)
+      .where(and(eq(rules.status, 'draft'), isNull(rules.syntaxValid)))
+      .get()?.n ?? 0,
+  );
 
   const attackerModel = ctx.pricing.attackerAssumedModel;
   const attackerPrice = idrPerMTok(ctx.pricing, attackerModel);
@@ -278,6 +312,7 @@ export function computeOverview(db: Db, ctx: OverviewContext): Overview {
       avgHoldSeconds: Math.round(Number(trapped?.avgHold ?? 0) * 10) / 10,
       maxDepth: Number(trapped?.maxDepth ?? 0),
       rulesPending: pendingRows.length,
+      rulesValidating: validating,
     },
     contacts: listSessions(db, { limit: 8, flagged: true }),
     pendingRules: pendingRows.slice(0, 5).map(ruleToApi),

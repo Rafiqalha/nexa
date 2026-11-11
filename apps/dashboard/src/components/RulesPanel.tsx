@@ -31,7 +31,8 @@ export function RulesPanel({ rules }: { rules: readonly Rule[] }) {
   if (rules.length === 0) {
     return (
       <p className="border-t border-line py-6 text-[14px] text-muted">
-        Belum ada draf aturan. Draf muncul otomatis setelah sesi jebakan berakhir.
+        Belum ada draf aturan. Draf muncul otomatis setelah sesi jebakan berakhir dan lolos validasi
+        suricata -T.
       </p>
     );
   }

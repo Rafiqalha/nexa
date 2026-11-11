@@ -7,7 +7,7 @@ import type { Bus } from '../bus';
 import type { Db } from '../db/client';
 import { rules } from '../db/schema';
 import type { Logger } from '../logger';
-import { eventToApi, ruleToApi, sessionSummary } from './queries';
+import { eventToApi, isReviewableRule, ruleToApi, sessionSummary } from './queries';
 
 export type StreamListener = (msg: StreamMessage) => void;
 
@@ -37,7 +37,8 @@ export class StreamHub {
     bus.on('session:closed', (row) => this.markSession(row.id));
     bus.on('rule:changed', ({ ruleId }) => {
       const row = deps.db.select().from(rules).where(eq(rules.id, ruleId)).get();
-      if (row) this.broadcast({ type: 'rule', data: ruleToApi(row) });
+      // Draf yang belum divalidasi suricata -T tidak dikirim ke dashboard (§2.5).
+      if (row && isReviewableRule(row)) this.broadcast({ type: 'rule', data: ruleToApi(row) });
       this.markOverview();
     });
     bus.on('canary:triggered', ({ sessionId }) => this.markSession(sessionId));
