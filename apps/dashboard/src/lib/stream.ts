@@ -1,6 +1,6 @@
-// Klien SSE berbasis fetch agar header Authorization bisa dikirim (token tidak di URL).
+// Klien SSE berbasis fetch (cookie sesi same-origin; token tidak pernah di URL).
 import { type StreamMessage, StreamMessageSchema } from '@nexa/shared';
-import { authHeaders, signOut } from './auth';
+import { refreshAuth } from './auth';
 
 export type ConnectionState = 'connecting' | 'open' | 'closed';
 
@@ -39,11 +39,13 @@ export function connectStream(handlers: StreamHandlers): () => void {
       controller = new AbortController();
       try {
         const res = await fetch('/api/stream', {
-          headers: { accept: 'text/event-stream', ...authHeaders() },
+          credentials: 'same-origin',
+          headers: { accept: 'text/event-stream' },
           signal: controller.signal,
         });
-        if (res.status === 401) {
-          signOut();
+        if (res.status === 401 || res.status === 403) {
+          // Sesi berakhir / wajib 2FA: status login dimuat ulang, layar menyesuaikan.
+          void refreshAuth();
           return;
         }
         if (!res.ok || !res.body) throw new Error(`stream ${res.status}`);

@@ -19,9 +19,26 @@ const dateFmt = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
   month: 'short',
 });
+const dayFmt = new Intl.DateTimeFormat('id-ID', {
+  timeZone: 'Asia/Jakarta',
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+const rupiahFmt = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
 
 export function formatInt(n: number): string {
   return intFmt.format(n);
+}
+
+/** Rupiah utuh untuk tagihan (harga paket & invoice), mis. "Rp 4.900.000". */
+export function formatRupiah(n: number): string {
+  return `Rp ${rupiahFmt.format(Math.round(n))}`;
+}
+
+/** Tanggal WIB, mis. "15 Nov 2026". */
+export function formatDateWib(ts: number): string {
+  return dayFmt.format(ts);
 }
 
 export function formatScore(n: number): string {

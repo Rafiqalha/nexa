@@ -1,59 +1,60 @@
-// Kredensial dashboard hanya di sessionStorage tab ini (tidak pernah di bundle/localStorage).
+// Status login dari sensor (GET /api/auth/status). Sesi berupa cookie httpOnly yang diatur
+// server: browser tidak pernah memegang token di JavaScript, sessionStorage, atau bundle.
+import {
+  type AuthStatus,
+  AuthStatusSchema,
+  can,
+  type Permission,
+  type Principal,
+} from '@nexa/shared';
 import { useSyncExternalStore } from 'react';
 
-const TOKEN_KEY = 'nexa.token';
-const OPERATOR_KEY = 'nexa.operator';
-/** Penanda proxy dev menyisipkan token (DASHBOARD_DEV_AUTOAUTH=1); token tidak ada di browser. */
-const PROXY_AUTH = '__proxy__';
-
 export interface AuthState {
-  token: string | null;
-  operator: string;
+  status: AuthStatus | null;
+  /** Sensor tidak terjangkau saat memeriksa status. */
+  offline: boolean;
 }
 
+let state: AuthState = { status: null, offline: false };
 const listeners = new Set<() => void>();
-let snapshot: AuthState = read();
 
-function read(): AuthState {
-  return {
-    token: sessionStorage.getItem(TOKEN_KEY),
-    operator: sessionStorage.getItem(OPERATOR_KEY) ?? '',
-  };
-}
-
-function emit(): void {
-  snapshot = read();
+function set(next: AuthState): void {
+  state = next;
   for (const l of listeners) l();
 }
 
+let inflight: Promise<AuthStatus | null> | null = null;
+
+/** Muat ulang status login (dipanggil saat start, setelah login/logout, dan saat 401). */
+export function refreshAuth(): Promise<AuthStatus | null> {
+  inflight ??= (async () => {
+    try {
+      const res = await fetch('/api/auth/status', { headers: { accept: 'application/json' } });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const status = AuthStatusSchema.parse(await res.json());
+      set({ status, offline: false });
+      return status;
+    } catch {
+      set({ status: state.status, offline: true });
+      return null;
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
+}
+
+export async function signOut(): Promise<void> {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', headers: { accept: 'application/json' } });
+  } finally {
+    window.location.hash = '#/';
+    await refreshAuth();
+  }
+}
+
 export function getAuth(): AuthState {
-  return snapshot;
-}
-
-export function signIn(token: string, operator: string): void {
-  sessionStorage.setItem(TOKEN_KEY, token);
-  sessionStorage.setItem(OPERATOR_KEY, operator);
-  emit();
-}
-
-export function signInViaProxy(operator: string): void {
-  signIn(PROXY_AUTH, operator);
-}
-
-export function setOperator(operator: string): void {
-  sessionStorage.setItem(OPERATOR_KEY, operator);
-  emit();
-}
-
-export function signOut(): void {
-  sessionStorage.removeItem(TOKEN_KEY);
-  emit();
-}
-
-/** Header Authorization; kosong bila token disisipkan proxy dev. */
-export function authHeaders(): Record<string, string> {
-  const t = snapshot.token;
-  return t && t !== PROXY_AUTH ? { authorization: `Bearer ${t}` } : {};
+  return state;
 }
 
 export function useAuth(): AuthState {
@@ -62,6 +63,15 @@ export function useAuth(): AuthState {
       listeners.add(cb);
       return () => listeners.delete(cb);
     },
-    () => snapshot,
+    () => state,
   );
+}
+
+export function usePrincipal(): Principal | null {
+  return useAuth().status?.principal ?? null;
+}
+
+/** Izin hanya untuk menampilkan/menyembunyikan aksi; server tetap memeriksa setiap rute. */
+export function useCan(permission: Permission): boolean {
+  return can(usePrincipal()?.role, permission);
 }

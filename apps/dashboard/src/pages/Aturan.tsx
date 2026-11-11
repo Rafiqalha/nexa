@@ -1,9 +1,12 @@
-import { RuleListSchema } from '@nexa/shared';
+import { type Rule, RuleListSchema } from '@nexa/shared';
+import { Download } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { RuleItem } from '../components/RuleItem';
 import { useRuleDecision } from '../components/RulesPanel';
+import { buttonVariants } from '../components/ui/button';
 import { ApiError, apiGet } from '../lib/api';
+import { useCan } from '../lib/auth';
 import { navItem } from '../lib/nav';
 import { setRules, useAppState } from '../lib/store';
 
@@ -12,6 +15,8 @@ export function Aturan() {
   const { rules } = useAppState();
   const [error, setError] = useState<string | null>(null);
   const { busyId, error: decisionError, decide } = useRuleDecision();
+  const canDecide = useCan('rules:decide');
+  const canExport = useCan('rules:export');
 
   useEffect(() => {
     apiGet('/api/rules', RuleListSchema)
@@ -25,7 +30,23 @@ export function Aturan() {
 
   return (
     <div className="flex flex-col gap-12">
-      <PageHeader title={navItem('aturan').title} icon={navItem('aturan').icon} />
+      <PageHeader title={navItem('aturan').title} icon={navItem('aturan').icon}>
+        {canExport ? (
+          <a
+            href="/api/rules/export"
+            download="nexa.rules"
+            className={buttonVariants({ variant: 'secondary' })}
+          >
+            <Download aria-hidden="true" strokeWidth={2} className="size-4" />
+            Ekspor nexa.rules
+          </a>
+        ) : null}
+      </PageHeader>
+      {canDecide ? null : (
+        <p className="meta">
+          Peran Anda hanya melihat aturan; persetujuan oleh Admin atau Operator.
+        </p>
+      )}
       {error ? <p className="text-status-trapped">{error}</p> : null}
       {decisionError ? <p className="text-status-trapped">{decisionError}</p> : null}
       <section aria-labelledby="pending-title">
@@ -41,8 +62,12 @@ export function Aturan() {
                 key={r.id}
                 rule={r}
                 busy={busyId === r.id}
-                onApprove={(rule) => void decide(rule, 'approve')}
-                onReject={(rule) => void decide(rule, 'reject')}
+                {...(canDecide
+                  ? {
+                      onApprove: (rule: Rule) => void decide(rule, 'approve'),
+                      onReject: (rule: Rule) => void decide(rule, 'reject'),
+                    }
+                  : {})}
               />
             ))}
           </div>

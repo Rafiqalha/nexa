@@ -1,103 +1,281 @@
-import { LAB_LABEL } from '@nexa/shared';
-import { LoaderCircle, LogIn } from 'lucide-react';
+// Layar masuk: email + kata sandi, langkah 2FA bila aktif, dan penyiapan akun pemilik
+// pertama (butuh SETUP_TOKEN dari environment sensor). Sesi = cookie httpOnly dari server.
+import { type AuthStatus, LoginResultSchema } from '@nexa/shared';
+import { KeyRound, LoaderCircle, LogIn } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
-import { LogoMark } from '../components/LogoMark';
+import { AuthLayout } from '../components/AuthLayout';
+import { Field, FormError, inputClass, monoInputClass } from '../components/form';
 import { Button } from '../components/ui/button';
-import { probeStatus } from '../lib/api';
-import { signIn, signInViaProxy } from '../lib/auth';
-import { loginErrorMessage, normalizeToken } from '../lib/token';
+import { apiPost, errorMessage } from '../lib/api';
+import { refreshAuth } from '../lib/auth';
+import { normalizeToken } from '../lib/token';
 
-const inputClass =
-  'mt-2 block min-h-11 w-full border border-line-strong bg-bg px-3 font-mono text-[13px] text-fg transition-colors duration-200 placeholder:text-muted hover:border-muted focus:border-fg-2';
-
-export function Login({ proxyAuth = false }: { proxyAuth?: boolean }) {
-  const [token, setToken] = useState('');
-  const [operator, setOperator] = useState('');
+function useAttempt() {
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  // Naik setiap percobaan gagal agar animasi getar pesan error diputar ulang.
   const [attempt, setAttempt] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const fail = (message: string) => {
+    setError(message);
+    setAttempt((a) => a + 1);
+  };
+  return { error, setError, attempt, busy, setBusy, fail };
+}
+
+function SubmitButton({
+  busy,
+  label,
+  busyLabel,
+}: {
+  busy: boolean;
+  label: string;
+  busyLabel: string;
+}) {
+  return (
+    <Button type="submit" disabled={busy} className="w-full">
+      {busy ? (
+        <LoaderCircle aria-hidden="true" strokeWidth={2} className="nx-spin size-4" />
+      ) : (
+        <LogIn aria-hidden="true" strokeWidth={2} className="size-4" />
+      )}
+      {busy ? busyLabel : label}
+    </Button>
+  );
+}
+
+function SetupForm({ status }: { status: AuthStatus }) {
+  const [form, setForm] = useState({
+    setupToken: '',
+    orgName: '',
+    name: '',
+    email: '',
+    password: '',
+    confirm: '',
+  });
+  const s = useAttempt();
+  const set = (k: keyof typeof form) => (e: { target: { value: string } }) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
-    if (operator.trim().length < 2) {
-      setError('Isi nama operator (minimal 2 karakter); dicatat pada setiap keputusan aturan.');
-      setAttempt((a) => a + 1);
-      return;
+    s.setError(null);
+    if (form.password !== form.confirm) return s.fail('Konfirmasi kata sandi tidak sama.');
+    s.setBusy(true);
+    try {
+      await apiPost(
+        '/api/auth/setup',
+        {
+          setupToken: normalizeToken(form.setupToken),
+          orgName: form.orgName,
+          name: form.name,
+          email: form.email,
+          password: form.password,
+        },
+        LoginResultSchema,
+      );
+      await refreshAuth();
+    } catch (err) {
+      s.fail(errorMessage(err, 'Penyiapan gagal.'));
+    } finally {
+      s.setBusy(false);
     }
-    if (proxyAuth) {
-      signInViaProxy(operator.trim());
-      return;
-    }
-    const clean = normalizeToken(token);
-    setBusy(true);
-    const status = await probeStatus({ authorization: `Bearer ${clean}` });
-    setBusy(false);
-    if (status !== 200) {
-      setError(loginErrorMessage(status, window.location.origin));
-      setAttempt((a) => a + 1);
-      return;
-    }
-    signIn(clean, operator.trim());
   }
 
   return (
-    <main className="nx-page mx-auto flex min-h-screen max-w-[420px] flex-col justify-center px-6 py-14">
-      <div className="flex items-center gap-3">
-        <LogoMark size={36} />
-        <p className="font-sans text-[20px] font-semibold tracking-[0.16em] text-fg">NEXA</p>
-      </div>
-      <h1 className="mt-8 text-[28px] font-medium tracking-[-0.01em]">Masuk ke Dashboard</h1>
-      <p className="meta mt-2">{LAB_LABEL}</p>
-      <form className="mt-10 space-y-6" onSubmit={submit}>
-        {proxyAuth ? (
-          <p className="meta">Mode dev: token disisipkan proxy lokal (DASHBOARD_DEV_AUTOAUTH).</p>
-        ) : (
-          <label className="block text-[13px] text-fg-2">
-            Token API sensor
-            <input
-              className={inputClass}
-              type="password"
-              autoComplete="off"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              required
-            />
-          </label>
-        )}
-        <label className="block text-[13px] text-fg-2">
-          Nama operator
+    <AuthLayout
+      title="Penyiapan awal"
+      label={status.label}
+      subtitle="Belum ada akun. Buat akun pemilik organisasi: peran Admin, pengelola pengguna dan tagihan."
+      footer={
+        status.setupAvailable
+          ? 'Token penyiapan = nilai SETUP_TOKEN di environment sensor (Railway: tab Variables; lab: pnpm token). Hanya bisa dipakai sekali.'
+          : 'SETUP_TOKEN belum di-set di environment sensor, jadi penyiapan lewat layar ini tidak tersedia.'
+      }
+    >
+      <form className="space-y-6" onSubmit={submit}>
+        <Field label="Token penyiapan">
+          <input
+            className={monoInputClass}
+            type="password"
+            autoComplete="off"
+            value={form.setupToken}
+            onChange={set('setupToken')}
+            required
+            disabled={!status.setupAvailable}
+          />
+        </Field>
+        <Field label="Nama organisasi">
+          <input className={inputClass} value={form.orgName} onChange={set('orgName')} required />
+        </Field>
+        <Field label="Nama Anda">
           <input
             className={inputClass}
-            type="text"
             autoComplete="name"
-            value={operator}
-            onChange={(e) => setOperator(e.target.value)}
+            value={form.name}
+            onChange={set('name')}
             required
           />
-        </label>
-        {error ? (
-          <p key={attempt} role="alert" className="nx-shake text-[13px] text-status-trapped">
-            {error}
-          </p>
-        ) : null}
-        <Button type="submit" disabled={busy} className="w-full">
-          {busy ? (
-            <LoaderCircle aria-hidden="true" strokeWidth={2} className="nx-spin size-4" />
-          ) : (
-            <LogIn aria-hidden="true" strokeWidth={2} className="size-4" />
-          )}
-          {busy ? 'Memeriksa…' : 'Masuk'}
-        </Button>
+        </Field>
+        <Field label="Email">
+          <input
+            className={inputClass}
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={set('email')}
+            required
+          />
+        </Field>
+        <Field label="Kata sandi" hint="Minimal 10 karakter.">
+          <input
+            className={inputClass}
+            type="password"
+            autoComplete="new-password"
+            minLength={10}
+            value={form.password}
+            onChange={set('password')}
+            required
+          />
+        </Field>
+        <Field label="Ulangi kata sandi">
+          <input
+            className={inputClass}
+            type="password"
+            autoComplete="new-password"
+            value={form.confirm}
+            onChange={set('confirm')}
+            required
+          />
+        </Field>
+        <FormError message={s.error} attempt={s.attempt} />
+        <SubmitButton busy={s.busy} label="Buat akun pemilik" busyLabel="Menyiapkan…" />
       </form>
-      <p className="meta mt-8">
-        Token = nilai DASHBOARD_TOKEN di .env sensor. Jalankan pnpm token di folder repo untuk
-        menyalinnya ke clipboard tanpa menampilkannya.
-      </p>
-      <p className="meta mt-3">
-        Token hanya disimpan di sessionStorage tab ini dan tidak pernah ditanam di aplikasi.
-      </p>
-    </main>
+    </AuthLayout>
+  );
+}
+
+export function Login({ status }: { status: AuthStatus }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [code, setCode] = useState('');
+  const s = useAttempt();
+
+  if (status.needsSetup) return <SetupForm status={status} />;
+
+  async function submitPassword(e: FormEvent) {
+    e.preventDefault();
+    s.setError(null);
+    s.setBusy(true);
+    try {
+      const r = await apiPost('/api/auth/login', { email, password }, LoginResultSchema);
+      if (r.status === 'totp_required') {
+        setChallenge(r.challenge);
+        setPassword('');
+      } else {
+        await refreshAuth();
+      }
+    } catch (err) {
+      s.fail(errorMessage(err, 'Gagal masuk.'));
+    } finally {
+      s.setBusy(false);
+    }
+  }
+
+  async function submitCode(e: FormEvent) {
+    e.preventDefault();
+    if (!challenge) return;
+    s.setError(null);
+    s.setBusy(true);
+    try {
+      await apiPost('/api/auth/login/totp', { challenge, code: code.trim() }, LoginResultSchema);
+      await refreshAuth();
+    } catch (err) {
+      setCode('');
+      s.fail(errorMessage(err, 'Kode 2FA ditolak.'));
+      if (err instanceof Error && /masuk ulang/i.test(err.message)) setChallenge(null);
+    } finally {
+      s.setBusy(false);
+    }
+  }
+
+  if (challenge) {
+    return (
+      <AuthLayout
+        title="Verifikasi dua langkah"
+        label={status.label}
+        subtitle="Masukkan kode 6 digit dari aplikasi authenticator Anda."
+      >
+        <form className="space-y-6" onSubmit={submitCode}>
+          <Field label="Kode 2FA">
+            <input
+              className={`${monoInputClass} tracking-[0.4em]`}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="\d{6}"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              required
+              // biome-ignore lint/a11y/noAutofocus: satu-satunya kolom di langkah ini
+              autoFocus
+            />
+          </Field>
+          <FormError message={s.error} attempt={s.attempt} />
+          <Button type="submit" disabled={s.busy || code.length !== 6} className="w-full">
+            {s.busy ? (
+              <LoaderCircle aria-hidden="true" strokeWidth={2} className="nx-spin size-4" />
+            ) : (
+              <KeyRound aria-hidden="true" strokeWidth={2} className="size-4" />
+            )}
+            {s.busy ? 'Memeriksa…' : 'Verifikasi'}
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => {
+              setChallenge(null);
+              setCode('');
+              s.setError(null);
+            }}
+          >
+            Kembali
+          </Button>
+        </form>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <AuthLayout
+      title="Masuk ke Dashboard"
+      label={status.label}
+      subtitle={status.orgName}
+      footer="Belum punya akun? Minta tautan undangan ke admin organisasi. Lupa kata sandi? Admin dapat membuat tautan reset."
+    >
+      <form className="space-y-6" onSubmit={submitPassword}>
+        <Field label="Email">
+          <input
+            className={inputClass}
+            type="email"
+            autoComplete="username"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </Field>
+        <Field label="Kata sandi">
+          <input
+            className={inputClass}
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </Field>
+        <FormError message={s.error} attempt={s.attempt} />
+        <SubmitButton busy={s.busy} label="Masuk" busyLabel="Memeriksa…" />
+      </form>
+    </AuthLayout>
   );
 }

@@ -39,6 +39,8 @@ export default defineConfig(() => {
         },
       },
     },
-    build: { outDir: 'dist', sourcemap: false, target: 'es2022' },
+    // assetsInlineLimit 0: font/gambar tidak di-inline sebagai data: URI, jadi CSP tetap
+    // ketat (font-src 'self') tanpa pengecualian data:.
+    build: { outDir: 'dist', sourcemap: false, target: 'es2022', assetsInlineLimit: 0 },
   };
 });

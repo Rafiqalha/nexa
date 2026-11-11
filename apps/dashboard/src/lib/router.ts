@@ -1,8 +1,25 @@
-// Router hash kecil (tanpa dependensi). Rute: #/, #/sesi, #/sesi/<id>, #/intel, #/aturan.
+// Router hash kecil (tanpa dependensi).
+// Rute: #/, #/sesi, #/sesi/<id>, #/intel, #/aturan, #/pengguna, #/tagihan, #/pengaturan,
+// #/audit, #/akun, dan rute publik #/undangan/<token>, #/reset/<token>.
 // `#/kontak` lama tetap diterima sebagai alias `#/sesi` agar tautan lama tidak putus.
 import { useSyncExternalStore } from 'react';
 
-export type Page = 'dashboard' | 'sesi' | 'intel' | 'aturan';
+export const APP_PAGES = [
+  'dashboard',
+  'sesi',
+  'intel',
+  'aturan',
+  'pengguna',
+  'tagihan',
+  'pengaturan',
+  'audit',
+  'akun',
+] as const;
+export type AppPage = (typeof APP_PAGES)[number];
+/** Halaman publik (tanpa login): menerima undangan dan reset kata sandi. */
+export type PublicPage = 'undangan' | 'reset';
+export type Page = AppPage | PublicPage;
+
 export interface Route {
   page: Page;
   id: string | null;
@@ -12,16 +29,27 @@ export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const [first, second] = parts;
   if (first === 'sesi' || first === 'kontak') return { page: 'sesi', id: second ?? null };
-  if (first === 'intel') return { page: 'intel', id: null };
-  if (first === 'aturan') return { page: 'aturan', id: null };
+  if (first === 'undangan' || first === 'reset') return { page: first, id: second ?? null };
+  if (first && (APP_PAGES as readonly string[]).includes(first) && first !== 'sesi') {
+    return { page: first as AppPage, id: null };
+  }
   return { page: 'dashboard', id: null };
 }
 
-export const HREF: Readonly<Record<Page, string>> = {
+export function isPublicPage(page: Page): page is PublicPage {
+  return page === 'undangan' || page === 'reset';
+}
+
+export const HREF: Readonly<Record<AppPage, string>> = {
   dashboard: '#/',
   sesi: '#/sesi',
   intel: '#/intel',
   aturan: '#/aturan',
+  pengguna: '#/pengguna',
+  tagihan: '#/tagihan',
+  pengaturan: '#/pengaturan',
+  audit: '#/audit',
+  akun: '#/akun',
 };
 
 export function sessionHref(id: string): string {

@@ -1,6 +1,6 @@
-// Salin DASHBOARD_TOKEN dari .env ke clipboard TANPA menampilkannya di terminal,
-// untuk ditempel di layar login dashboard / aplikasi desktop.
-//   pnpm token
+// Salin token dari .env ke clipboard TANPA menampilkannya di terminal.
+//   pnpm token              -> SETUP_TOKEN (layar "Penyiapan awal"; lab: jatuh ke DASHBOARD_TOKEN)
+//   pnpm token -- service   -> DASHBOARD_TOKEN (token layanan untuk skrip/klien API lab)
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -12,12 +12,21 @@ if (!existsSync(envPath)) {
   console.error('[token] .env belum ada. Jalankan: pnpm env:init');
   process.exit(1);
 }
-const line = readFileSync(envPath, 'utf8')
-  .split(/\r?\n/)
-  .find((l) => /^\s*DASHBOARD_TOKEN\s*=/.test(l));
-const token = (line?.slice(line.indexOf('=') + 1) ?? '').trim().replace(/^(['"])(.*)\1$/, '$2');
+const lines = readFileSync(envPath, 'utf8').split(/\r?\n/);
+const envValue = (key) => {
+  const line = lines.find((l) => new RegExp(`^\\s*${key}\\s*=`).test(l));
+  return (line?.slice(line.indexOf('=') + 1) ?? '').trim().replace(/^(['"])(.*)\1$/, '$2');
+};
+
+const service = process.argv.slice(2).includes('service');
+const key = service
+  ? 'DASHBOARD_TOKEN'
+  : envValue('SETUP_TOKEN')
+    ? 'SETUP_TOKEN'
+    : 'DASHBOARD_TOKEN';
+const token = envValue(key);
 if (!token) {
-  console.error('[token] DASHBOARD_TOKEN kosong. Jalankan: pnpm env:init');
+  console.error(`[token] ${key} kosong. Jalankan: pnpm env:init`);
   process.exit(1);
 }
 
@@ -35,12 +44,14 @@ for (const [cmd, args] of candidates) {
   const r = spawnSync(cmd, args, { input: token, stdio: ['pipe', 'ignore', 'ignore'] });
   if (r.status === 0) {
     console.log(
-      `[token] DASHBOARD_TOKEN (${token.length} karakter) disalin ke clipboard. Tempel di kolom "Token API sensor".`,
+      service
+        ? `[token] DASHBOARD_TOKEN (${token.length} karakter) disalin. Kirim sebagai header Authorization: Bearer.`
+        : `[token] ${key} (${token.length} karakter) disalin. Tempel di kolom "Token penyiapan" saat membuat akun pemilik.`,
     );
     process.exit(0);
   }
 }
 console.error(
-  '[token] Tidak ada utilitas clipboard (clip/pbcopy/wl-copy/xclip). Buka .env dan salin nilai DASHBOARD_TOKEN secara manual.',
+  `[token] Tidak ada utilitas clipboard (clip/pbcopy/wl-copy/xclip). Buka .env dan salin nilai ${key} secara manual.`,
 );
 process.exit(1);

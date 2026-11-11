@@ -1,6 +1,7 @@
 import { LAB_LABEL } from '@nexa/shared';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAuth } from '../lib/auth';
 import { formatClockWib } from '../lib/format';
 import { useAppState } from '../lib/store';
 import { LiveDot } from './LiveDot';
@@ -21,6 +22,8 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   const { connection } = useAppState();
+  // Label data per mode sensor: lab = simulasi, produksi = trafik nyata.
+  const label = useAuth().status?.label ?? LAB_LABEL;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -43,7 +46,7 @@ export function PageHeader({
           <span>·</span>
           <span>{formatClockWib(now)}</span>
           <span>·</span>
-          <span>{LAB_LABEL}</span>
+          <span>{label}</span>
         </p>
       </div>
       {children}

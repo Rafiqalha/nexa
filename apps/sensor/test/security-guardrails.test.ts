@@ -102,6 +102,8 @@ describe('§2.6 secret tidak pernah di repo', () => {
       'DASHBOARD_TOKEN',
       'ATTACKER_LLM_API_KEY',
       'SURICATA_CONTROL_TOKEN',
+      'AUTH_SECRET',
+      'SETUP_TOKEN',
     ]) {
       const line = example.split(/\r?\n/).find((l) => l.startsWith(`${key}=`));
       if (line) expect(line.trim(), key).toBe(`${key}=`);
@@ -145,12 +147,20 @@ describe('§2.11 jujur di UI', () => {
     f.endsWith('.tsx'),
   );
 
-  it('setiap halaman memuat label "Data simulasi lab" (lewat PageHeader atau LAB_LABEL)', () => {
-    const header = readFileSync(join(REPO, 'apps/dashboard/src/components/PageHeader.tsx'), 'utf8');
-    expect(header).toMatch(/LAB_LABEL/);
+  it('setiap halaman memuat label data (lewat PageHeader, AuthLayout, atau LAB_LABEL)', () => {
+    for (const c of ['PageHeader', 'AuthLayout']) {
+      const text = readFileSync(join(REPO, `apps/dashboard/src/components/${c}.tsx`), 'utf8');
+      expect(text, c).toMatch(/LAB_LABEL/);
+    }
     for (const f of pages) {
       const text = readFileSync(join(REPO, 'apps/dashboard/src/pages', f), 'utf8');
-      expect(/<PageHeader|LAB_LABEL/.test(text), f).toBe(true);
+      expect(/<PageHeader|<AuthLayout|LAB_LABEL/.test(text), f).toBe(true);
+    }
+  });
+
+  it('label produksi hanya dipakai saat mode produksi (dataLabel), bukan di-hardcode di UI', () => {
+    for (const f of sourceFiles('apps/dashboard/src')) {
+      expect(readFileSync(f, 'utf8'), rel(f)).not.toMatch(/Trafik nyata \(produksi\)/);
     }
   });
 

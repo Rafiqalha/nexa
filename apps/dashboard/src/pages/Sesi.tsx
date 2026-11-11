@@ -1,4 +1,9 @@
-import { SessionDetailSchema, SessionListSchema, type SessionSummary } from '@nexa/shared';
+import {
+  type Rule,
+  SessionDetailSchema,
+  SessionListSchema,
+  type SessionSummary,
+} from '@nexa/shared';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ContactsTable } from '../components/ContactsTable';
@@ -8,6 +13,7 @@ import { useRuleDecision } from '../components/RulesPanel';
 import { SessionTimeline } from '../components/SessionTimeline';
 import { StatusText } from '../components/StatusText';
 import { ApiError, apiGet } from '../lib/api';
+import { useCan } from '../lib/auth';
 import { formatDateTimeWib, formatDuration, formatInt, formatScore } from '../lib/format';
 import { CLASSIFICATION, REASONS } from '../lib/labels';
 import { navItem } from '../lib/nav';
@@ -78,6 +84,7 @@ function SessionDetailView({ id }: { id: string }) {
   const detail = details.get(id);
   const [error, setError] = useState<string | null>(null);
   const { busyId, error: decisionError, decide } = useRuleDecision();
+  const canDecide = useCan('rules:decide');
 
   useEffect(() => {
     apiGet(`/api/sessions/${id}`, SessionDetailSchema)
@@ -166,8 +173,12 @@ function SessionDetailView({ id }: { id: string }) {
                 key={r.id}
                 rule={r}
                 busy={busyId === r.id}
-                onApprove={(rule) => void decide(rule, 'approve')}
-                onReject={(rule) => void decide(rule, 'reject')}
+                {...(canDecide
+                  ? {
+                      onApprove: (rule: Rule) => void decide(rule, 'approve'),
+                      onReject: (rule: Rule) => void decide(rule, 'reject'),
+                    }
+                  : {})}
               />
             ))}
           </div>

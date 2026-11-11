@@ -10,15 +10,16 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const envPath = resolve(root, '.env');
 const example = readFileSync(resolve(root, '.env.example'), 'utf8');
-const newToken = () => randomBytes(24).toString('base64url');
+/** AUTH_SECRET lebih panjang (min 32 karakter); token lain 24 byte acak. */
+const newToken = (key) => randomBytes(key === 'AUTH_SECRET' ? 48 : 24).toString('base64url');
 const KEY_LINE = /^\s*([A-Z0-9_]+)\s*=(.*)$/;
 /** Kunci secret yang diisi acak bila kosong. */
-const GENERATED = ['DASHBOARD_TOKEN', 'SURICATA_CONTROL_TOKEN'];
+const GENERATED = ['DASHBOARD_TOKEN', 'SURICATA_CONTROL_TOKEN', 'SETUP_TOKEN', 'AUTH_SECRET'];
 
 if (!existsSync(envPath)) {
   let content = example;
   for (const key of GENERATED) {
-    content = content.replace(new RegExp(`^${key}=.*$`, 'm'), `${key}=${newToken()}`);
+    content = content.replace(new RegExp(`^${key}=.*$`, 'm'), `${key}=${newToken(key)}`);
   }
   writeFileSync(envPath, content, { mode: 0o600 });
   console.log('[env] .env dibuat dari .env.example (token acak dibuat).');
@@ -36,14 +37,17 @@ const added = [];
 let tokenFilled = false;
 for (const key of GENERATED) {
   if (present.has(key) && present.get(key) === '') {
-    current = current.replace(new RegExp(`^[ \\t]*${key}[ \\t]*=.*$`, 'm'), `${key}=${newToken()}`);
+    current = current.replace(
+      new RegExp(`^[ \\t]*${key}[ \\t]*=.*$`, 'm'),
+      `${key}=${newToken(key)}`,
+    );
     tokenFilled = true;
   }
 }
 for (const line of example.split(/\r?\n/)) {
   const m = line.match(KEY_LINE);
   if (!m || present.has(m[1])) continue;
-  const value = GENERATED.includes(m[1]) ? newToken() : m[2];
+  const value = GENERATED.includes(m[1]) ? newToken(m[1]) : m[2];
   added.push(`${m[1]}=${value}`);
 }
 

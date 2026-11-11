@@ -1,22 +1,17 @@
-// Utilitas token login (murni, tanpa sessionStorage) agar mudah dites.
+// Utilitas token yang ditempel pengguna (murni, mudah dites).
 
 /**
- * Rapikan token yang ditempel operator: buang spasi, awalan `DASHBOARD_TOKEN=` dan tanda
- * kutip pembungkus yang ikut tersalin dari file .env. Token asli tidak memuat karakter itu.
+ * Rapikan token yang ditempel: buang spasi, awalan `SETUP_TOKEN=` / `DASHBOARD_TOKEN=` dan
+ * tanda kutip pembungkus yang ikut tersalin dari file .env atau panel variabel Railway.
  */
 export function normalizeToken(input: string): string {
-  let t = input.trim().replace(/^DASHBOARD_TOKEN\s*=\s*/i, '');
+  let t = input.trim().replace(/^(SETUP_TOKEN|DASHBOARD_TOKEN)\s*=\s*/i, '');
   const quoted = /^(['"])(.*)\1$/.exec(t);
   if (quoted) t = quoted[2] ?? '';
   return t.trim();
 }
 
-/** Pesan login per status HTTP pemeriksaan token (null = sensor tidak terjangkau). */
-export function loginErrorMessage(status: number | null, origin: string): string {
-  if (status === null) return `Sensor tidak terjangkau di ${origin}.`;
-  if (status === 429) return 'Terlalu banyak token salah. Tunggu 1 menit, lalu coba lagi.';
-  if (status === 401 || status === 403) {
-    return 'Token ditolak oleh sensor. Tempel nilai DASHBOARD_TOKEN dari .env sensor (tanpa nama variabel dan tanda kutip).';
-  }
-  return `Sensor menjawab HTTP ${status}. Periksa log sensor.`;
+/** Tautan sekali pakai lengkap (origin dashboard + path hash dari server). */
+export function absoluteLink(path: string, origin: string): string {
+  return `${origin.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 }

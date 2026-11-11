@@ -48,6 +48,15 @@
     min-height: 100%;
   }
 
+  :root {
+    /* Kontrol bawaan (select, scrollbar, date) mengikuti tema gelap. */
+    color-scheme: dark;
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--text-2);
+  }
+
   body {
     margin: 0;
     background: var(--bg);
