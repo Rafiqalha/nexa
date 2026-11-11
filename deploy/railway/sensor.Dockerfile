@@ -23,6 +23,8 @@ RUN pnpm install --frozen-lockfile --prod --filter sensor...
 # Dashboard dibangun di stage terpisah; dev dependency Vite tidak ikut image akhir.
 FROM manifests AS dashboard
 RUN pnpm install --frozen-lockfile --filter dashboard...
+# Vite 8 (rolldown) membaca tsconfig dashboard, yang meng-extend tsconfig.base.json di root.
+COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY apps/dashboard apps/dashboard
 RUN pnpm --filter dashboard build
