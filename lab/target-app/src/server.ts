@@ -1,16 +1,4 @@
-import { serve } from '@hono/node-server';
-import { createTargetApp } from './app';
+import { startTargetServer } from './listen';
 
-const port = Number(process.env.PORT ?? 3000);
-const hostname = process.env.HOST ?? '0.0.0.0';
-
-serve({ fetch: createTargetApp().fetch, port, hostname }, (info) => {
-  console.log(
-    JSON.stringify({
-      ts: new Date().toISOString(),
-      level: 'info',
-      msg: 'target-app listening',
-      port: info.port,
-    }),
-  );
-});
+// Bind bawaan 127.0.0.1; container menetapkan HOST sendiri (lihat listen.ts).
+startTargetServer(process.env);

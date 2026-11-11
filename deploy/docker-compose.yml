@@ -10,6 +10,9 @@ services:
       dockerfile: lab/target-app/Dockerfile
     init: true
     environment:
+      # Bind bawaan target adalah 127.0.0.1 (F-06). Di container, sensor menjangkaunya lewat
+      # jaringan internal `lab`; target tetap tanpa port publish ke host.
+      HOST: 0.0.0.0
       PORT: "3000"
     networks: [lab]
     healthcheck:

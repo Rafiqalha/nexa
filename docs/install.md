@@ -66,7 +66,8 @@ pnpm lab:up
 
 `pnpm build` membangun dashboard (`apps/dashboard/dist`) yang disajikan port admin. Lab lokal
 menjalankan target (`:3000`) dan sensor (`:8080`, `:8081`) sebagai proses Node; PID ada di
-`data/lab-local.json`, log di `data/lab-logs/`.
+`data/lab-local.json`, log di `data/lab-logs/`. Target hanya listen di `127.0.0.1`, sehingga
+mesin lain di jaringan tidak bisa memanggilnya langsung tanpa melewati sensor.
 
 **Suricata di WSL (opsional, Windows):** jalankan di dalam distro WSL (tanpa root):
 
@@ -206,8 +207,9 @@ Variabel service `sensor` (bukan secret):
 | `DATABASE_PATH`, `SURICATA_RULES_DIR` | `/data/nexa.db`, `/data/rules` |
 | `SURICATA_RUNNER`, `SURICATA_EXEC` | `exec`, `bash /opt/nexa/nexa-suricata.sh` |
 
-Variabel service `portal`: `HOST=::` dan `PORT=3000`. Healthcheck service `sensor` di
-`/healthz`, service `portal` di `/`.
+Variabel service `portal`: `HOST=::` dan `PORT=3000`. `HOST` wajib di-set: tanpanya portal
+hanya listen di `127.0.0.1` (bawaan target) dan tidak terjangkau sensor lewat jaringan privat.
+Healthcheck service `sensor` di `/healthz`, service `portal` di `/`.
 
 `X-Real-IP` diisi edge Railway dengan IP klien. Uji pasca-deploy mengirim `X-Real-IP` dan
 `X-Forwarded-For` palsu yang berbeda-beda: ketiga request tetap tercatat sebagai satu sesi
