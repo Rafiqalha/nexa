@@ -1,6 +1,7 @@
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { serve } from '@hono/node-server';
 import { createSensor } from './app';
+import { loadOrCreateSecret } from './auth/secret-file';
 import { type Config, ConfigError, loadConfig } from './config';
 import { openDb, runMigrations } from './db/client';
 import { createLogger } from './logger';
@@ -31,7 +32,10 @@ runMigrations(handle.db);
 
 const dashboardDist =
   config.admin.dashboardDist ?? join(findRepoRoot(), 'apps', 'dashboard', 'dist');
-const sensor = createSensor({ config, logger, db: handle.db, dashboardDist });
+// AUTH_SECRET dari env; bila tidak ada, dibuat sekali & disimpan di folder data (0600).
+const authSecret =
+  config.auth.secret ?? loadOrCreateSecret(join(dirname(config.db.path), 'auth-secret'), logger);
+const sensor = createSensor({ config, logger, db: handle.db, dashboardDist, authSecret });
 
 const publicServer = serve(
   { fetch: sensor.publicApp.fetch, port: config.sensor.port, hostname: config.sensor.host },

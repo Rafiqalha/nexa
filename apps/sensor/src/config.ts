@@ -36,6 +36,19 @@ const EnvSchema = z
     SENSOR_PORT: opt(port.default(8080)),
     UPSTREAM_URL: opt(z.url({ protocol: /^https?$/, error: 'harus URL http(s) yang valid' })),
     TRUST_PROXY: opt(bool.default(false)),
+    /**
+     * Header IP klien saat TRUST_PROXY=true: `x-forwarded-for` (entri pertama, bawaan),
+     * `x-forwarded-for-last` (entri terakhir = ditambahkan proxy tepercaya), atau nama header
+     * lain yang ditimpa proxy, mis. `x-real-ip`.
+     */
+    CLIENT_IP_HEADER: opt(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[a-z0-9-]{3,64}$/)
+        .default('x-forwarded-for'),
+    ),
 
     ADMIN_HOST: opt(z.string().default('127.0.0.1')),
     ADMIN_PORT: opt(port.default(8081)),
@@ -90,10 +103,6 @@ const EnvSchema = z
     path: ['SURICATA_CONTROL_TOKEN'],
     message: 'wajib di-set (min 16 karakter) bila SURICATA_RUNNER=control',
   })
-  .refine((e) => Boolean(e.AUTH_SECRET) || (e.NEXA_MODE === 'lab' && Boolean(e.DASHBOARD_TOKEN)), {
-    path: ['AUTH_SECRET'],
-    message: 'wajib di-set (min 32 karakter); di lab boleh kosong bila DASHBOARD_TOKEN di-set',
-  })
   .refine((e) => e.NEXA_MODE !== 'production' || Boolean(e.DASHBOARD_ORIGIN), {
     path: ['DASHBOARD_ORIGIN'],
     message: 'wajib di-set di produksi (origin https dashboard)',
@@ -104,7 +113,13 @@ export interface Config {
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   mode: 'lab' | 'production';
   orgName: string;
-  sensor: { host: string; port: number; upstreamUrl: URL; trustProxy: boolean };
+  sensor: {
+    host: string;
+    port: number;
+    upstreamUrl: URL;
+    trustProxy: boolean;
+    clientIpHeader: string;
+  };
   admin: {
     host: string;
     port: number;
@@ -114,7 +129,8 @@ export interface Config {
     /** Origin publik dashboard (tanpa slash akhir); null = diturunkan dari header Host. */
     publicOrigin: string | null;
   };
-  auth: { secret: string; setupToken: string | null };
+  /** secret null = dibuat & disimpan sekali di folder data oleh index.ts (produksi). */
+  auth: { secret: string | null; setupToken: string | null };
   db: { path: string };
   llm: { baseUrl: string; model: string; apiKey: string; dailyTokenBudget: number };
   detect: {
@@ -172,12 +188,13 @@ export function loadConfig(
     throw new ConfigError(['UPSTREAM_URL: wajib di-set']);
   }
   // Lab tanpa AUTH_SECRET: turunkan secara deterministik dari DASHBOARD_TOKEN agar sesi
-  // dan rahasia 2FA tetap valid setelah restart. Produksi wajib AUTH_SECRET sendiri.
+  // dan rahasia 2FA tetap valid setelah restart. Tanpa keduanya (mis. produksi), index.ts
+  // membuat secret acak sekali dan menyimpannya di folder data (izin 0600).
   const authSecret =
     e.AUTH_SECRET ??
-    createHash('sha256')
-      .update(`nexa-auth:${e.DASHBOARD_TOKEN ?? ''}`)
-      .digest('base64url');
+    (e.NEXA_MODE === 'lab' && e.DASHBOARD_TOKEN
+      ? createHash('sha256').update(`nexa-auth:${e.DASHBOARD_TOKEN}`).digest('base64url')
+      : null);
   const setupToken = e.SETUP_TOKEN ?? (e.NEXA_MODE === 'lab' ? (e.DASHBOARD_TOKEN ?? null) : null);
   return {
     env: e.NODE_ENV,
@@ -189,6 +206,7 @@ export function loadConfig(
       port: e.SENSOR_PORT,
       upstreamUrl: new URL(e.UPSTREAM_URL),
       trustProxy: e.TRUST_PROXY,
+      clientIpHeader: e.CLIENT_IP_HEADER,
     },
     admin: {
       host: e.ADMIN_HOST,

@@ -54,6 +54,8 @@ export interface SensorDeps {
   interrogation?: InterrogationConfig | null;
   /** Paket tagihan (default config/plans.json). */
   plans?: Plan[];
+  /** AUTH_SECRET hasil index.ts (env, atau dibuat sekali di folder data). */
+  authSecret?: string;
 }
 
 export interface Sensor {
@@ -148,6 +150,9 @@ export function createSensor(deps: SensorDeps): Sensor {
   // Intel LLM PASCA-SESI: antrean + redaksi + budget harian. Tidak pernah di jalur request.
   const budget = new DailyBudget(db, config.llm.dailyTokenBudget, now);
 
+  const authSecret = deps.authSecret ?? config.auth.secret;
+  if (!authSecret) throw new Error('AUTH_SECRET tidak tersedia (env atau folder data)');
+
   // Administrasi: audit, tagihan (paket & kursi), pengaturan berjalan, dan akun/sesi login.
   // Ketiganya saling membaca lewat closure (kursi <- akun, batas paket <- tagihan).
   const audit = new AuditLog(db, now);
@@ -174,7 +179,7 @@ export function createSensor(deps: SensorDeps): Sensor {
   const auth = new AuthService({
     db,
     audit,
-    box: new SecretBox(config.auth.secret),
+    box: new SecretBox(authSecret),
     setupToken: config.auth.setupToken,
     serviceToken: config.admin.dashboardToken,
     issuer: 'NEXA',
@@ -246,6 +251,7 @@ export function createSensor(deps: SensorDeps): Sensor {
     auth,
     mode: config.mode,
     trustProxy: config.sensor.trustProxy,
+    clientIpHeader: config.sensor.clientIpHeader,
     publicOrigin: config.admin.publicOrigin,
   };
   const orgName = () => settings.get().org.name;

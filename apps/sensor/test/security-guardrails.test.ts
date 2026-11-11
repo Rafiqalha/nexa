@@ -81,10 +81,16 @@ describe('§2.7–2.8 agen uji: hanya HTTP ke allowlist, tanpa eksekusi/eksploit
       scripts: Record<string, string>;
     };
     expect(rootPkg.scripts.build).not.toMatch(/lab/);
-    // Image sensor hanya menyalin manifest paket lab (untuk validasi lockfile), bukan kodenya.
-    const dockerfile = readFileSync(join(REPO, 'apps/sensor/Dockerfile'), 'utf8');
-    const labCopies = dockerfile.split('\n').filter((l) => /^\s*COPY\s+lab\//.test(l));
-    for (const line of labCopies) expect(line).toMatch(/^\s*COPY\s+lab\/[\w-]+\/package\.json\s/);
+    // Image sensor (compose & Railway) hanya menyalin manifest paket lab (untuk validasi
+    // lockfile), bukan kodenya.
+    for (const file of ['apps/sensor/Dockerfile', 'deploy/railway/sensor.Dockerfile']) {
+      const dockerfile = readFileSync(join(REPO, file), 'utf8');
+      const labCopies = dockerfile.split('\n').filter((l) => /^\s*COPY\s+lab\//.test(l));
+      expect(labCopies.length, file).toBeGreaterThan(0);
+      for (const line of labCopies) {
+        expect(line, file).toMatch(/^\s*COPY\s+lab\/[\w-]+\/package\.json\s/);
+      }
+    }
   });
 });
 

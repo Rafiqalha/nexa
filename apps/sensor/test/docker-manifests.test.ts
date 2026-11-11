@@ -16,6 +16,7 @@ const workspacePackages = WORKSPACE_DIRS.flatMap((dir) =>
 
 const DOCKERFILES = [
   'apps/sensor/Dockerfile',
+  'deploy/railway/sensor.Dockerfile',
   'lab/target-app/Dockerfile',
   'lab/attacker-agent/Dockerfile',
 ];

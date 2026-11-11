@@ -42,10 +42,42 @@ describe('loadConfig', () => {
     expect(problems.join('\n')).toMatch(/UPSTREAM_URL: wajib di-set/);
   });
 
-  it('gagal bila DASHBOARD_TOKEN kosong atau terlalu pendek', () => {
-    expect(problemsOf({ UPSTREAM_URL: 'http://x:1' }).join('\n')).toMatch(/DASHBOARD_TOKEN/);
+  it('DASHBOARD_TOKEN opsional (kosong = token layanan mati), tapi tidak boleh pendek', () => {
+    const c = loadConfig({ UPSTREAM_URL: 'http://x:1' });
+    expect(c.admin.dashboardToken).toBeNull();
+    // Tanpa AUTH_SECRET & token layanan: secret dibuat index.ts di folder data.
+    expect(c.auth.secret).toBeNull();
     expect(problemsOf({ ...validEnv, DASHBOARD_TOKEN: 'pendek' }).join('\n')).toMatch(
       /DASHBOARD_TOKEN: minimal 16 karakter/,
+    );
+  });
+
+  it('mode produksi: wajib DASHBOARD_ORIGIN; SETUP_TOKEN tidak jatuh ke DASHBOARD_TOKEN', () => {
+    expect(problemsOf({ ...validEnv, NEXA_MODE: 'production' }).join('\n')).toMatch(
+      /DASHBOARD_ORIGIN/,
+    );
+    const c = loadConfig({
+      ...validEnv,
+      NEXA_MODE: 'production',
+      DASHBOARD_ORIGIN: 'https://nexa.uji.test/',
+    });
+    expect(c.mode).toBe('production');
+    expect(c.admin.publicOrigin).toBe('https://nexa.uji.test');
+    expect(c.auth.setupToken).toBeNull();
+    expect(c.auth.secret).toBeNull();
+    // Lab: token layanan sekaligus token penyiapan & sumber secret turunan.
+    const lab = loadConfig(validEnv);
+    expect(lab.auth.setupToken).toBe(SECRET_TOKEN);
+    expect(lab.auth.secret).not.toBe(SECRET_TOKEN);
+  });
+
+  it('header IP klien di balik proxy bisa dipilih', () => {
+    expect(loadConfig(validEnv).sensor.clientIpHeader).toBe('x-forwarded-for');
+    expect(loadConfig({ ...validEnv, CLIENT_IP_HEADER: 'X-Real-IP' }).sensor.clientIpHeader).toBe(
+      'x-real-ip',
+    );
+    expect(problemsOf({ ...validEnv, CLIENT_IP_HEADER: 'bad header!' }).join('\n')).toMatch(
+      /CLIENT_IP_HEADER/,
     );
   });
 

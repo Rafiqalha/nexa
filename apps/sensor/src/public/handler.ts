@@ -46,10 +46,21 @@ function normalizeIp(ip: string | undefined): string {
   return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
 }
 
-export function clientIp(c: Context<{ Bindings: HttpBindings }>, trustProxy: boolean): string {
+export function clientIp(
+  c: Context<{ Bindings: HttpBindings }>,
+  trustProxy: boolean,
+  header = 'x-forwarded-for',
+): string {
   if (trustProxy) {
-    const first = c.req.header('x-forwarded-for')?.split(',')[0]?.trim();
-    if (first) return normalizeIp(first);
+    // `x-forwarded-for-last`: entri terakhir = alamat yang ditambahkan proxy tepercaya,
+    // tidak bisa dipalsukan klien yang mengirim X-Forwarded-For sendiri.
+    const last = header === 'x-forwarded-for-last';
+    const parts = (c.req.header(last ? 'x-forwarded-for' : header) ?? '')
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const picked = last ? parts[parts.length - 1] : parts[0];
+    if (picked) return normalizeIp(picked);
   }
   try {
     return normalizeIp(getConnInfo(c).remote.address);
@@ -89,7 +100,7 @@ export function createPublicApp(deps: PublicDeps): Hono<{ Bindings: HttpBindings
     const started = performance.now();
     const url = new URL(c.req.url);
     const pathAndQuery = `${url.pathname}${url.search}`;
-    const ip = clientIp(c, config.sensor.trustProxy);
+    const ip = clientIp(c, config.sensor.trustProxy, config.sensor.clientIpHeader);
     const headers = headersToBag(c.req.raw.headers);
     const ts = now();
     const hasBody = c.req.method !== 'GET' && c.req.method !== 'HEAD';

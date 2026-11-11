@@ -14,6 +14,8 @@ export interface AuthHttpDeps {
   auth: AuthService;
   mode: NexaMode;
   trustProxy: boolean;
+  /** Header IP klien di balik proxy (lihat CLIENT_IP_HEADER). */
+  clientIpHeader: string;
   /** Origin publik dashboard (DASHBOARD_ORIGIN), mis. https://nexa.example.org. */
   publicOrigin: string | null;
 }
@@ -23,11 +25,13 @@ export function sessionCookieName(mode: NexaMode): string {
   return mode === 'production' ? '__Host-nexa_session' : 'nexa_session';
 }
 
-export function requestIp(c: Context, deps: Pick<AuthHttpDeps, 'trustProxy'>): string {
-  return clientIp(c as Parameters<typeof clientIp>[0], deps.trustProxy);
+type IpDeps = Pick<AuthHttpDeps, 'trustProxy' | 'clientIpHeader'>;
+
+export function requestIp(c: Context, deps: IpDeps): string {
+  return clientIp(c as Parameters<typeof clientIp>[0], deps.trustProxy, deps.clientIpHeader);
 }
 
-export function requestContext(c: Context, deps: Pick<AuthHttpDeps, 'trustProxy'>) {
+export function requestContext(c: Context, deps: IpDeps) {
   return { ip: requestIp(c, deps), userAgent: c.req.header('user-agent') ?? '' };
 }
 
