@@ -1,0 +1,758 @@
+<!doctype html>
+<!--
+  Slide "Penjelasan Karya" NEXA untuk Kartika Cyber Hackathon 2026 (Tim Martex).
+  Satu <section class="slide"> = satu halaman PDF 16:9 (1920 × 1080 px).
+
+  Buat ulang PDF (docs/submission/slides.pdf):  node scripts/make-slides.mjs
+
+  Atribut yang diproses skrip itu:
+  - data-m="kunci"         angka dari docs/metrics.json; isi elemen harus sama persis dengan nilai
+                           hitungan skrip (format id-ID), kalau tidak skrip berhenti.
+  - data-bar / data-of     lebar batang = nilai data-bar ÷ nilai data-of (kunci metrik).
+  - data-icon="nama"       ikon Lucide asli dari lucide-react milik dashboard.
+  - data-mark              logo Simpul (DESIGN.md §4, docs/brand/logo.md).
+  - data-camo="seed"       pita loreng digital prosedural (dosis kecil, hanya slide judul & penutup).
+  Semua angka lab berlabel "Data simulasi lab". Jangan menulis klaim "100% lokal": demo memakai
+  API DeepSeek untuk intel pasca-sesi.
+-->
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>NEXA · Slide Penjelasan Karya · Tim Martex · Kartika Cyber Hackathon 2026</title>
+    <meta name="author" content="Tim Martex" />
+    <meta name="description" content="NEXA: deception defensif untuk agen AI penyerang. Kartika Cyber Hackathon 2026, kategori Penangkalan." />
+    <link rel="stylesheet" href="slides.css" />
+  </head>
+  <body>
+    <!-- 1. Judul ------------------------------------------------------------------------------>
+    <section class="slide s-title">
+      <div class="lockup"><i data-mark></i><b>NEXA</b></div>
+      <div class="hero">
+        <p class="kicker">Slide penjelasan karya</p>
+        <h1>Deception defensif untuk agen AI penyerang</h1>
+        <p class="lead">
+          NEXA mendeteksi agen AI di reverse proxy, menahannya di labirin umpan prosedural, lalu
+          menyusun draf aturan Suricata yang baru aktif setelah disetujui operator.
+        </p>
+      </div>
+      <div class="team">
+        <b>Tim Martex</b>
+        <span>Kartika Cyber Hackathon 2026 · Kategori Penangkalan</span>
+      </div>
+      <div class="shot"><img src="../screenshots/1-dashboard.jpg" alt="Dashboard NEXA dengan meteran token" /></div>
+      <div class="camo" data-camo="7"></div>
+    </section>
+
+    <!-- 2. Masalah ---------------------------------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">01</span> Masalah</p>
+      <h2 class="title">Agen AI penyerang murah dan tidak kenal lelah. Blokir statis selalu tertinggal.</h2>
+      <div class="cols3">
+        <div>
+          <i data-icon="bot"></i>
+          <h3>Serangan kini dijalankan agen</h3>
+          <p>
+            Agen AI yang dibekali tool HTTP memindai situs, mencari kredensial, dan mencoba celah
+            tanpa henti dengan biaya yang sangat murah.
+          </p>
+        </div>
+        <div>
+          <i data-icon="ban"></i>
+          <h3>Blokir mengajari penyerang</h3>
+          <p>
+            Daftar blokir IP dan signature selalu satu langkah di belakang. Respons 403 memberi
+            tahu agen kapan harus berganti alamat dan pola.
+          </p>
+        </div>
+        <div>
+          <i data-icon="wallet"></i>
+          <h3>LLM di jalur request membuka celah baru</h3>
+          <p>
+            Memanggil model untuk setiap request mengundang Denial of Wallet, dan mengirim log
+            mentah ke layanan cloud berisiko membocorkan data internal.
+          </p>
+        </div>
+      </div>
+      <div class="question">
+        <p>Bagaimana kalau kecerdasan agen penyerang justru dijadikan kelemahannya?</p>
+        <p>
+          Setiap halaman yang dibaca agen harus diproses modelnya, jadi dibayar dengan token. NEXA
+          menyajikan halaman umpan tanpa memanggil LLM di jalur request.
+        </p>
+      </div>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 3. Cara kerja ------------------------------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">02</span> Cara kerja</p>
+      <h2 class="title">Satu alur dari deteksi sampai aturan blokir</h2>
+      <div class="flow">
+        <p class="phase req label">Jalur request · deterministik, tanpa LLM</p>
+        <p class="phase post label">Pasca-sesi · setelah sesi idle 60 detik</p>
+
+        <div class="step" style="grid-column: 1">
+          <div class="head"><span class="mono">01</span><i data-icon="radar"></i></div>
+          <h3>Deteksi</h3>
+          <ul>
+            <li>Skor per sesi dari 4 sinyal: honeylink tersembunyi, UA otomasi, header browser hilang, dan ritme permintaan.</li>
+            <li>Mulai skor 0,6 sesi dibelokkan ke labirin dan tetap lengket; 0,85 ke atas ditandai agen.</li>
+            <li>Pengunjung sah diteruskan utuh ke aplikasi asli.</li>
+          </ul>
+        </div>
+        <div class="arrow" style="grid-column: 2"><i data-icon="chevron-right"></i></div>
+        <div class="step" style="grid-column: 3">
+          <div class="head"><span class="mono">02</span><i data-icon="waypoints"></i></div>
+          <h3>Labirin umpan</h3>
+          <ul>
+            <li>Halaman, API, robots.txt, dan server MCP palsu dibangkitkan prosedural dari seed.</li>
+            <li>Bandit memilih jenis umpan yang paling lama menahan agen.</li>
+            <li>Tanpa LLM, NEXA tidak memakai token selama agen tertahan.</li>
+          </ul>
+        </div>
+        <div class="arrow" style="grid-column: 4"><i data-icon="chevron-right"></i></div>
+        <div class="step" style="grid-column: 5">
+          <div class="head"><span class="mono">03</span><i data-icon="key-round"></i></div>
+          <h3>Canary</h3>
+          <ul>
+            <li>Kredensial dan dokumen palsu yang unik untuk tiap sesi.</li>
+            <li>Begitu dipakai di request mana pun, NEXA mencatat infrastruktur yang dipakai penyerang.</li>
+            <li>Agen mengira login-nya berhasil.</li>
+          </ul>
+        </div>
+        <div class="arrow" style="grid-column: 6"><i data-icon="chevron-right"></i></div>
+        <div class="step" style="grid-column: 7">
+          <div class="head"><span class="mono">04</span><i data-icon="brain-circuit"></i></div>
+          <h3>Intel pasca-sesi</h3>
+          <ul>
+            <li>Dosir sesi disamarkan dulu: IP, host, path, dan secret.</li>
+            <li>Budget harian dicek, lalu model dipanggil lewat satu pintu: <code>intel/llm.ts</code>.</li>
+            <li>Hasilnya pola serangan, dugaan model, dan usulan aturan.</li>
+          </ul>
+        </div>
+        <div class="arrow" style="grid-column: 8"><i data-icon="chevron-right"></i></div>
+        <div class="step" style="grid-column: 9">
+          <div class="head"><span class="mono">05</span><i data-icon="shield-check"></i></div>
+          <h3>Aturan + persetujuan</h3>
+          <ul>
+            <li>Draf aturan Suricata divalidasi <code>suricata -T</code>.</li>
+            <li>Operator menekan Setujui atau Tolak; nama dan waktunya dicatat.</li>
+            <li>Hanya aturan yang disetujui ditulis ke <code>nexa.rules</code>.</li>
+          </ul>
+        </div>
+      </div>
+      <p class="credit">
+        Berdiri di atas riset Mantis, LLM Agent Honeypot (Palisade Research), Cloudflare AI Labyrinth,
+        dan Nepenthes. Kebaruan NEXA ada di integrasinya: satu alur utuh yang aman dioperasikan,
+        dengan gerbang persetujuan operator.
+      </p>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 4. Arsitektur ------------------------------------------------------------------------->
+    <section class="slide dia">
+      <p class="kicker"><span class="mono">03</span> Arsitektur</p>
+      <h2 class="title">Sensor headless di depan aplikasi, model hanya pasca-sesi</h2>
+
+      <svg class="edges" viewBox="0 0 1920 1080" aria-hidden="true">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto">
+            <path class="ah" d="M2 1.5 9 5 2 8.5" />
+          </marker>
+          <marker id="ah-red" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto">
+            <path class="ah red" d="M2 1.5 9 5 2 8.5" />
+          </marker>
+        </defs>
+        <!-- Jalur request -->
+        <path class="e" d="M346 333H424" marker-end="url(#ah)" />
+        <path class="e red" d="M346 453H424" marker-end="url(#ah-red)" />
+        <path class="e" d="M896 333H1214" marker-end="url(#ah)" />
+        <path class="e red" d="M896 453H1214" marker-end="url(#ah-red)" />
+        <!-- Event ke SQLite -->
+        <path class="e" d="M661 496V554" marker-end="url(#ah)" />
+        <path class="e" d="M1520 496V554" marker-end="url(#ah)" />
+        <!-- Pasca-sesi -->
+        <path class="e" d="M221 632V710" marker-end="url(#ah)" />
+        <path class="e" d="M346 758H424" marker-end="url(#ah)" />
+        <path class="e" d="M346 884H424" marker-end="url(#ah)" />
+        <path class="e" d="M738 758H784" marker-end="url(#ah)" />
+        <path class="e" d="M1098 758H1144" marker-end="url(#ah)" />
+        <path class="e" d="M1458 758H1504" marker-end="url(#ah)" />
+        <path class="e" d="M738 884H784" marker-end="url(#ah)" />
+        <path class="e" d="M1098 884H1144" marker-end="url(#ah)" />
+        <path class="e" d="M1458 884H1504" marker-end="url(#ah)" />
+      </svg>
+
+      <p class="lane label" style="left: 96px; top: 244px">Jalur request · deterministik, tanpa LLM</p>
+      <div class="node" style="left: 96px; top: 290px; width: 250px; height: 86px">
+        <b><i data-icon="user"></i>Pengunjung</b><span>browser biasa</span>
+      </div>
+      <div class="node" style="left: 96px; top: 410px; width: 250px; height: 86px">
+        <b><i data-icon="bot" class="red"></i>Agen AI</b><span>berbasis LLM</span>
+      </div>
+      <div class="node" style="left: 426px; top: 290px; width: 470px; height: 206px">
+        <b><i data-icon="radar"></i>Sensor NEXA :8080</b>
+        <span>reverse proxy + deteksi<br />honeylink · UA otomasi ·<br />header browser · ritme<br />belokkan mulai skor 0,6</span>
+      </div>
+      <p class="elabel" style="left: 924px; top: 297px">sah: diteruskan utuh</p>
+      <p class="elabel red" style="left: 924px; top: 417px">curiga/agen: dibelokkan</p>
+      <div class="node" style="left: 1216px; top: 290px; width: 608px; height: 86px">
+        <b><i data-icon="server"></i>Aplikasi asli</b><span>pengunjung sah, byte per byte</span>
+      </div>
+      <div class="node" style="left: 1216px; top: 410px; width: 608px; height: 86px">
+        <b><i data-icon="waypoints"></i>Labirin umpan</b><span>prosedural + bandit · canary · MCP umpan</span>
+      </div>
+
+      <div class="node row" style="left: 96px; top: 556px; width: 1728px; height: 76px">
+        <b><i data-icon="database"></i>SQLite + Drizzle</b>
+        <span>sesi · event · canary · aturan · intel · budget LLM · akun · log audit</span>
+      </div>
+
+      <p class="lane label" style="left: 426px; top: 670px">Pasca-sesi · satu-satunya tempat model dipanggil</p>
+      <div class="node" style="left: 96px; top: 712px; width: 250px; height: 218px">
+        <b><i data-icon="timer"></i>Sesi ditutup</b><span>idle 60 detik,<br />hanya sesi jebakan</span>
+      </div>
+
+      <div class="node" style="left: 426px; top: 712px; width: 312px; height: 92px">
+        <b><i data-icon="eye-off"></i>Redaksi</b><span>IP, host, path, secret</span>
+      </div>
+      <div class="node" style="left: 786px; top: 712px; width: 312px; height: 92px">
+        <b><i data-icon="wallet"></i>Budget harian</b><span>kuota token per hari</span>
+      </div>
+      <div class="node" style="left: 1146px; top: 712px; width: 312px; height: 92px">
+        <b><i data-icon="cpu"></i>Satu pintu</b><span>intel/llm.ts</span>
+      </div>
+      <div class="node" style="left: 1506px; top: 712px; width: 318px; height: 92px">
+        <b><i data-icon="cloud"></i>Penyedia model</b><span>API DeepSeek / on-prem</span>
+      </div>
+
+      <div class="node" style="left: 426px; top: 838px; width: 312px; height: 92px">
+        <b><i data-icon="file-code"></i>Draf aturan</b><span>template + usulan LLM</span>
+      </div>
+      <div class="node" style="left: 786px; top: 838px; width: 312px; height: 92px">
+        <b><i data-icon="list-checks"></i>Validasi</b><span>suricata -T</span>
+      </div>
+      <div class="node gate" style="left: 1146px; top: 838px; width: 312px; height: 92px">
+        <b><i data-icon="user-check"></i>Persetujuan</b><span>operator, di dashboard</span>
+      </div>
+      <div class="node" style="left: 1506px; top: 838px; width: 318px; height: 92px">
+        <b><i data-icon="shield-check"></i>Suricata</b><span>nexa.rules + reload</span>
+      </div>
+
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 5. Teknologi -------------------------------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">04</span> Teknologi</p>
+      <h2 class="title">Teknologi yang dipakai</h2>
+      <table class="tech">
+        <tr>
+          <td>Bahasa &amp; runtime</td>
+          <td>TypeScript strict · Node.js 24 · pnpm</td>
+          <td>Satu monorepo: sensor, dashboard, desktop, landing, lab</td>
+        </tr>
+        <tr>
+          <td>Sensor &amp; proxy</td>
+          <td>Hono · zod</td>
+          <td>Reverse proxy, deteksi, labirin, API admin; semua input eksternal divalidasi zod</td>
+        </tr>
+        <tr>
+          <td>Data</td>
+          <td>SQLite (better-sqlite3) + Drizzle ORM</td>
+          <td>Sesi, event, canary, aturan, intel, budget LLM, akun, log audit</td>
+        </tr>
+        <tr>
+          <td>Realtime</td>
+          <td>Server-Sent Events (SSE)</td>
+          <td>Dashboard diperbarui tanpa polling</td>
+        </tr>
+        <tr>
+          <td>Dashboard</td>
+          <td>React 19 · Vite · Tailwind CSS 4 · shadcn/ui</td>
+          <td>UI flat dengan ikon Lucide, font Geist dan JetBrains Mono</td>
+        </tr>
+        <tr>
+          <td>Desktop</td>
+          <td>Electron 45 · installer NSIS</td>
+          <td>Hanya memuat dashboard; tanpa secret dan tanpa modul native</td>
+        </tr>
+        <tr>
+          <td>IDS</td>
+          <td>Suricata · <code>suricata -T</code></td>
+          <td>Validasi sintaks draf, lalu <code>nexa.rules</code> ditulis setelah disetujui</td>
+        </tr>
+        <tr>
+          <td>Model</td>
+          <td><code>intel/llm.ts</code> · klien OpenAI-compatible</td>
+          <td>Demo memakai API DeepSeek; bisa diarahkan ke Ollama/vLLM in-network lewat <code>LLM_BASE_URL</code></td>
+        </tr>
+        <tr>
+          <td>Agen ke agen</td>
+          <td>MCP SDK v2</td>
+          <td>Server MCP umpan di labirin, MCP intel baca-saja untuk analis</td>
+        </tr>
+        <tr>
+          <td>Kualitas &amp; deploy</td>
+          <td>Vitest · Biome · Docker Compose · Railway</td>
+          <td>Test regresi keamanan, lab terisolasi, demo live di Railway</td>
+        </tr>
+      </table>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 6. Fitur dashboard: Dashboard --------------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">05</span> Fitur dashboard</p>
+      <h2 class="title">Dashboard: dampak serangan terbaca dalam satu layar</h2>
+      <div class="shot-l"><img src="../screenshots/1-dashboard.jpg" alt="Dashboard NEXA" /></div>
+      <ul class="callouts">
+        <li>
+          <h3><i data-icon="flame"></i>Meteran token</h3>
+          <p>Token yang dibakar penyerang (estimasi batas bawah) berdampingan dengan token yang dipakai NEXA untuk intel pasca-sesi.</p>
+        </li>
+        <li>
+          <h3><i data-icon="layout-dashboard"></i>Ringkasan</h3>
+          <p>Sesi terjebak, rata-rata lama tertahan, kedalaman labirin, dan aturan yang menunggu.</p>
+        </li>
+        <li>
+          <h3><i data-icon="radar"></i>Sesi aktif</h3>
+          <p>Diperbarui realtime lewat SSE: sumber, status, skor, estimasi token, lama tertahan.</p>
+        </li>
+        <li>
+          <h3><i data-icon="shield-check"></i>Aturan menunggu</h3>
+          <p>Draf yang lolos validasi bisa langsung disetujui atau ditolak.</p>
+        </li>
+      </ul>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span>Data simulasi lab</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 7. Fitur dashboard: Sesi + Linimasa --------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">05</span> Fitur dashboard</p>
+      <h2 class="title">Sesi: kenapa klien ditandai dan apa yang ia lakukan</h2>
+      <div class="pair">
+        <figure>
+          <div class="crop"><img src="../screenshots/2-sesi.jpg" alt="Daftar sesi terdeteksi" /></div>
+          <figcaption>
+            <b><i data-icon="radar"></i>Sesi terdeteksi</b>
+            <p>Semua klien yang ditandai beserta skor, kedalaman labirin, estimasi token, dan lama tertahan. Sesi sah bisa ikut ditampilkan.</p>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="crop"><img src="../screenshots/3-linimasa-sesi.jpg" alt="Linimasa satu sesi agen" /></div>
+          <figcaption>
+            <b><i data-icon="scroll-text"></i>Linimasa sesi</b>
+            <p>Sinyal deteksi, canary yang dipakai, dan setiap langkah agen di labirin: robots.txt, honeylink, server MCP umpan. Deterministik per seed, jadi bisa direproduksi.</p>
+          </figcaption>
+        </figure>
+      </div>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span>Data simulasi lab</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 8. Fitur dashboard: Intelijen + Aturan ------------------------------------------------>
+    <section class="slide">
+      <p class="kicker"><span class="mono">05</span> Fitur dashboard</p>
+      <h2 class="title">Intelijen pasca-sesi dan gerbang persetujuan aturan</h2>
+      <div class="pair">
+        <figure>
+          <div class="crop"><img src="../screenshots/5-intel.jpg" alt="Intelijen ancaman per sesi" /></div>
+          <figcaption>
+            <b><i data-icon="brain-circuit"></i>Intelijen ancaman</b>
+            <p>Ringkasan LLM pasca-sesi: pola serangan, dugaan model atau framework dengan tingkat keyakinan, dan token yang dipakai. Pemakaian budget harian tampil di atas.</p>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="crop"><img src="../screenshots/4-aturan.jpg" alt="Aturan deteksi menunggu persetujuan" /></div>
+          <figcaption>
+            <b><i data-icon="shield-check"></i>Aturan deteksi</b>
+            <p>Draf Suricata yang lolos <code>suricata -T</code> menunggu Setujui atau Tolak. Riwayat keputusan mencatat siapa dan kapan; aturan aktif bisa diekspor sebagai <code>nexa.rules</code>.</p>
+          </figcaption>
+        </figure>
+      </div>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span>Data simulasi lab</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 9. Hasil lab: dengan vs tanpa NEXA ---------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">06</span> Hasil lab</p>
+      <h2 class="title">Usaha agen pindah dari aplikasi asli ke labirin</h2>
+      <p class="sub">
+        Agen uji deepseek-flash · median <span data-m="f.runs">6</span> run dengan NEXA dan
+        <span data-m="f.runsBase">3</span> run tanpa NEXA · target fiktif lab/target-app
+      </p>
+      <div class="res">
+        <div class="bars">
+          <h3>Permintaan agen yang sampai ke aplikasi asli</h3>
+          <div class="row base">
+            <div class="lbl">
+              <span>Tanpa NEXA</span>
+              <span class="mono"><span data-m="f.requestsBase">58</span> <small>dari</small> <span data-m="f.requestsBase">58</span></span>
+            </div>
+            <div class="track"><span class="bar" data-bar="f.requestsBase" data-of="f.requestsBase"></span></div>
+          </div>
+          <div class="row nexa">
+            <div class="lbl">
+              <span>Dengan NEXA</span>
+              <span class="mono"><span data-m="f.upstream">2</span> <small>dari</small> <span data-m="f.requests">35</span></span>
+            </div>
+            <div class="track"><span class="bar" data-bar="f.upstream" data-of="f.requestsBase"></span></div>
+          </div>
+          <p class="after">
+            <span class="mono" data-m="f.labyrinth">33</span> permintaan lainnya habis di labirin
+            umpan, dan "kredensial" yang ditemukan agen adalah canary.
+          </p>
+          <p class="caveat">
+            Agen uji dibatasi 15 langkah dan 250 ribu token per run, jadi lama tertahan dan token
+            dibatasi anggaran agen itu, bukan oleh NEXA. Model <span class="nw">deepseek-v4-pro</span>
+            menunjukkan pola yang sama: <span class="mono" data-m="p.requestsBase">77</span> permintaan
+            sampai aplikasi asli tanpa NEXA (<span class="mono" data-m="p.runsBase">1</span> run),
+            <span class="mono" data-m="p.upstream">2</span> dengan NEXA (median <span class="mono" data-m="p.runs">5</span> run).
+          </p>
+        </div>
+        <table class="cmp">
+          <tr>
+            <th>Median per run</th>
+            <th>Tanpa NEXA</th>
+            <th>Dengan NEXA</th>
+          </tr>
+          <tr>
+            <td>Permintaan HTTP agen</td>
+            <td class="n" data-m="f.requestsBase">58</td>
+            <td class="n" data-m="f.requests">35</td>
+          </tr>
+          <tr>
+            <td>…yang sampai ke aplikasi asli</td>
+            <td class="n" data-m="f.requestsBase">58</td>
+            <td class="n" data-m="f.upstream">2</td>
+          </tr>
+          <tr>
+            <td>…yang ditahan di labirin</td>
+            <td class="n">0</td>
+            <td class="n" data-m="f.labyrinth">33</td>
+          </tr>
+          <tr>
+            <td>Waktu tertahan di labirin (detik)</td>
+            <td class="n">0</td>
+            <td class="n" data-m="f.held">34</td>
+          </tr>
+          <tr>
+            <td>Token dibakar penyerang (aktual API)</td>
+            <td class="n" data-m="f.tokensBase">175.404</td>
+            <td class="n" data-m="f.tokens">204.079</td>
+          </tr>
+          <tr>
+            <td>Token NEXA (LLM intel pasca-sesi)</td>
+            <td class="n">0</td>
+            <td class="n accent" data-m="f.nexaTokens">3.122</td>
+          </tr>
+          <tr>
+            <td>Canary diberikan / dipakai penyerang</td>
+            <td class="n muted">-</td>
+            <td class="n"><span data-m="f.canaryIssued">36</span> / <span data-m="f.canaryUsed">2</span></td>
+          </tr>
+          <tr>
+            <td>Panggilan MCP umpan</td>
+            <td class="n muted">-</td>
+            <td class="n" data-m="f.mcp">10</td>
+          </tr>
+        </table>
+      </div>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span>Data simulasi lab · docs/metrics.md</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 10. Hasil lab: deteksi, false-positive, interogasi ------------------------------------>
+    <section class="slide">
+      <p class="kicker"><span class="mono">06</span> Hasil lab</p>
+      <h2 class="title">Agen cepat ditandai, pengunjung manusia tidak terganggu</h2>
+      <p class="sub">
+        Semua run dengan NEXA: <span data-m="runs">11</span> run agen uji, 2 model DeepSeek ·
+        pengunjung manusia disimulasikan scripts/lab-human.mjs
+      </p>
+      <div class="stats">
+        <div>
+          <div class="big" data-m="detected">11/11</div>
+          <p>run agen terdeteksi dan dijebak</p>
+          <p class="note">4 sinyal muncul di <span data-m="allSignals">11/11</span> run</p>
+        </div>
+        <div>
+          <div class="big"><span data-m="timeToTrap">1,8</span><small>detik</small></div>
+          <p>median sampai agen terjebak</p>
+          <p class="note">dihitung sejak permintaan pertamanya</p>
+        </div>
+        <div>
+          <div class="big" data-m="human">0/14</div>
+          <p>pengunjung manusia (simulasi) ditandai</p>
+          <p class="note">
+            <span data-m="humanNormal">0/8</span> jeda 3–15 detik · <span data-m="humanFast">0/6</span> jeda
+            1–3 detik · <span data-m="humanTrapped">0</span> dijebak
+          </p>
+        </div>
+        <div>
+          <div class="big"><span data-m="toDraft">98,9</span><small>detik</small></div>
+          <p>median sampai draf aturan tervalidasi siap ditinjau</p>
+          <p class="note">
+            <span data-m="endToDraft">61,7</span> detik setelah sesi berakhir, termasuk idle 60 detik ·
+            <span data-m="drafts">5</span> draf per sesi
+          </p>
+        </div>
+      </div>
+      <div class="interog">
+        <div>
+          <h3>Interogasi kognitif</h3>
+          <p class="tag">Eksperimental</p>
+          <p class="intro">Umpan teks di halaman labirin meminta agen mengirim deskripsi dirinya ke endpoint jebakan.</p>
+        </div>
+        <div class="cell">
+          <div class="big" data-m="hijack">2/11</div>
+          <p>run dibelokkan: agen benar-benar mengirim data ke endpoint jebakan</p>
+        </div>
+        <div class="cell">
+          <div class="big" data-m="disclosed">2/11</div>
+          <p>run mengungkap tugas dan daftar tool-nya</p>
+        </div>
+        <div class="cell">
+          <div class="big" data-m="leak">0/11</div>
+          <p>run membocorkan system prompt penuh</p>
+        </div>
+        <p class="honest">
+          Dilaporkan apa adanya. Sampel kecil, satu desain umpan, dan satu agen uji, jadi fitur ini
+          belum bisa diklaim andal. Deteksi, labirin, dan canary tidak bergantung padanya.
+        </p>
+      </div>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span>Data simulasi lab · docs/metrics.md</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 11. Keamanan & etika ------------------------------------------------------------------>
+    <section class="slide">
+      <p class="kicker"><span class="mono">07</span> Keamanan &amp; etika</p>
+      <h2 class="title">Defensif saja, keputusan tetap di tangan manusia</h2>
+      <div class="grid6">
+        <div>
+          <h3><i data-icon="shield"></i>Tanpa hack-back</h3>
+          <p>NEXA hanya menjawab request yang datang. Tidak pernah memindai, mengeksekusi, atau menghubungi mesin penyerang. Interogasi hanya berupa umpan teks.</p>
+        </div>
+        <div>
+          <h3><i data-icon="user-check"></i>Persetujuan wajib</h3>
+          <p>Tidak ada aturan yang di-deploy tanpa record persetujuan operator dan validasi <code>suricata -T</code>. Setiap keputusan tercatat di log audit.</p>
+        </div>
+        <div>
+          <h3><i data-icon="cpu"></i>Tanpa LLM di jalur request</h3>
+          <p>Deteksi, labirin, dan canary bersifat prosedural, sehingga penyerang tidak bisa memicu biaya model (Denial of Wallet).</p>
+        </div>
+        <div>
+          <h3><i data-icon="eye-off"></i>Redaksi sebelum keluar</h3>
+          <p>Hanya data sesi jebakan yang dikirim ke model, setelah IP, host, path, dan secret disamarkan. Log aplikasi asli tidak pernah dikirim.</p>
+        </div>
+        <div>
+          <h3><i data-icon="lock"></i>Secrets tidak ke UI</h3>
+          <p>API key hanya ada di environment sensor: tidak pernah di repo, dashboard, aplikasi desktop, atau log.</p>
+        </div>
+        <div>
+          <h3><i data-icon="flask-conical"></i>Jujur soal data dan model</h3>
+          <p>Angka lab berlabel Data simulasi lab, dari target fiktif dan agen uji minimal. NEXA <span class="nw">model-agnostic</span>: demo memakai API DeepSeek, deployment satuan bisa memakai model <span class="nw">in-network</span>.</p>
+        </div>
+      </div>
+      <p class="strip">
+        Akses dashboard: login wajib dengan 4 peran, 2FA TOTP, kunci akun setelah gagal berulang,
+        penjaga Origin, dan log audit. Bukti per batasan ada di docs/security-audit.md.
+      </p>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 12. Cara mencoba ---------------------------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">08</span> Cara mencoba</p>
+      <h2 class="title">Silakan dicoba langsung</h2>
+      <ul class="rows">
+        <li>
+          <i data-icon="layout-dashboard"></i>
+          <b>Dashboard live</b>
+          <div>
+            <a class="url" href="https://nexa-console.up.railway.app/#/daftar">nexa-console.up.railway.app/#/daftar</a>
+            <p>Daftar dengan nama, email, dan kata sandi, lalu langsung masuk sebagai Pemantau (baca-saja). Data di sini berlabel Trafik nyata (produksi).</p>
+          </div>
+        </li>
+        <li>
+          <i data-icon="circle-play"></i>
+          <b>Video tutorial (6:14)</b>
+          <div>
+            <span class="url muted">Tautan YouTube ada di formulir submission</span>
+            <p>Pemasangan dan demo lengkap, dari serangan sampai aturan blokir.</p>
+          </div>
+        </li>
+        <li>
+          <i data-icon="code"></i>
+          <b>Kode sumber</b>
+          <div>
+            <a class="url" href="https://github.com/Rafiqalha/nexa">github.com/Rafiqalha/nexa</a>
+            <p><code>pnpm install</code>, <code>pnpm env:init</code>, lalu <code>pnpm demo</code> menjalankan lab lokal lengkap dengan agen uji.</p>
+          </div>
+        </li>
+        <li>
+          <i data-icon="monitor"></i>
+          <b>Aplikasi desktop Windows</b>
+          <div>
+            <a class="url" href="https://github.com/Rafiqalha/nexa/releases/tag/v0.3.1">github.com/Rafiqalha/nexa/releases/tag/v0.3.1</a>
+            <p>Installer v0.3.1 langsung membuka NEXA live. Belum ditandatangani, jadi Windows menampilkan peringatan SmartScreen.</p>
+          </div>
+        </li>
+        <li>
+          <i data-icon="globe"></i>
+          <b>Landing page</b>
+          <div>
+            <a class="url" href="https://nexa-deception.vercel.app">nexa-deception.vercel.app</a>
+            <p>Ringkasan produk dan tur singkat.</p>
+          </div>
+        </li>
+        <li>
+          <i data-icon="server"></i>
+          <b>Portal demo yang dilindungi</b>
+          <div>
+            <a class="url" href="https://portal-bayu7.up.railway.app">portal-bayu7.up.railway.app</a>
+            <p>Portal fiktif BAYU-7. Setiap pengunjung melewati deteksi NEXA lebih dulu.</p>
+          </div>
+        </li>
+      </ul>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 13. Roadmap --------------------------------------------------------------------------->
+    <section class="slide">
+      <p class="kicker"><span class="mono">09</span> Roadmap</p>
+      <h2 class="title">Potensi pengembangan</h2>
+      <div class="road">
+        <div>
+          <p class="label col-head">Sudah berjalan</p>
+          <ul class="done">
+            <li><i data-icon="check"></i>Deteksi 4 sinyal di reverse proxy</li>
+            <li><i data-icon="check"></i>Labirin prosedural, bandit, dan server MCP umpan</li>
+            <li><i data-icon="check"></i>Canary kredensial dan dokumen per sesi</li>
+            <li><i data-icon="check"></i>Intel pasca-sesi dengan redaksi dan budget harian</li>
+            <li><i data-icon="check"></i>Draf aturan Suricata dengan gerbang persetujuan</li>
+            <li><i data-icon="check"></i>Dashboard web dan aplikasi desktop Windows</li>
+            <li><i data-icon="check"></i>Akun berperan, 2FA, log audit, demo live</li>
+          </ul>
+        </div>
+        <div>
+          <p class="label col-head">Berikutnya</p>
+          <ul class="next">
+            <li>
+              <i data-icon="brain-circuit"></i>
+              <div>
+                <b>Interogasi matang dan atribusi model</b>
+                <p>Lebih banyak model, desain umpan, dan run uji, ditambah sidik jari model untuk atribusi. Saat ini masih eksperimental.</p>
+              </div>
+            </li>
+            <li>
+              <i data-icon="server"></i>
+              <div>
+                <b>Model in-network penuh</b>
+                <p>Intel pasca-sesi dengan model on-premise (Ollama/vLLM) sebagai bawaan, agar deployment satuan bisa berjalan air-gapped.</p>
+              </div>
+            </li>
+            <li>
+              <i data-icon="gauge"></i>
+              <div>
+                <b>Decoy OT</b>
+                <p>Panel HMI palsu, sehingga labirin juga menjangkau penyerang yang mengincar aset OT.</p>
+              </div>
+            </li>
+            <li>
+              <i data-icon="target"></i>
+              <div>
+                <b>Mode Latihan</b>
+                <p>Arena red-team bawaan untuk mengukur ketahanan decoy tiap satuan.</p>
+              </div>
+            </li>
+            <li>
+              <i data-icon="boxes"></i>
+              <div>
+                <b>Siap skala produksi</b>
+                <p>Beberapa replika sensor dengan basis data bersama, dan installer desktop yang ditandatangani.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <footer class="foot">
+        <span class="brand"><i data-mark></i>NEXA</span>
+        <span class="event">Kartika Cyber Hackathon 2026 · Tim Martex</span>
+        <span class="pg"></span>
+      </footer>
+    </section>
+
+    <!-- 14. Penutup --------------------------------------------------------------------------->
+    <section class="slide s-end">
+      <div class="lockup"><i data-mark></i><b>NEXA</b></div>
+      <div class="hero">
+        <p>NEXA mengubah kecerdasan agen penyerang menjadi biaya bagi dirinya sendiri, sementara keputusan tetap di tangan manusia.</p>
+        <p>
+          Satu alur utuh dari deteksi sampai aturan yang disetujui operator, tanpa LLM di jalur
+          request, dan diukur apa adanya di lab sendiri.
+        </p>
+      </div>
+      <div class="thanks">
+        <div>
+          <b>Terima kasih</b>
+          <span>Tim Martex · Kartika Cyber Hackathon 2026 · Kategori Penangkalan</span>
+        </div>
+        <ul>
+          <li><a href="https://github.com/Rafiqalha/nexa">github.com/Rafiqalha/nexa</a></li>
+          <li><a href="https://nexa-console.up.railway.app/#/daftar">nexa-console.up.railway.app</a></li>
+          <li><a href="https://nexa-deception.vercel.app">nexa-deception.vercel.app</a></li>
+        </ul>
+      </div>
+      <div class="camo" data-camo="11"></div>
+    </section>
+  </body>
+</html>
