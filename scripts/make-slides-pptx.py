@@ -55,6 +55,7 @@ def slide_notes(section: str) -> str:
     """Teks slide per paragraf (tanpa footer), untuk catatan pembicara."""
     body = re.sub(r"<footer.*?</footer>", "", section, flags=re.S)
     body = re.sub(r"<svg.*?</svg>", "", body, flags=re.S)
+    body = re.sub(r"<small[^>]*>", " ", body)  # "1,8<small>detik" -> "1,8 detik"
     body = re.sub(r"\s+", " ", body)
     body = re.sub(r"</t[dh]>", " · ", body)
     body = re.sub(r"<br\s*/?>|</(p|h1|h2|h3|li|tr|b|a|figcaption|div)>", "\n", body)
