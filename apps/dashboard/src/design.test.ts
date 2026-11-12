@@ -114,7 +114,6 @@ describe('DESIGN.md: komponen', () => {
       'components/Sidebar.tsx',
       'components/CostMeter.tsx',
       'components/ui/button.tsx',
-      'components/LogoMark.tsx',
       'components/LiveDot.tsx',
     ]);
     const users = files

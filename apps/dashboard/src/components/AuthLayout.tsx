@@ -20,7 +20,7 @@ export function AuthLayout({
   return (
     <main className="nx-page mx-auto flex min-h-screen max-w-[440px] flex-col justify-center px-6 py-14 pt-[calc(var(--titlebar-h,0px)+56px)]">
       <div className="flex items-center gap-3">
-        <LogoMark size={36} />
+        <LogoMark size={28} />
         <p className="font-sans text-[20px] font-semibold tracking-[0.16em] text-fg">NEXA</p>
       </div>
       <h1 className="mt-8 text-[28px] font-medium tracking-[-0.01em]">{title}</h1>

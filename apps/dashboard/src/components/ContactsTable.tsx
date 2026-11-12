@@ -1,6 +1,6 @@
 import type { SessionSummary } from '@nexa/shared';
 import { formatDuration, formatInt, formatScore, formatTimeWib } from '../lib/format';
-import { CLASSIFICATION } from '../lib/labels';
+import { CLASSIFICATION, CLASSIFICATION_TONE, TONE_CLASS } from '../lib/labels';
 import { staggerStyle, useChangeCount } from '../lib/motion';
 import { sessionHref } from '../lib/router';
 import { cn } from '../lib/utils';
@@ -26,7 +26,12 @@ function SessionRow({ s, index }: { s: SessionSummary; index: number }) {
         >
           {s.sourceIp}
         </a>
-        <span className="block font-sans text-[12px] text-muted">
+        <span
+          className={cn(
+            'block font-sans text-[12px]',
+            TONE_CLASS[CLASSIFICATION_TONE[s.classification]],
+          )}
+        >
           {CLASSIFICATION[s.classification]}
         </span>
       </TableCell>

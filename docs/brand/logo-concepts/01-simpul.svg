@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img"><title>NEXA · Simpul</title><rect width="64" height="64" rx="2" fill="#0C0F0D"/>
+<defs><mask id="k01m" maskUnits="userSpaceOnUse"><rect width="64" height="64" fill="#fff"/><path d="M27.4 26.8 L36.6 37.2" stroke="#000" stroke-width="13"/></mask></defs>
+<path d="M16 50 V14 L48 50 V14 Z" stroke="#E8E6DC" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter" fill="none" mask="url(#k01m)"/>
+<path d="M25.4 24.5 L38.6 39.5" stroke="#E8E6DC" stroke-width="5" fill="none"/>
+<rect x="12.5" y="28.5" width="7" height="7" fill="#A3B18A"/></svg>

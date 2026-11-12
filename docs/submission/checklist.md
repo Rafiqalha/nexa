@@ -5,8 +5,8 @@ Deadline: **15 November 2026, 23:59 WIB**. Status per 11 November 2026.
 | Item rulebook | Status | Lokasi / catatan |
 |---|---|---|
 | Link publik (repositori) | ☑ Sudah | <https://github.com/Rafiqalha/nexa> (publik, branch `main`). Seluruh riwayat dipindai sebelum push: tidak ada nilai rahasia `.env`, dan `data/`, `lab/output/`, `apps/desktop/release/` tidak pernah ikut. |
-| Thumbnail 1200×630, ≤ 500 KB | ☑ Sudah | [`thumbnail.png`](thumbnail.png): 1200×630, 40 KB. Dibuat ulang dengan `python scripts/make-thumbnail.py` dari `docs/metrics.json`. |
-| Screenshot (maks. 5) | ☑ Sudah | [`screenshots/`](screenshots/): 5 JPG 1440 px (Dashboard, Sesi, Linimasa sesi, Aturan, Intelijen), diambil dengan `node scripts/capture-screenshots.mjs`. |
+| Thumbnail 1200×630, ≤ 500 KB | ☑ Sudah | [`thumbnail.png`](thumbnail.png): 1200×630, ±175 KB. Logo Simpul, font Geist dan JetBrains Mono, metrik dari `docs/metrics.json`, dan potongan UI dari screenshot Dashboard. Dibuat ulang dengan `node scripts/make-thumbnail.mjs`, yang juga menyalinnya ke `apps/landing/public/og.png`. |
+| Screenshot (maks. 5) | ☑ Sudah | [`screenshots/`](screenshots/): 5 JPG 2880×1800 (viewport 1440×900 skala 2, ≤ 500 KB per berkas): Dashboard, Sesi, Linimasa sesi, Aturan, Intelijen. Data dari run lab nyata 11 November (salinan `data/nexa.db`), berlabel "Data simulasi lab". Diambil 12 November dengan `node scripts/capture-screenshots.mjs --base http://localhost:8081/ --demo-login --session <uuid>`; langkahnya ada di kepala skrip. |
 | Video demo ≤ 10 menit | ☐ **Belum** | Perlu direkam tim. Urutan yang disarankan ada di bawah. |
 | Slide presentasi | ☐ **Belum** | Perlu dibuat tim. Bahan: README, `docs/architecture.md`, `docs/metrics.md`, `docs/prior-art.md`. |
 | Dokumentasi | ☑ Sudah | `README.md`, `docs/architecture.md`, `docs/install.md`, `docs/metrics.md`, `docs/interrogation.md`, `docs/security-audit.md`, `docs/prior-art.md`, `docs/versions.md`. |

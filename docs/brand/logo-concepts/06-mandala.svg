@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img"><title>NEXA · Mandala Pradaksina</title><rect width="64" height="64" rx="2" fill="#0C0F0D"/>
+<g stroke="#E8E6DC" stroke-width="3.5" stroke-linecap="square" stroke-linejoin="miter" fill="none">
+<path d="M36 8 H51 V13 H56 V28"/><path d="M56 36 V51 H51 V56 H36"/><path d="M28 56 H13 V51 H8 V36"/><path d="M8 28 V13 H13 V8 H28"/>
+<path d="M36 17 H43 V21 H47 V28"/><path d="M47 36 V43 H43 V47 H36"/><path d="M28 47 H21 V43 H17 V36"/><path d="M17 28 V21 H21 V17 H28"/>
+</g>
+<circle cx="32" cy="32" r="7" stroke="#E8E6DC" stroke-width="3" fill="none"/>
+<circle cx="32" cy="32" r="2.6" fill="#A3B18A"/></svg>

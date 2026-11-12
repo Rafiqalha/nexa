@@ -13,6 +13,10 @@ const STATUS_LABEL: Record<Rule['status'], { label: string; className: string }>
   rejected: { label: 'Ditolak', className: 'text-status-neutral' },
 };
 
+/** Satu segmen metadata rule, diawali pemisah "·" redup selebar 3 karakter mono. */
+const META_SEGMENT =
+  "inline-block whitespace-nowrap before:inline-block before:w-[3ch] before:text-center before:text-muted before:content-['·']";
+
 function validationText(rule: Rule): { text: string; className: string } {
   if (rule.syntaxValid === true)
     return { text: 'Sintaks valid (suricata -T)', className: 'text-fg-2' };
@@ -51,22 +55,28 @@ export function RuleItem({
         {rule.body}
       </pre>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="meta">
-          {rule.sessionId ? (
-            <a href={sessionHref(rule.sessionId)} className="transition-colors hover:text-fg">
-              sesi {rule.sessionId.slice(0, 8)}
-            </a>
-          ) : (
-            'tanpa sesi'
-          )}
-          {' · '}
-          <span className={v.className}>{v.text}</span>
-          {' · '}
-          <span className={status.className}>{status.label}</span>
-          {rule.decidedBy && rule.decidedAt
-            ? ` · ${rule.decidedBy}, ${formatDateTimeWib(rule.decidedAt)}`
-            : ''}
-        </p>
+        {/* Segmen tidak terpotong; baris digeser −3ch dan dipangkas, jadi pemisah "·" di awal
+            tiap baris jatuh di luar kotak dan tidak pernah menggantung saat panel sempit. */}
+        <div className="min-w-0 overflow-hidden">
+          <p className="meta -ml-[3ch]">
+            <span className={META_SEGMENT}>
+              {rule.sessionId ? (
+                <a href={sessionHref(rule.sessionId)} className="transition-colors hover:text-fg">
+                  sesi {rule.sessionId.slice(0, 8)}
+                </a>
+              ) : (
+                'tanpa sesi'
+              )}
+            </span>
+            <span className={cn(META_SEGMENT, v.className)}>{v.text}</span>
+            <span className={cn(META_SEGMENT, status.className)}>{status.label}</span>
+            {rule.decidedBy && rule.decidedAt ? (
+              <span className={META_SEGMENT}>
+                {`${rule.decidedBy}, ${formatDateTimeWib(rule.decidedAt)}`}
+              </span>
+            ) : null}
+          </p>
+        </div>
         {canDecide ? (
           <div className="flex gap-2">
             <Button

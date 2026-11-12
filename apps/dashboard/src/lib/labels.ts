@@ -23,6 +23,13 @@ export const CLASSIFICATION: Readonly<Record<Classification, string>> = {
   legit: 'Sah',
 };
 
+/** Warna teks klasifikasi (selalu bersama labelnya): agen = ancaman, sah = netral. */
+export const CLASSIFICATION_TONE: Readonly<Record<Classification, StatusTone>> = {
+  agent: 'trapped',
+  suspect: 'suspect',
+  legit: 'neutral',
+};
+
 export const REASONS: Readonly<Record<string, string>> = {
   honeylink: 'Honeylink',
   automation_ua: 'UA otomasi',

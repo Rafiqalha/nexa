@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img"><title>NEXA · Fatamorgana</title><rect width="64" height="64" rx="2" fill="#0C0F0D"/>
+<defs><mask id="k07m" maskUnits="userSpaceOnUse"><rect width="64" height="64" fill="#000"/>
+<g fill="#fff"><rect y="38.5" width="64" height="3"/><rect y="43.5" width="64" height="3"/><rect y="48.5" width="64" height="3"/><rect y="53.5" width="64" height="3"/><rect y="58.5" width="64" height="3"/></g></mask></defs>
+<path d="M19 31 V13 L45 31 V13" stroke="#E8E6DC" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+<path d="M8 36 H56" stroke="#8E9686" stroke-width="2" fill="none"/>
+<path d="M19 41 V59 L45 41 V59" stroke="#A3B18A" stroke-width="5" stroke-linecap="square" stroke-linejoin="miter" fill="none" mask="url(#k07m)"/></svg>

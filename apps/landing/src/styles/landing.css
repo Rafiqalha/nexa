@@ -114,14 +114,8 @@ input {
   display: inline-flex;
   flex: none;
 }
-.logo__frame {
-  stroke: var(--line-strong);
-}
-.logo__n {
+.logo__mark {
   stroke: var(--text);
-}
-.logo__bar {
-  stroke: var(--accent);
 }
 
 .wrap {
@@ -852,15 +846,9 @@ input {
   animation: nx-pill 420ms var(--ease) both;
 }
 .reel__mark {
-  display: inline-grid;
-  place-items: center;
   flex: none;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--bg);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
+  margin-left: 4px;
+  stroke: var(--bg);
 }
 .reel__controls {
   display: flex;
@@ -978,20 +966,8 @@ input {
   color: var(--line-strong);
 }
 .m-logo {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--line-strong);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-}
-.m-logo--lg {
-  width: 30px;
-  height: 30px;
-  font-size: 16px;
+  flex: none;
+  stroke: var(--text);
 }
 .m-live,
 .m-sub {

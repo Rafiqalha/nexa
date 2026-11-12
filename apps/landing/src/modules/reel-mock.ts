@@ -16,6 +16,10 @@ const fmt = (n: number, decimals = 0): string =>
 const icon = (name: string, size = 16): string =>
   `<span data-icon="${name}" data-size="${size}"></span>`;
 
+/** Tanda NEXA "Simpul" (sama dengan LogoMark dashboard). */
+const logo = (size: number): string =>
+  `<svg class="m-logo" viewBox="6 6 52 52" width="${size}" height="${size}" aria-hidden="true"><path d="M13 53.375V10.625L51 53.375V10.625Z" fill="none" stroke-width="8" stroke-linejoin="bevel"/></svg>`;
+
 const esc = (s: string): string =>
   s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
@@ -287,9 +291,9 @@ ${head('shield-check', 'Aturan deteksi', 'Sensor aktif · 10.48 WIB · Data simu
 /** HTML panggung lengkap. Teks aturan yang "diketik" diisi renderer dari RULE. */
 export function mockHtml(at: { issued: number; used: number }): string {
   return `<div class="m-app">
-<div class="m-top"><span class="m-crumb"><span class="m-logo">N</span><b>NEXA</b><span class="m-sep">/</span><span data-m="crumb">Dashboard</span></span><span class="m-live"><i class="m-dot"></i>Sensor aktif · 10.47 WIB</span></div>
+<div class="m-top"><span class="m-crumb">${logo(16)}<b>NEXA</b><span class="m-sep">/</span><span data-m="crumb">Dashboard</span></span><span class="m-live"><i class="m-dot"></i>Sensor aktif · 10.47 WIB</span></div>
 <div class="m-side">
-  <div class="m-brand"><span class="m-logo m-logo--lg">N</span><span><b>NEXA</b><small>Deception defensif</small></span></div>
+  <div class="m-brand">${logo(26)}<span><b>NEXA</b><small>Deception defensif</small></span></div>
   <div class="m-nav">${nav('dashboard', 'layout-dashboard', 'Dashboard')}${nav('sesi', 'radar', 'Sesi')}${nav('intel', 'brain-circuit', 'Intelijen')}${nav('aturan', 'shield-check', 'Aturan')}</div>
   <div class="m-user">${icon('user')}<span><small>Operator</small>Operator Lab</span>${icon('log-out')}</div>
 </div>

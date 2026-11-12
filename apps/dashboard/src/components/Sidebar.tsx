@@ -68,7 +68,7 @@ export function Sidebar({
   return (
     <aside className="flex min-w-0 flex-[1_1_220px] flex-col border-line bg-surface md:sticky md:top-[var(--titlebar-h,0px)] md:h-[calc(100vh-var(--titlebar-h,0px))] md:overflow-y-auto md:border-r">
       <div className="flex items-center gap-3 px-6 pt-8 pb-7">
-        <LogoMark size={32} />
+        <LogoMark size={26} />
         <div className="min-w-0">
           <p className="font-sans text-[18px] leading-none font-semibold tracking-[0.16em] text-fg">
             NEXA
@@ -125,9 +125,12 @@ export function Sidebar({
             />
             <span className="min-w-0">
               <span className="block truncate text-[13px] text-fg-2">{principal.name}</span>
-              <span className="meta block truncate">
-                {ROLE_LABELS[principal.role]}
-                {principal.isOwner ? ' · Pemilik' : ''}
+              {/* Pemilik selalu Admin dan tidak bisa diturunkan, jadi "Pemilik" saja agar muat. */}
+              <span
+                className="meta block truncate"
+                title={`${ROLE_LABELS[principal.role]}${principal.isOwner ? ' · Pemilik' : ''}`}
+              >
+                {principal.isOwner ? 'Pemilik' : ROLE_LABELS[principal.role]}
               </span>
             </span>
           </a>

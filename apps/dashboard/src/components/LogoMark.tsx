@@ -1,36 +1,25 @@
-// Tanda NEXA (selaras ikon aplikasi): huruf N + garis aksen sage. Flat, tanpa efek.
+// Tanda NEXA "Simpul" (selaras ikon aplikasi): huruf N yang ditutup kembali ke titik awalnya (Z),
+// sehingga N, X, dan ∞ menjadi satu goresan tak terputus. Ujung lancip dipancung (bevel). Satu warna,
+// tanpa bingkai, tanpa efek. Konstruksi: docs/brand/logo.md.
 import { cn } from '../lib/utils';
 
-export function LogoMark({ size = 28, className }: { size?: number; className?: string }) {
+export function LogoMark({ size = 24, className }: { size?: number; className?: string }) {
   return (
     <svg
       aria-hidden="true"
       focusable="false"
-      viewBox="0 0 28 28"
+      viewBox="6 6 52 52"
       width={size}
       height={size}
-      className={cn('shrink-0', className)}
+      className={cn('shrink-0 text-fg', className)}
     >
-      <rect
-        x="0.5"
-        y="0.5"
-        width="27"
-        height="27"
-        rx="2"
-        fill="none"
-        stroke="currentColor"
-        className="text-line-strong"
-      />
       <path
-        d="M8.5 19V8.5L19.5 19V8.5"
+        d="M13 53.375V10.625L51 53.375V10.625Z"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="square"
-        strokeLinejoin="miter"
-        className="text-fg"
+        strokeWidth="8"
+        strokeLinejoin="bevel"
       />
-      <path d="M8.5 23h11" stroke="currentColor" strokeWidth="2" className="text-accent" />
     </svg>
   );
 }

@@ -34,7 +34,7 @@ export function TitleBar({ section, showStatus }: { section: string; showStatus:
         height: 'env(titlebar-area-height, 40px)',
       }}
     >
-      <LogoMark size={20} />
+      <LogoMark size={16} />
       <span className="text-[12px] font-semibold tracking-[0.18em] text-fg">NEXA</span>
       <span aria-hidden="true" className="text-line-strong">
         /

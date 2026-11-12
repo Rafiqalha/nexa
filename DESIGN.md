@@ -14,7 +14,7 @@ Sistem desain Dashboard NEXA (web dan aplikasi desktop). v0.2 · 11 November 202
 2. **Gerak bermakna, tetap flat.** Gerak menandai peristiwa: konten masuk, data baru dari sensor, umpan balik klik, status koneksi. Hanya `transform`, `opacity`, dan warna, lewat keyframe `nx-*` sendiri (§8.6), tanpa easing yang memantul. Gerak berulang hanya untuk titik status sensor, spinner proses, dan loreng di dasar sidebar (§5); tidak ada hujan kode, scanline, atau animasi idle di area konten. Semua gerak wajib berhenti saat `prefers-reduced-motion`.
 3. **Tanpa badge & pil.** Status ditandai **warna teks** saja, bukan kapsul berlatar. Titik status sensor selalu didampingi label teks.
 4. **Tanpa kartu.** Bagian dipisah oleh **garis 1px** dan **ruang kosong**, bukan kotak berlatar atau border tebal.
-5. **Satu aksen.** Hijau sage satu-satunya warna aksen, dipakai hemat: item navigasi aktif, angka token NEXA, tombol aksi primer, logo NEXA, titik "Sensor aktif", outline fokus, kilasan data baru (§8.6), dan garis grafik (§8.5). Daftar komponen yang boleh memakai kelas aksen dijaga `apps/dashboard/src/design.test.ts`.
+5. **Satu aksen.** Hijau sage satu-satunya warna aksen, dipakai hemat: item navigasi aktif, angka token NEXA, tombol aksi primer, titik "Sensor aktif", outline fokus, kilasan data baru (§8.6), dan garis grafik (§8.5). Daftar komponen yang boleh memakai kelas aksen dijaga `apps/dashboard/src/design.test.ts`.
 6. **Tipografi membawa hierarki.** Ukuran, berat, dan warna teks — bukan dekorasi — yang membedakan penting vs tidak.
 7. **Angka itu produk.** Semua angka memakai font mono dengan angka tabular agar tidak "bergoyang" saat berubah, termasuk selama animasi menghitung naik.
 8. **Identitas lewat loreng digital, dosis kecil.** Satu tempat saja, nyaris menyatu dengan latar (lihat §5).
@@ -48,7 +48,7 @@ Palet diturunkan dari deskripsi warna PDL TNI baru (sage green, pola digital). *
 
 | Token | Hex | Pemakaian |
 |---|---|---|
-| `--accent` | `#A3B18A` | Satu-satunya aksen: nav aktif, token NEXA, tombol primer, logo, titik "Sensor aktif", outline fokus, kilasan data baru |
+| `--accent` | `#A3B18A` | Satu-satunya aksen: nav aktif, token NEXA, tombol primer, titik "Sensor aktif", outline fokus, kilasan data baru |
 | `--on-accent` | `#0C0F0D` | Teks di atas tombol aksen |
 | `--status-trapped` | `#E07A62` | "Terjebak" / ancaman (merah bata redup) |
 | `--status-suspect` | `#D9A441` | "Dicurigai" (kuning tanah) |
@@ -117,7 +117,7 @@ Berat maksimum 600 (hanya wordmark). Jangan pakai bold 700+ — terlihat murahan
 - Ikon hanya bila menambah makna. Tiap menu navigasi punya ikon (tabel di §7); judul halaman memakai ikon menunya; judul bagian, label stat, dan label meteran boleh memakai ikon.
 - Ikon di samping teks diberi `aria-hidden="true"`. Tombol ikon-saja **wajib** `aria-label`.
 - Satu set ikon saja di seluruh aplikasi. Jangan campur Lucide dan Phosphor.
-- Logo NEXA (`components/LogoMark.tsx`) adalah SVG flat sendiri, selaras dengan ikon aplikasi desktop: huruf N dalam bingkai `--line-strong` dengan garis bawah aksen.
+- Logo NEXA (`components/LogoMark.tsx`) adalah SVG flat sendiri, selaras dengan ikon aplikasi desktop: **Simpul**, huruf N yang ditutup kembali ke titik awalnya sehingga N, X, dan ∞ menjadi satu goresan, dengan ujung dipancung. Satu warna (`--text`), tanpa bingkai dan tanpa aksen. Konstruksi dan aturan pakai: `docs/brand/logo.md`.
 - **Dilarang** memakai lambang resmi TNI AD/PUSSIBERAD di dalam aplikasi seolah produk resmi. Motif terinspirasi loreng aman; logo institusi tidak.
 
 ---
@@ -145,7 +145,7 @@ Berat maksimum 600 (hanya wordmark). Jangan pakai bold 700+ — terlihat murahan
 - Padding konten: `40px 48px 56px`. Jarak antar blok besar: `48px`. Jarak antar kolom: `56px`.
 - Grid ringkasan: `repeat(auto-fit, minmax(180px, 1fr))`, gap 32px.
 - Tabel lebar dibungkus `overflow-x: auto`; `min-width: 560px`.
-- Radius: **2px** (tombol, logo). Elemen lain 0, kecuali titik status dan riak klik yang bulat. Tidak ada sudut membulat besar.
+- Radius: **2px** (tombol). Elemen lain 0, kecuali titik status dan riak klik yang bulat. Tidak ada sudut membulat besar.
 - Spacing kelipatan 4px (4, 8, 12, 16, 24, 32, 40, 48, 56).
 - Scrollbar tipis berwarna `--line-strong` di atas latar transparan, bukan scrollbar bawaan sistem.
 

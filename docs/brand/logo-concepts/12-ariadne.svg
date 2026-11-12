@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img"><title>NEXA · Benang Ariadne</title><rect width="64" height="64" rx="2" fill="#0C0F0D"/>
+<g stroke="#E8E6DC" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter" fill="none">
+<path d="M22 52 H52 V12 H12 V52"/><path d="M22 22 V52"/><path d="M22 22 H42"/><path d="M42 22 V42"/><path d="M32 42 H42"/><path d="M22 32 H32"/>
+</g>
+<path d="M17 60 V17 H47 V47 H27 V37 H37 V27 H27" stroke="#A3B18A" stroke-width="3.5" stroke-linecap="square" stroke-linejoin="miter" fill="none"/>
+<rect x="24" y="24" width="6" height="6" fill="#A3B18A"/></svg>
