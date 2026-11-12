@@ -1,0 +1,279 @@
+{
+  "about": "Footage demo langsung dari lab nyata: portal sebagai pengunjung, serangan agen AI live di dashboard, linimasa sesi, intel, dan persetujuan aturan. Jalankan dengan sensor lab di :8080/:8081 (salinan DB) dan target-app di :3000.",
+  "steps": [
+    {
+      "do": "load",
+      "url": "http://localhost:8081/",
+      "wait": 2500
+    },
+    {
+      "do": "login"
+    },
+    {
+      "do": "background",
+      "color": [255, 255, 255]
+    },
+    {
+      "do": "zoom",
+      "factor": 1.25
+    },
+    {
+      "do": "load",
+      "url": "http://localhost:8080/",
+      "wait": 3500
+    },
+    {
+      "do": "record",
+      "clip": "portal",
+      "duration": 18,
+      "cursorStart": [1100, 640],
+      "actions": [
+        {
+          "t": 1.2,
+          "move": [620, 330],
+          "ms": 1000
+        },
+        {
+          "t": 3.0,
+          "click": "Pengumuman",
+          "ms": 1000
+        },
+        {
+          "t": 7.0,
+          "move": [560, 400],
+          "ms": 1000
+        },
+        {
+          "t": 9.5,
+          "click": "Dokumen",
+          "ms": 1000
+        },
+        {
+          "t": 14.0,
+          "click": "Beranda",
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "do": "background",
+      "color": null
+    },
+    {
+      "do": "zoom",
+      "factor": 1
+    },
+    {
+      "do": "load",
+      "url": "http://localhost:8081/#/",
+      "wait": 4500
+    },
+    {
+      "do": "record",
+      "clip": "dashboard-live",
+      "duration": 72,
+      "cursorStart": [1340, 760],
+      "actions": [
+        {
+          "t": 3,
+          "mark": "attack",
+          "name": "attack",
+          "spawn": ["scripts/lab.mjs", "attack", "--", "--label", "video-demo"]
+        },
+        {
+          "t": 5,
+          "moveTo": "Token dibakar penyerang",
+          "ms": 1300
+        },
+        {
+          "t": 14,
+          "moveTo": "Terjebak",
+          "ms": 1300
+        },
+        {
+          "t": 24,
+          "moveTo": "Token dibakar penyerang",
+          "ms": 1300
+        },
+        {
+          "t": 38,
+          "moveTo": "Sesi terjebak",
+          "ms": 1300
+        },
+        {
+          "t": 52,
+          "moveTo": "Aturan menunggu persetujuan",
+          "ms": 1300
+        }
+      ]
+    },
+    {
+      "do": "waitFor",
+      "name": "sesi baru selesai + intel + draf aturan",
+      "timeout": 420000,
+      "every": 5000,
+      "required": true,
+      "code": "(async () => { const j = (u) => fetch(u, { headers: { accept: 'application/json' } }).then((r) => r.json()); const { sessions } = await j('/api/sessions?limit=20&flagged=1'); const fresh = sessions.filter((s) => s.classification === 'agent' && s.firstSeenAt > Date.now() - 30 * 60 * 1000).sort((a, b) => b.firstSeenAt - a.firstSeenAt); if (!fresh.length) return false; window.__sid = fresh[0].id; const d = await j('/api/sessions/' + window.__sid); return Boolean(d.intel && d.intel.status === 'done' && d.rules.some((r) => r.status === 'draft' && r.syntaxValid === true)); })()"
+    },
+    {
+      "do": "dump",
+      "file": "attack-session.json",
+      "code": "(async () => fetch('/api/sessions/' + window.__sid, { headers: { accept: 'application/json' } }).then((r) => r.json()))()"
+    },
+    {
+      "do": "js",
+      "name": "buka linimasa",
+      "code": "location.hash = '#/sesi/' + window.__sid; window.__sid"
+    },
+    {
+      "do": "sleep",
+      "ms": 3500
+    },
+    {
+      "do": "record",
+      "clip": "timeline",
+      "duration": 34,
+      "cursorStart": [1150, 650],
+      "actions": [
+        {
+          "t": 1.5,
+          "moveTo": "Sinyal deteksi",
+          "ms": 1200
+        },
+        {
+          "t": 5,
+          "scrollTo": {
+            "q": "Canary dipakai",
+            "offset": 96
+          },
+          "ms": 1800
+        },
+        {
+          "t": 9.5,
+          "scrollTo": {
+            "q": "Linimasa di dalam labirin",
+            "offset": 96
+          },
+          "ms": 1800
+        },
+        {
+          "t": 13,
+          "moveTo": "Honeylink",
+          "ms": 1200
+        },
+        {
+          "t": 17,
+          "scrollBy": 380,
+          "ms": 2600
+        },
+        {
+          "t": 23,
+          "scrollBy": 380,
+          "ms": 2600
+        },
+        {
+          "t": 29,
+          "move": [900, 420],
+          "ms": 1200
+        }
+      ]
+    },
+    {
+      "do": "js",
+      "name": "buka intel",
+      "code": "window.scrollTo(0, 0); location.hash = '#/intel'; true"
+    },
+    {
+      "do": "sleep",
+      "ms": 4000
+    },
+    {
+      "do": "record",
+      "clip": "intel",
+      "duration": 26,
+      "cursorStart": [1150, 650],
+      "actions": [
+        {
+          "t": 1.5,
+          "moveTo": "Dugaan model / framework",
+          "ms": 1200
+        },
+        {
+          "t": 5.5,
+          "moveTo": "Keyakinan",
+          "ms": 1100
+        },
+        {
+          "t": 9,
+          "moveTo": "Budget LLM hari ini",
+          "ms": 1200
+        },
+        {
+          "t": 13,
+          "scrollBy": 320,
+          "ms": 2600
+        },
+        {
+          "t": 19,
+          "scrollBy": 280,
+          "ms": 2400
+        }
+      ]
+    },
+    {
+      "do": "js",
+      "name": "buka aturan",
+      "code": "window.scrollTo(0, 0); location.hash = '#/aturan'; true"
+    },
+    {
+      "do": "sleep",
+      "ms": 4000
+    },
+    {
+      "do": "record",
+      "clip": "rules",
+      "duration": 28,
+      "cursorStart": [1150, 650],
+      "actions": [
+        {
+          "t": 1.5,
+          "moveTo": "Menunggu persetujuan",
+          "ms": 1200
+        },
+        {
+          "t": 4.5,
+          "move": [640, 330],
+          "ms": 1400
+        },
+        {
+          "t": 9,
+          "mark": "approve",
+          "click": "Setujui",
+          "ms": 1200
+        },
+        {
+          "t": 15,
+          "scrollTo": {
+            "q": "Riwayat keputusan",
+            "offset": 96
+          },
+          "ms": 1800
+        },
+        {
+          "t": 19,
+          "moveTo": "Aktif di Suricata",
+          "ms": 1300
+        }
+      ]
+    },
+    {
+      "do": "dump",
+      "file": "rules-after.json",
+      "code": "(async () => fetch('/api/rules', { headers: { accept: 'application/json' } }).then((r) => r.json()))()"
+    }
+  ],
+  "view": {
+    "width": 1440,
+    "height": 810
+  }
+}

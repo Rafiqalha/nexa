@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  /* Kanvas arsitektur beranimasi (gaya kanvas besar + kamera). Flat: garis 1px, radius 2px,
+     tanpa bayangan/gradien/glow. Semua keadaan dihitung dari detik t (deterministik). */
+  #world {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    transform-origin: 0 0;
+  }
+  .box {
+    position: absolute;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    border-radius: 2px;
+  }
+  .box h4 {
+    margin: 0;
+    font: 500 15px/1 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .box .t {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .box .s {
+    font: 400 17px/1.4 'JetBrains Mono', monospace;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+  .ico {
+    width: 30px;
+    height: 30px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .src {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 18px;
+    font-size: 24px;
+    font-weight: 500;
+  }
+  .chip {
+    position: absolute;
+    height: 46px;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    font: 400 17px 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+  .chip b {
+    font-weight: 500;
+  }
+  .bar {
+    position: absolute;
+    height: 10px;
+    background: var(--line);
+  }
+  .bar i {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--trapped);
+  }
+  .tick {
+    position: absolute;
+    width: 2px;
+    top: -8px;
+    bottom: -8px;
+    background: var(--text-2);
+  }
+  .cell {
+    position: absolute;
+    width: 74px;
+    height: 54px;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    background: var(--camo-1);
+  }
+  .cell::before,
+  .cell::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 18px;
+    height: 3px;
+    background: var(--line-strong);
+  }
+  .cell::before {
+    top: 14px;
+  }
+  .cell::after {
+    top: 26px;
+    right: 30px;
+  }
+  .key {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    color: var(--suspect);
+  }
+  .node {
+    position: absolute;
+    top: 0;
+    width: 218px;
+    height: 150px;
+    padding: 18px;
+  }
+  .arrow {
+    position: absolute;
+    height: 1px;
+    background: var(--line-strong);
+  }
+  .pkt {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    margin: -7px 0 0 -7px;
+  }
+  .note {
+    position: absolute;
+    font: 400 18px 'JetBrains Mono', monospace;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+  .ok {
+    color: var(--accent);
+  }
+  .red {
+    color: var(--trapped);
+  }
+  svg.lines {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: visible;
+  }
+  svg.lines path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.5;
+  }
+</style>
+<body>
+  <div id="world">
+    <svg class="lines" width="1920" height="1080" aria-hidden="true">
+      <path id="pHuman" d="M330 255 H470 M1030 255 H1250" />
+      <path id="pAgent" d="M330 415 H470 M1030 415 C1140 415 1140 500 1250 500" />
+    </svg>
+
+    <div class="note" style="left: 100px; top: 170px">INTERNET</div>
+    <div class="box src" id="human" style="left: 100px; top: 220px; width: 230px; height: 70px">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+      Pengunjung
+    </div>
+    <div class="box src" id="agent" style="left: 100px; top: 380px; width: 230px; height: 70px; color: var(--trapped)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></svg>
+      <span style="color: var(--text)">Agen AI</span>
+    </div>
+
+    <div class="box" id="nexa" style="left: 470px; top: 150px; width: 560px; height: 370px; padding: 26px">
+      <h4>NEXA · reverse proxy</h4>
+      <div class="t">Skor deteksi per sesi</div>
+      <div class="chip" id="c1" style="left: 26px; top: 120px; width: 248px"><span>UA otomasi</span><b>+</b></div>
+      <div class="chip" id="c2" style="left: 286px; top: 120px; width: 248px"><span>Header hilang</span><b>+</b></div>
+      <div class="chip" id="c3" style="left: 26px; top: 178px; width: 248px"><span>Ritme cepat</span><b>+</b></div>
+      <div class="chip" id="c4" style="left: 286px; top: 178px; width: 248px"><span>Honeylink</span><b>+</b></div>
+      <div class="note" style="left: 26px; top: 262px; color: var(--muted)">skor</div>
+      <div class="bar" style="left: 96px; top: 270px; width: 438px"><i id="fill"></i><span class="tick" style="left: 372px"></span></div>
+      <div class="note" id="thr" style="left: 400px; top: 296px; color: var(--muted); font-size: 16px">ambang 0,85</div>
+      <div class="note" id="score" style="left: 26px; top: 318px; font-size: 20px"></div>
+    </div>
+
+    <div class="box" id="app" style="left: 1250px; top: 150px; width: 470px; height: 150px; padding: 22px">
+      <h4>Aplikasi asli</h4>
+      <div class="t">Diteruskan apa adanya</div>
+      <div class="s">pengunjung sah · byte per byte</div>
+    </div>
+
+    <div class="box" id="maze" style="left: 1250px; top: 350px; width: 570px; height: 330px; padding: 22px">
+      <h4 class="red">Labirin umpan</h4>
+      <div id="cells"></div>
+      <div class="note" id="m1" style="left: 22px; top: 252px; font-size: 16px">seed 0x5e7a · prosedural</div>
+      <div class="note" id="m2" style="left: 22px; top: 280px; font-size: 16px">LLM di jalur request: <span class="ok">0</span> · token NEXA: <span class="ok">0</span></div>
+      <div class="note" id="m3" style="left: 330px; top: 252px; font-size: 16px"></div>
+    </div>
+
+    <div id="row2" style="position: absolute; left: 60px; top: 760px; width: 1800px; height: 160px">
+      <div class="note" style="left: 0; top: -44px; color: var(--muted)">SETELAH SESI DITUTUP</div>
+    </div>
+    <div class="note" id="final" style="left: 0; width: 1920px; text-align: center; top: 968px; font-size: 24px; color: var(--text)"></div>
+  </div>
+  <script>
+    const { $, cue, clamp, ease } = kit;
+    const ICON = {
+      eye: '<path d="m2 2 20 20"/><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/>',
+      cpu: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
+      file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      user: '<path d="m16 11 2 2 4-4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',
+      shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+      radar: '<path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18h.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/><circle cx="12" cy="12" r="2"/><path d="m13.41 10.59 5.66-5.66"/>',
+      key: '<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>',
+    };
+    const svg = (k, cls = 'ico') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
+    const NODES = [
+      ['radar', 'Sesi ditutup', '60 dtk tanpa request'],
+      ['eye', 'Redaksi', 'IP, host, path, secret'],
+      ['cpu', 'Intel LLM', 'satu pintu · budget harian'],
+      ['file', 'Draf Suricata', 'dari pola sesi'],
+      ['check', 'suricata -T', 'validasi sintaks'],
+      ['user', 'Persetujuan', 'operator, tercatat'],
+      ['shield', 'Aktif', 'deploy ke Suricata'],
+    ];
+    const cells = [];
+    window.__init = () => {
+      const row = $('#row2');
+      NODES.forEach(([ic, t, s], i) => {
+        const x = i * 262;
+        row.insertAdjacentHTML(
+          'beforeend',
+          `<div class="box node" id="n${i}" style="left:${x}px"><div style="color:var(--text-2)">${svg(ic)}</div><div class="t" style="font-size:22px">${t}</div><div class="s" style="font-size:15px">${s}</div></div>` +
+            (i < NODES.length - 1 ? `<div class="arrow" id="a${i}" style="left:${x + 218}px;top:75px;width:44px"></div>` : ''),
+        );
+      });
+      const holder = $('#cells');
+      for (let r = 0; r < 3; r++)
+        for (let c = 0; c < 6; c++) {
+          const d = document.createElement('div');
+          d.className = 'cell';
+          Object.assign(d.style, { left: `${22 + c * 88}px`, top: `${64 + r * 62}px` });
+          holder.appendChild(d);
+          cells.push(d);
+        }
+      cells.forEach((cel, i) => {
+        if (i % 4 === 1) cel.insertAdjacentHTML('beforeend', `<span class="key" style="right:4px;bottom:4px">${svg('key', 'ico')}</span>`);
+      });
+      for (const s of document.querySelectorAll('.key svg')) Object.assign(s.style, { width: '20px', height: '20px' });
+    };
+
+    // Titik pada polyline sederhana (dua segmen + kurva disederhanakan jadi titik-titik kontrol).
+    const PATH_H = [[330, 255], [470, 255], [1030, 255], [1250, 255]];
+    const PATH_A = [[330, 415], [470, 415], [1030, 415], [1140, 450], [1250, 500]];
+    const along = (pts, k) => {
+      const seg = [];
+      let total = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        seg.push(l);
+        total += l;
+      }
+      let d = clamp(k, 0, 1) * total;
+      for (let i = 0; i < seg.length; i++) {
+        if (d <= seg[i]) {
+          const f = d / seg[i];
+          return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f];
+        }
+        d -= seg[i];
+      }
+      return pts[pts.length - 1];
+    };
+    const packets = [];
+    const pkt = (color) => {
+      const p = document.createElement('div');
+      p.className = 'pkt';
+      p.style.background = color;
+      $('#world').appendChild(p);
+      packets.push(p);
+      return p;
+    };
+
+    const show = (el, t, at, d = 0.5, dy = 16) => {
+      const k = ease(clamp((t - at) / d, 0, 1));
+      el.style.opacity = k;
+      el.style.transform = `translateY(${(1 - k) * dy}px)`;
+    };
+    const lit = (el, on, color) => {
+      el.style.borderColor = on ? color : 'var(--line-strong)';
+      el.style.color = on ? 'var(--text)' : 'var(--muted)';
+    };
+    // Kamera: [t, cx, cy, skala]
+    const camAt = (t, keys) => {
+      let s = keys[0].slice(1);
+      for (const k of keys.slice(1)) {
+        if (t < k[0]) break;
+        const e = ease(clamp((t - k[0]) / 1.1, 0, 1));
+        s = s.map((v, i) => v + (k[i + 1] - v) * e);
+      }
+      return s;
+    };
+
+    let pH, pA, pA2;
+    window.__frame = (t) => {
+      if (!pH) {
+        pH = pkt('var(--accent)');
+        pA = pkt('var(--trapped)');
+        pA2 = pkt('var(--trapped)');
+      }
+      const T = {
+        proxy: cue('reverse proxy', 2.5),
+        sinyal: cue('empat sinyal', 6),
+        ua: cue('user agent', 7.5),
+        hdr: cue('header browser', 9),
+        rit: cue('ritme', 10.5),
+        hon: cue('honeylink', 12),
+        sah: cue('Pengunjung sah', 16),
+        skor: cue('Begitu skor', 19.5),
+        belok: cue('dibelokkan', 22),
+        lab: cue('Labirin ini', 25),
+        nollm: cue('tidak ada LLM', 28),
+        can: cue('canary', 33),
+        pakai: cue('Begitu canary', 37),
+        sesi: cue('Setelah sesi', 41),
+        samar: cue('disamarkan', 43),
+        rangkum: cue('dirangkum', 45),
+        draf: cue('draf aturan', 48),
+        valid: cue('divalidasi', 50.5),
+        setuju: cue('persetujuan operator', 53),
+        akhir: cue('NEXA hanya', 56),
+      };
+      // Kamera berpindah dari node ke node mengikuti narasi (gaya kanvas besar).
+      const cam = camAt(t, [
+        [0, 560, 350, 1.6],
+        [T.sah - 0.6, 900, 330, 1.25],
+        [T.skor - 0.4, 1000, 420, 1.1],
+        [T.lab - 0.6, 1535, 515, 1.62],
+        [T.sesi - 0.6, 960, 845, 1.0],
+        [T.akhir - 0.4, 960, 560, 0.94],
+      ]);
+      $('#world').style.transform = `translate(${960 - cam[0] * cam[2]}px, ${540 - cam[1] * cam[2]}px) scale(${cam[2]})`;
+
+      show($('#human'), t, 0.2);
+      show($('#agent'), t, 0.5);
+      show($('#nexa'), t, Math.min(T.proxy, 1.2));
+      show($('#app'), t, Math.min(T.proxy + 0.6, 2.2));
+      show($('#maze'), t, T.belok - 0.4);
+      document.querySelector('svg.lines').style.opacity = clamp((t - T.proxy) / 0.6, 0, 1);
+      for (const [id, at] of [['#c1', T.ua], ['#c2', T.hdr], ['#c3', T.rit], ['#c4', T.hon]]) lit($(id), t >= at, 'var(--trapped)');
+      // Skor naik per sinyal: 0,05 → 0,90 lalu melewati ambang.
+      const parts = [T.ua, T.hdr, T.rit, T.hon].filter((x) => t >= x).length;
+      const target = [0.05, 0.3, 0.5, 0.62, 0.9][parts];
+      const fillK = parts === 4 ? 0.62 + (0.9 - 0.62) * ease(clamp((t - T.skor) / 0.9, 0, 1)) : target;
+      $('#fill').style.width = `${(Math.min(fillK, 1) / 1.03) * 100}%`;
+      $('#score').innerHTML = t >= T.ua ? `${fillK.toFixed(2).replace('.', ',')} ${fillK >= 0.85 ? '<span class="red">≥ 0,85 · agen</span>' : ''}` : '';
+
+      // Paket pengunjung: lewat NEXA ke aplikasi, berulang.
+      const hk = t >= T.sah - 1 ? ((t - (T.sah - 1)) % 2.4) / 2.4 : -1;
+      pH.style.opacity = hk >= 0 ? 1 : 0;
+      if (hk >= 0) {
+        const [x, y] = along(PATH_H, hk);
+        pH.style.left = `${x}px`;
+        pH.style.top = `${y}px`;
+      }
+      // Paket agen: setelah skor lewat ambang, dibelokkan ke labirin lalu berputar di dalamnya.
+      const ak = t >= T.belok - 1.2 ? clamp((t - (T.belok - 1.2)) / 1.6, 0, 1) : -1;
+      pA.style.opacity = ak >= 0 ? 1 : 0;
+      if (ak >= 0 && ak < 1) {
+        const [x, y] = along(PATH_A, ak);
+        pA.style.left = `${x}px`;
+        pA.style.top = `${y}px`;
+      }
+      const inMaze = t >= T.belok + 0.4;
+      [pA, pA2].forEach((p, j) => {
+        if (!inMaze || (j === 1 && t < T.lab)) {
+          if (j === 1) p.style.opacity = 0;
+          return;
+        }
+        p.style.opacity = 1;
+        const step = Math.floor((t * 1.6 + j * 7) % 18);
+        const c = cells[step];
+        p.style.left = `${1250 + 22 + 37 + (step % 6) * 88}px`;
+        p.style.top = `${350 + 64 + 27 + Math.floor(step / 6) * 62}px`;
+        c.style.borderColor = 'var(--trapped)';
+      });
+      // Sel labirin muncul satu per satu saat narasi masuk ke labirin prosedural.
+      cells.forEach((c, i) => {
+        const at = T.lab + 0.2 + i * 0.12;
+        c.style.opacity = t >= T.belok ? (t >= at ? 1 : 0.25) : 0;
+        if (!(inMaze && Math.floor((t * 1.6) % 18) === i)) c.style.borderColor = 'var(--line-strong)';
+      });
+      document.querySelectorAll('.key').forEach((k, i) => {
+        k.style.opacity = t >= T.can + i * 0.15 ? 1 : 0;
+      });
+      $('#m1').style.opacity = clamp((t - T.lab) / 0.5, 0, 1);
+      $('#m2').style.opacity = clamp((t - T.nollm) / 0.5, 0, 1);
+      $('#m3').innerHTML = t >= T.pakai ? '<span class="red">canary dipakai → bukti</span>' : '';
+
+      // Baris pasca-sesi.
+      for (let i = 0; i < NODES.length; i++) {
+        const at = [T.sesi, T.samar, T.rangkum, T.draf, T.valid, T.setuju, T.setuju + 1.2][i];
+        show($(`#n${i}`), t, at - 0.2, 0.5, 12);
+        lit($(`#n${i}`), t >= at && t < at + 2.2 + (i === 6 ? 99 : 0), i === 6 ? 'var(--accent)' : 'var(--text-2)');
+        if (i < NODES.length - 1) $(`#a${i}`).style.opacity = t >= at + 0.3 ? 1 : 0;
+      }
+      $('#row2').style.opacity = clamp((t - (T.sesi - 0.6)) / 0.5, 0, 1);
+      $('#final').style.opacity = clamp((t - T.akhir) / 0.6, 0, 1);
+      $('#final').textContent = 'Hanya bertahan. Tidak ada serangan balik. Keputusan di tangan operator.';
+    };
+  </script>
+</body>
+</html>

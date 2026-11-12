@@ -1,0 +1,52 @@
+/* Gaya dasar adegan video: token DESIGN.md, flat (tanpa gradien, bayangan, glow, blur). */
+:root {
+  --bg: #0c0f0d;
+  --surface: #0f130f;
+  --line: #232a24;
+  --line-strong: #343d35;
+  --text: #e8e6dc;
+  --text-2: #b9bdb0;
+  --muted: #8e9686;
+  --accent: #a3b18a;
+  --trapped: #e07a62;
+  --suspect: #d9a441;
+  --camo-1: #161c17;
+  --camo-2: #1d251d;
+  --camo-3: #232b22;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Geist, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.muted {
+  color: var(--muted);
+}
+.accent {
+  color: var(--accent);
+}
+.abs {
+  position: absolute;
+}
+/* Label kejujuran di semua adegan berdata. Di atas pita subtitle (y >= 990 dibiarkan kosong). */
+.label {
+  position: absolute;
+  left: 96px;
+  bottom: 116px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 22px;
+  color: var(--muted);
+}

@@ -31,3 +31,7 @@ Thumbs.db
 
 # Vercel CLI (tautan proyek & output build lokal)
 .vercel
+
+# Cache bytecode Python (skrip video)
+__pycache__/
+*.pyc

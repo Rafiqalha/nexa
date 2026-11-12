@@ -1,0 +1,143 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "chapters": [
+    {
+      "n": 1,
+      "title": "Masalah"
+    },
+    {
+      "n": 2,
+      "title": "Cara kerja"
+    },
+    {
+      "n": 3,
+      "title": "Demo langsung"
+    },
+    {
+      "n": 4,
+      "title": "Hasil lab"
+    },
+    {
+      "n": 5,
+      "title": "Penutup"
+    }
+  ],
+  "segments": [
+    {
+      "id": "s00",
+      "chapter": 0,
+      "visual": {
+        "type": "scene",
+        "name": "intro"
+      },
+      "tts": "Sugeng rawuh, Bapak dan Ibu dewan juri. Kami tim NEXA. Dalam lima menit, kami akan menunjukkan bagaimana NEXA menjebak agen AI penyerang, tanpa mengganggu pengunjung yang sah.",
+      "sub": "Sugeng rawuh, Bapak dan Ibu dewan juri. Kami tim NEXA. Dalam 5 menit, kami akan menunjukkan bagaimana NEXA menjebak agen AI penyerang, tanpa mengganggu pengunjung yang sah."
+    },
+    {
+      "id": "s01",
+      "chapter": 1,
+      "visual": {
+        "type": "scene",
+        "name": "masalah"
+      },
+      "tts": "Serangan siber hari ini tidak lagi dijalankan manusia satu per satu. Agen AI yang dibekali tool bisa memindai situs, mencari kredensial, dan mencoba celah tanpa henti, dengan biaya yang sangat murah. Pertahanan statis seperti daftar blokir IP atau signature selalu tertinggal satu langkah. Maka pertanyaannya: bagaimana kalau kecerdasan penyerang justru kita jadikan kelemahannya?",
+      "sub": "Serangan siber hari ini tidak lagi dijalankan manusia satu per satu. Agen AI yang dibekali tool bisa memindai situs, mencari kredensial, dan mencoba celah tanpa henti, dengan biaya yang sangat murah. Pertahanan statis seperti daftar blokir IP atau signature selalu tertinggal satu langkah. Maka pertanyaannya: bagaimana kalau kecerdasan penyerang justru kita jadikan kelemahannya?"
+    },
+    {
+      "id": "s02",
+      "chapter": 2,
+      "visual": {
+        "type": "footage",
+        "name": "landing-arena"
+      },
+      "tts": "Itulah NEXA, lapisan deception defensif. NEXA berdiri di depan aplikasi sebagai reverse proxy. Pengunjung sah diteruskan apa adanya. Tetapi begitu sebuah klien terdeteksi sebagai agen AI, ia dibelokkan ke labirin umpan yang tidak punya ujung.",
+      "sub": "Itulah NEXA, lapisan deception defensif. NEXA berdiri di depan aplikasi sebagai reverse proxy. Pengunjung sah diteruskan apa adanya. Tetapi begitu sebuah klien terdeteksi sebagai agen AI, ia dibelokkan ke labirin umpan yang tidak punya ujung."
+    },
+    {
+      "id": "s03",
+      "chapter": 2,
+      "visual": {
+        "type": "footage",
+        "name": "landing-story",
+        "cues": ["Pertama", "Kedua", "Ketiga", "Keempat", "Kelima", "Keenam"]
+      },
+      "tts": "Cara kerjanya ada enam langkah. Pertama, deteksi. NEXA menilai sinyal seperti user agent otomasi, header browser yang hilang, ritme yang terlalu cepat, dan honeylink, yaitu tautan yang hanya dilihat mesin. Kedua, agen dibelokkan. Ketiga, ia ditahan di labirin prosedural yang dibangkitkan dari seed, tanpa LLM sama sekali. Keempat, umpan disisipi canary, yaitu kredensial dan dokumen palsu yang bisa dilacak. Kelima, setelah sesi selesai, intelijen dirangkum oleh LLM dari data yang sudah disamarkan. Keenam, NEXA menyusun draf aturan Suricata, dan tidak ada yang aktif tanpa persetujuan operator.",
+      "sub": "Cara kerjanya ada 6 langkah. Pertama, deteksi. NEXA menilai sinyal seperti user-agent otomasi, header browser yang hilang, ritme yang terlalu cepat, dan honeylink, yaitu tautan yang hanya dilihat mesin. Kedua, agen dibelokkan. Ketiga, ia ditahan di labirin prosedural yang dibangkitkan dari seed, tanpa LLM sama sekali. Keempat, umpan disisipi canary, yaitu kredensial dan dokumen palsu yang bisa dilacak. Kelima, setelah sesi selesai, intelijen dirangkum oleh LLM dari data yang sudah disamarkan. Keenam, NEXA menyusun draf aturan Suricata, dan tidak ada yang aktif tanpa persetujuan operator."
+    },
+    {
+      "id": "s04",
+      "chapter": 3,
+      "visual": {
+        "type": "footage",
+        "name": "portal"
+      },
+      "tts": "Sekarang kita masuk ke demo. Ini portal fiktif BAYU tujuh yang kami lindungi di lab. Bagi pengunjung biasa, situs ini tampil normal, dan NEXA sama sekali tidak terlihat.",
+      "sub": "Sekarang kita masuk ke demo. Ini portal fiktif BAYU-7 yang kami lindungi di lab. Bagi pengunjung biasa, situs ini tampil normal, dan NEXA sama sekali tidak terlihat."
+    },
+    {
+      "id": "s05",
+      "chapter": 3,
+      "visual": {
+        "type": "footage",
+        "name": "dashboard-live",
+        "pip": "terminal"
+      },
+      "tts": "Sekarang kami lepaskan agen AI penyerang, yang dijalankan model DeepSeek dengan tool HTTP. Panel di kanan bawah menampilkan setiap permintaannya, sesuai catatan sensor. Perhatikan dashboard. Dalam hitungan detik, agen terdeteksi dan statusnya menjadi terjebak. Setiap halaman umpan yang ia baca menambah token yang dibakar penyerang. Ia mengira sedang menemukan arsip internal, padahal semua isinya palsu.",
+      "sub": "Sekarang kami lepaskan agen AI penyerang, yang dijalankan model DeepSeek dengan tool HTTP. Panel di kanan bawah menampilkan setiap permintaannya, sesuai catatan sensor. Perhatikan dashboard. Dalam hitungan detik, agen terdeteksi dan statusnya menjadi terjebak. Setiap halaman umpan yang ia baca menambah token yang dibakar penyerang. Ia mengira sedang menemukan arsip internal, padahal semua isinya palsu."
+    },
+    {
+      "id": "s06",
+      "chapter": 3,
+      "visual": {
+        "type": "footage",
+        "name": "timeline"
+      },
+      "tts": "Di linimasa sesi, setiap langkah agen tercatat. Ia membuka berkas robots, lalu langsung mengikuti honeylink ke arsip internal. Setiap respons umpan menyisipkan canary. Ketika canary itu dipakai, alamat pemakainya tercatat sebagai infrastruktur penyerang. Karena labirinnya deterministik per seed, setiap sesi bisa direproduksi untuk investigasi.",
+      "sub": "Di linimasa sesi, setiap langkah agen tercatat. Ia membuka robots.txt, lalu langsung mengikuti honeylink ke arsip internal. Setiap respons umpan menyisipkan canary. Ketika canary itu dipakai, alamat pemakainya tercatat sebagai infrastruktur penyerang. Karena labirinnya deterministik per seed, setiap sesi bisa direproduksi untuk investigasi."
+    },
+    {
+      "id": "s07",
+      "chapter": 3,
+      "visual": {
+        "type": "footage",
+        "name": "intel"
+      },
+      "tts": "Setelah sesi selesai, NEXA merangkum intelijennya: pola serangan, serta dugaan model atau framework beserta tingkat keyakinannya. Data disamarkan dulu sebelum dikirim ke model, dan pemakaiannya dibatasi budget harian.",
+      "sub": "Setelah sesi selesai, NEXA merangkum intelijennya: pola serangan, serta dugaan model atau framework beserta tingkat keyakinannya. Data disamarkan dulu sebelum dikirim ke model, dan pemakaiannya dibatasi budget harian."
+    },
+    {
+      "id": "s08",
+      "chapter": 3,
+      "visual": {
+        "type": "footage",
+        "name": "rules",
+        "cues": ["Setujui"]
+      },
+      "tts": "Dari sesi itu lahir draf aturan Suricata yang sudah lolos validasi sintaks. Keputusan tetap di tangan manusia. Operator meninjau, lalu menekan Setujui. Baru setelah itu aturan aktif, dan tercatat siapa yang menyetujuinya.",
+      "sub": "Dari sesi itu lahir draf aturan Suricata yang sudah lolos validasi sintaks (suricata -T). Keputusan tetap di tangan manusia. Operator meninjau, lalu menekan Setujui. Baru setelah itu aturan aktif, dan tercatat siapa yang menyetujuinya."
+    },
+    {
+      "id": "s09",
+      "chapter": 4,
+      "visual": {
+        "type": "scene",
+        "name": "hasil",
+        "cues": ["Sebelas", "Tanpa", "Dengan", "Agen membakar", "Empat belas", "Interogasi"]
+      },
+      "tts": "Inilah hasil lab kami. Sebelas dari sebelas run agen terdeteksi dan dijebak, dengan median satu koma delapan detik. Tanpa NEXA, seluruh lima puluh delapan permintaan agen sampai ke aplikasi asli. Dengan NEXA, hanya dua dari tiga puluh lima, sisanya tertahan di labirin. Agen membakar lebih dari dua ratus ribu token, sementara NEXA hanya memakai sekitar tiga ribu token untuk intel. Empat belas sesi pengunjung manusia simulasi, tidak satu pun yang ditandai. Interogasi agen masih eksperimental, dan kami laporkan apa adanya.",
+      "sub": "Inilah hasil lab kami. 11 dari 11 run agen terdeteksi dan dijebak, dengan median 1,8 detik. Tanpa NEXA, seluruh 58 permintaan agen sampai ke aplikasi asli. Dengan NEXA, hanya 2 dari 35, sisanya tertahan di labirin. Agen membakar lebih dari 200 ribu token, sementara NEXA hanya memakai sekitar 3 ribu token untuk intel. 14 sesi pengunjung manusia simulasi, tidak satu pun yang ditandai. Interogasi agen masih eksperimental, dan kami laporkan apa adanya."
+    },
+    {
+      "id": "s10",
+      "chapter": 5,
+      "visual": {
+        "type": "scene",
+        "name": "outro"
+      },
+      "tts": "NEXA mengubah kecerdasan agen penyerang menjadi biaya bagi dirinya sendiri, sementara keputusan tetap di tangan manusia. Semua yang tampil di video ini berasal dari run lab nyata. Dashboard live, kode, dan aplikasi desktopnya bisa Bapak dan Ibu coba lewat tautan di layar. Matur nuwun.",
+      "sub": "NEXA mengubah kecerdasan agen penyerang menjadi biaya bagi dirinya sendiri, sementara keputusan tetap di tangan manusia. Semua yang tampil di video ini berasal dari run lab nyata. Dashboard live, kode, dan aplikasi desktopnya bisa Bapak dan Ibu coba lewat tautan di layar. Matur nuwun."
+    }
+  ]
+}

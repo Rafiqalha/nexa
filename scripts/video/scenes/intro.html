@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  .lock {
+    position: absolute;
+    left: 50%;
+    top: 400px;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 64px;
+  }
+  .lock svg {
+    width: 250px;
+    height: 250px;
+    overflow: visible;
+  }
+  .word {
+    font-weight: 600;
+    font-size: 150px;
+    letter-spacing: 0.16em;
+    line-height: 1;
+  }
+  .tag {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 640px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 50px;
+    letter-spacing: -0.01em;
+    color: var(--text-2);
+  }
+  .meta {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 734px;
+    text-align: center;
+    font-size: 28px;
+    color: var(--muted);
+  }
+  .agenda {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 836px;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    font-size: 30px;
+    color: var(--text-2);
+  }
+  .agenda span {
+    padding: 0 34px;
+    border-left: 1px solid var(--line-strong);
+    opacity: 0;
+  }
+  .agenda span:first-child {
+    border-left: 0;
+  }
+  .agenda b {
+    font: 500 24px 'JetBrains Mono', monospace;
+    color: var(--accent);
+    margin-right: 14px;
+  }
+</style>
+<body>
+  <div class="lock">
+    <svg viewBox="6 6 52 52" aria-hidden="true">
+      <path id="n" d="M13 53.375V10.625L51 53.375V10.625" fill="none" stroke="#E8E6DC" stroke-width="8" stroke-linejoin="bevel" />
+      <path id="z" d="M51 10.625L13 53.375" fill="none" stroke="#A3B18A" stroke-width="8" />
+      <path id="full" d="M13 53.375V10.625L51 53.375V10.625Z" fill="none" stroke="#E8E6DC" stroke-width="8" stroke-linejoin="bevel" opacity="0" />
+    </svg>
+    <div class="word" id="word">NEXA</div>
+  </div>
+  <div class="tag" id="tag">Deception defensif untuk agen AI penyerang</div>
+  <div class="meta mono" id="meta">Kartika Cyber Hackathon 2026 · Penangkalan</div>
+  <div class="agenda" id="agenda"><span><b>01</b>Masalah</span><span><b>02</b>Cara kerja</span><span><b>03</b>Memasang</span><span><b>04</b>Demo langsung</span></div>
+  <div class="label" id="label">Video tutorial · Data simulasi lab</div>
+  <script>
+    const { prog, reveal, $ } = kit;
+    // Panjang garis tengah: N (tiang, diagonal, tiang) dan goresan penutup Z.
+    const N = 42.75 + Math.hypot(38, 42.75) + 42.75;
+    const Z = Math.hypot(38, 42.75);
+    window.__frame = (t) => {
+      const kn = prog(t, 0.3, 1.3, kit.ease);
+      $('#n').style.strokeDasharray = `${N}`;
+      $('#n').style.strokeDashoffset = `${N * (1 - kn)}`;
+      const kz = prog(t, 1.55, 0.65, kit.ease);
+      $('#z').style.strokeDasharray = `${Z}`;
+      $('#z').style.strokeDashoffset = `${Z * (1 - kz)}`;
+      // Setelah tertutup, goresan penuh berbevel menggantikan; sage memudar ke tulang.
+      const kf = prog(t, 2.25, 0.6);
+      $('#full').setAttribute('opacity', kf.toFixed(3));
+      $('#n').setAttribute('opacity', (1 - kf).toFixed(3));
+      $('#z').setAttribute('opacity', (1 - kf).toFixed(3));
+      const kw = prog(t, 2.35, 0.8);
+      $('#word').style.opacity = kw.toFixed(3);
+      $('#word').style.transform = `translateX(${((1 - kw) * -28).toFixed(2)}px)`;
+      reveal($('#tag'), t, 3.0, 0.7);
+      reveal($('#meta'), t, 3.45, 0.7);
+      reveal($('#label'), t, 3.8, 0.7, 0);
+      // Agenda tutorial muncul mengikuti narasi (cue dari compose; cadangan bila tanpa data).
+      const at = [kit.cue('masalah yang', 7), kit.cue('cara kerja', 8.2), kit.cue('cara memasangnya', 9.4), kit.cue('demo lengkap', 10.6)];
+      for (const [i, el] of [...document.querySelectorAll('#agenda span')].entries()) reveal(el, t, at[i], 0.5);
+    };
+  </script>
+</body>
+</html>

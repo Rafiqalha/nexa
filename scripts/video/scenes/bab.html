@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  .num {
+    position: absolute;
+    left: 168px;
+    top: 300px;
+    font-size: 140px;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .title {
+    position: absolute;
+    left: 160px;
+    top: 470px;
+    font-weight: 600;
+    font-size: 112px;
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+  .track {
+    position: absolute;
+    left: 168px;
+    right: 168px;
+    top: 672px;
+    height: 2px;
+    background: var(--line-strong);
+  }
+  .fill {
+    position: absolute;
+    left: 168px;
+    top: 671px;
+    height: 4px;
+    background: var(--accent);
+  }
+  .list {
+    position: absolute;
+    left: 168px;
+    right: 168px;
+    top: 706px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    font-size: 26px;
+  }
+  .list span {
+    color: var(--muted);
+  }
+  .list span.on {
+    color: var(--text);
+  }
+</style>
+<body>
+  <div class="num mono" id="num"></div>
+  <div class="title" id="title"></div>
+  <div class="track"></div>
+  <div class="fill" id="fill"></div>
+  <div class="list mono" id="list"></div>
+  <script>
+    const { prog, reveal, $ } = kit;
+    window.__init = () => {
+      const d = window.__data;
+      $('#num').textContent = String(d.n).padStart(2, '0');
+      $('#title').textContent = d.title;
+      $('#list').innerHTML = d.chapters
+        .map((c) => `<span class="${c.n === d.n ? 'on' : ''}">${String(c.n).padStart(2, '0')} ${c.title}</span>`)
+        .join('');
+    };
+    window.__frame = (t) => {
+      const d = window.__data;
+      reveal($('#num'), t, 0.05, 0.5, 24);
+      reveal($('#title'), t, 0.15, 0.55, 24);
+      const span = 1920 - 336;
+      const from = ((d.n - 1) / 5) * span;
+      const to = (d.n / 5) * span;
+      $('#fill').style.width = `${from + (to - from) * prog(t, 0.25, 0.9, kit.ease)}px`;
+      reveal($('#list'), t, 0.3, 0.5, 0);
+    };
+  </script>
+</body>
+</html>

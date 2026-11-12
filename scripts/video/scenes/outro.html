@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  .lock {
+    position: absolute;
+    left: 150px;
+    top: 128px;
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+  .lock svg {
+    width: 84px;
+    height: 84px;
+  }
+  .lock b {
+    font-weight: 600;
+    font-size: 54px;
+    letter-spacing: 0.16em;
+  }
+  .line {
+    position: absolute;
+    left: 150px;
+    top: 290px;
+    width: 1500px;
+    font-weight: 600;
+    font-size: 66px;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  .line2 {
+    position: absolute;
+    left: 152px;
+    top: 470px;
+    font-size: 40px;
+    color: var(--text-2);
+  }
+  .links {
+    position: absolute;
+    left: 150px;
+    top: 590px;
+    display: grid;
+    grid-template-columns: 340px auto;
+    row-gap: 18px;
+    font-size: 32px;
+  }
+  .links .k {
+    color: var(--muted);
+  }
+  .thanks {
+    position: absolute;
+    right: 150px;
+    bottom: 120px;
+    font-weight: 600;
+    font-size: 96px;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+  }
+</style>
+<body>
+  <div class="lock" id="lock">
+    <svg viewBox="6 6 52 52" aria-hidden="true"><path d="M13 53.375V10.625L51 53.375V10.625Z" fill="none" stroke="#E8E6DC" stroke-width="8" stroke-linejoin="bevel" /></svg>
+    <b>NEXA</b>
+  </div>
+  <div class="line" id="line">Kecerdasan agen penyerang menjadi biaya bagi dirinya sendiri.</div>
+  <div class="line2" id="line2">Keputusan tetap di tangan manusia.</div>
+  <div class="links mono" id="links">
+    <span class="k">Dashboard live</span><span>nexa-console.up.railway.app</span>
+    <span class="k">Landing</span><span>nexa-deception.vercel.app</span>
+    <span class="k">Kode sumber</span><span>github.com/Rafiqalha/nexa</span>
+    <span class="k">Aplikasi desktop</span><span>Rilis v0.3.1 di GitHub</span>
+  </div>
+  <div class="label" id="label">Semua footage dari run lab nyata, 12 November 2026 · Data simulasi lab</div>
+  <div class="thanks" id="thanks">Matur nuwun.</div>
+  <script>
+    const { reveal, cue, $ } = kit;
+    window.__frame = (t) => {
+      reveal($('#lock'), t, 0.1, 0.6);
+      reveal($('#line'), t, cue('NEXA', 0.2) + 0.1, 0.7);
+      reveal($('#line2'), t, cue('sementara', 3.5), 0.6);
+      reveal($('#label'), t, cue('Semua', 6.5), 0.6, 0);
+      reveal($('#links'), t, cue('Dashboard', 9.5), 0.7);
+      reveal($('#thanks'), t, cue('Matur', 15.5), 0.6);
+    };
+  </script>
+</body>
+</html>

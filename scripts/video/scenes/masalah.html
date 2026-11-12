@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  .col {
+    position: absolute;
+    left: 150px;
+    top: 210px;
+    width: 860px;
+  }
+  .l1 {
+    font-weight: 600;
+    font-size: 60px;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  .l2 {
+    margin-top: 56px;
+    font-size: 34px;
+    color: var(--text-2);
+  }
+  .chips {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .chip {
+    padding: 12px 20px;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    font-size: 28px;
+    color: var(--text);
+  }
+  .cheap {
+    margin-top: 22px;
+    font-size: 30px;
+    color: var(--muted);
+  }
+  .l3 {
+    margin-top: 56px;
+    font-weight: 600;
+    font-size: 44px;
+    line-height: 1.2;
+  }
+  .l3 b {
+    color: var(--trapped);
+    font-weight: 600;
+  }
+  .grid {
+    position: absolute;
+    left: 1130px;
+    top: 210px;
+    width: 640px;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 18px;
+  }
+  .grid svg {
+    width: 58px;
+    height: 58px;
+    stroke: var(--muted);
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .grid svg.hot {
+    stroke: var(--text);
+  }
+  .block {
+    position: absolute;
+    left: 1130px;
+    top: 690px;
+    width: 640px;
+    border-top: 1px solid var(--line-strong);
+    padding-top: 18px;
+    font-size: 24px;
+    line-height: 1.75;
+    color: var(--muted);
+  }
+  .block .late {
+    color: var(--suspect);
+  }
+  .q {
+    position: absolute;
+    left: 150px;
+    right: 150px;
+    top: 380px;
+    font-weight: 600;
+    font-size: 84px;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    color: var(--accent);
+  }
+</style>
+<body>
+  <div id="stage">
+    <div class="col">
+      <div class="l1" id="l1">Serangan tidak lagi dijalankan manusia satu per satu.</div>
+      <div class="l2" id="l2">Agen AI dengan tool bisa:</div>
+      <div class="chips mono">
+        <span class="chip" id="c1">memindai situs</span>
+        <span class="chip" id="c2">mencari kredensial</span>
+        <span class="chip" id="c3">mencoba celah</span>
+      </div>
+      <div class="cheap mono" id="cheap">tanpa henti · biaya sangat murah</div>
+      <div class="l3" id="l3">Blokir statis selalu <b>tertinggal satu langkah</b>.</div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="block mono" id="block"></div>
+  </div>
+  <div class="q" id="q">Bagaimana kalau kecerdasan penyerang justru menjadi kelemahannya?</div>
+  <script>
+    const { prog, reveal, cue, $ } = kit;
+    const BOT =
+      '<svg viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>';
+    const RULES = [
+      'deny 203.0.113.7',
+      'deny 198.51.100.24',
+      'deny 192.0.2.55',
+      'deny 203.0.113.91',
+      'sig  "sqlmap/1.7"',
+    ];
+    window.__init = () => {
+      $('#grid').innerHTML = BOT.repeat(48);
+    };
+    window.__frame = (t) => {
+      const tA = cue('Serangan', 0.3);
+      const tB = cue('Agen', 3.2);
+      const tC = cue('Pertahanan', 11);
+      const tD = cue('Maka', 16.5);
+      reveal($('#l1'), t, tA, 0.7);
+      reveal($('#l2'), t, tB, 0.6);
+      reveal($('#c1'), t, cue('memindai', tB + 1.2), 0.5);
+      reveal($('#c2'), t, cue('mencari', tB + 2.2), 0.5);
+      reveal($('#c3'), t, cue('mencoba', tB + 3.2), 0.5);
+      reveal($('#cheap'), t, cue('biaya', tB + 4.6), 0.5);
+      reveal($('#l3'), t, tC, 0.6);
+      // Agen berlipat cepat: 1 ikon saat "Serangan", 48 ikon menjelang "biaya".
+      const icons = [...$('#grid').children];
+      const n = Math.round(1 + 47 * prog(t, tB, Math.max(1, cue('biaya', tB + 4.6) - tB), (x) => x * x));
+      icons.forEach((el, i) => {
+        el.style.opacity = i < (t >= tA ? n : 0) ? '1' : '0';
+        el.classList.toggle('hot', i === n - 1);
+      });
+      // Daftar blokir bertambah jauh lebih lambat dari jumlah agen.
+      const shown = Math.floor(Math.max(0, t - tC) / 1.1);
+      $('#block').innerHTML =
+        RULES.slice(0, shown)
+          .map((r) => `<div>${r}</div>`)
+          .join('') + (t >= tC ? `<div class="late">+ ${Math.max(0, 48 - shown)} agen belum tercatat</div>` : '');
+      $('#block').style.opacity = String(prog(t, tC, 0.5));
+      // Pertanyaan menggantikan seluruh panggung.
+      const kq = prog(t, tD, 0.8);
+      $('#stage').style.opacity = String(1 - kq);
+      $('#q').style.opacity = String(kq);
+      $('#q').style.transform = `translateY(${((1 - kq) * 26).toFixed(2)}px)`;
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  .head {
+    position: absolute;
+    left: 150px;
+    top: 120px;
+    font-weight: 600;
+    font-size: 64px;
+    letter-spacing: -0.02em;
+  }
+  .sub {
+    position: absolute;
+    left: 152px;
+    top: 208px;
+    font-size: 26px;
+    color: var(--muted);
+  }
+  .grid {
+    position: absolute;
+    left: 150px;
+    right: 150px;
+    top: 290px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--line);
+  }
+  .cell {
+    padding: 34px 40px 38px 0;
+    border-bottom: 1px solid var(--line);
+    min-height: 250px;
+  }
+  .cell:nth-child(2n) {
+    padding-left: 48px;
+    border-left: 1px solid var(--line);
+  }
+  .big {
+    font-size: 92px;
+    line-height: 1;
+    font-weight: 500;
+  }
+  .cap {
+    margin-top: 16px;
+    font-size: 30px;
+    color: var(--text-2);
+  }
+  .note {
+    margin-top: 10px;
+    font-size: 24px;
+    color: var(--muted);
+  }
+  .bars {
+    margin-top: 6px;
+  }
+  .bar {
+    display: grid;
+    grid-template-columns: 220px 1fr 120px;
+    align-items: center;
+    gap: 18px;
+    margin-top: 16px;
+    font-size: 26px;
+  }
+  .bar .track {
+    height: 22px;
+    background: var(--line);
+    position: relative;
+  }
+  .bar .val {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+  }
+  .interog {
+    position: absolute;
+    left: 150px;
+    right: 150px;
+    top: 838px;
+    font-size: 26px;
+    color: var(--text-2);
+  }
+  .interog b {
+    color: var(--suspect);
+    font-weight: 500;
+  }
+</style>
+<body>
+  <div class="head" id="head">Hasil lab</div>
+  <div class="sub mono" id="sub"></div>
+  <div class="grid">
+    <div class="cell" id="a">
+      <div class="big mono" id="a1"></div>
+      <div class="cap">agen AI terdeteksi dan dijebak</div>
+      <div class="note mono" id="a2"></div>
+    </div>
+    <div class="cell" id="b">
+      <div class="cap" style="margin-top: 0">Permintaan agen yang sampai ke aplikasi asli</div>
+      <div class="bars mono">
+        <div class="bar" id="b1"><span class="muted">Tanpa NEXA</span><span class="track"><span class="val" id="b1v" style="background: var(--muted)"></span></span><span id="b1n"></span></div>
+        <div class="bar" id="b2"><span>Dengan NEXA</span><span class="track"><span class="val" id="b2v" style="background: var(--accent)"></span></span><span id="b2n"></span></div>
+      </div>
+      <div class="note mono" id="b3"></div>
+    </div>
+    <div class="cell" id="c">
+      <div class="big mono" id="c1"></div>
+      <div class="cap">token dibakar agen penyerang per run</div>
+      <div class="note mono" id="c2"></div>
+    </div>
+    <div class="cell" id="d">
+      <div class="big mono" id="d1"></div>
+      <div class="cap">pengunjung manusia (simulasi) ditandai</div>
+      <div class="note mono" id="d2"></div>
+    </div>
+  </div>
+  <div class="interog" id="e"></div>
+  <div class="label" id="label">Data simulasi lab · median run deepseek-flash · docs/metrics.md</div>
+  <script>
+    const { prog, reveal, cue, $ } = kit;
+    const fmt = (n) => new Intl.NumberFormat('id-ID').format(n);
+    window.__init = () => {
+      const m = window.__data.metrics;
+      $('#sub').textContent = `${m.runs} run agen dengan NEXA · ${m.baselineRuns} run tanpa NEXA · 14 sesi manusia simulasi`;
+      $('#a1').textContent = m.detected;
+      $('#a2').textContent = `median ${m.timeToTrap} detik sampai terjebak`;
+      $('#b1n').textContent = `${m.baselineReq}/${m.baselineReq}`;
+      $('#b2n').textContent = `${m.upstream}/${m.requests}`;
+      $('#b3').textContent = `${m.requests - m.upstream} permintaan lainnya habis di labirin umpan`;
+      $('#c1').textContent = fmt(m.attackerTokens);
+      $('#c2').textContent = `NEXA hanya ${fmt(m.nexaTokens)} token (intel pasca-sesi); labirin tanpa LLM`;
+      $('#d1').textContent = m.human;
+      $('#d2').textContent = 'jeda 1–15 detik, header browser lengkap';
+      $('#e').innerHTML = `<b>Interogasi (eksperimental):</b> ${m.hijack} run agen mengirim data ke endpoint jebakan · ${m.leak} run membocorkan system prompt penuh`;
+    };
+    window.__frame = (t) => {
+      const m = window.__data.metrics;
+      reveal($('#head'), t, 0.1, 0.6);
+      reveal($('#sub'), t, 0.4, 0.6, 0);
+      reveal($('#a'), t, cue('Sebelas', 2.6), 0.6);
+      reveal($('#b'), t, cue('Tanpa', 7.5), 0.6);
+      reveal($('#b1'), t, cue('Tanpa', 7.5) + 0.2, 0.5, 0);
+      $('#b1v').style.width = `${100 * prog(t, cue('Tanpa', 7.5) + 0.3, 1.2, kit.ease)}%`;
+      reveal($('#b2'), t, cue('Dengan', 11.5), 0.5, 0);
+      $('#b2v').style.width = `${((100 * m.upstream) / m.baselineReq) * prog(t, cue('Dengan', 11.5) + 0.2, 0.8, kit.ease)}%`;
+      reveal($('#b3'), t, cue('Dengan', 11.5) + 1.2, 0.5, 0);
+      reveal($('#c'), t, cue('Agen membakar', 15.5), 0.6);
+      reveal($('#d'), t, cue('Empat belas', 21.5), 0.6);
+      reveal($('#e'), t, cue('Interogasi', 26.5), 0.6);
+      reveal($('#label'), t, 0.8, 0.6, 0);
+    };
+  </script>
+</body>
+</html>

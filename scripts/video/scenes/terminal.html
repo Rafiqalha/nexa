@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  html,
+  body {
+    width: 760px;
+    height: 452px;
+    background: transparent;
+  }
+  .win {
+    position: absolute;
+    inset: 0;
+    background: #0f130f;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+  }
+  .bar {
+    height: 46px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 18px;
+    font-size: 17px;
+    color: var(--text-2);
+  }
+  .sq {
+    width: 10px;
+    height: 10px;
+    background: var(--trapped);
+  }
+  .body {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    top: 60px;
+    bottom: 16px;
+    overflow: hidden;
+    font-size: 17px;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+  .ln .tm {
+    color: var(--muted);
+  }
+  .ln .m {
+    color: var(--text-2);
+  }
+  .ln .p {
+    color: var(--text);
+  }
+  .ln .st {
+    color: var(--accent);
+  }
+  .prompt {
+    color: var(--accent);
+  }
+  .dim {
+    color: var(--muted);
+  }
+</style>
+<body>
+  <div class="win mono">
+    <div class="bar"><span class="sq"></span><span id="title"></span></div>
+    <div class="body" id="body"></div>
+  </div>
+  <script>
+    const { $ } = kit;
+    const MAX = 13;
+    const esc = (s) => s.replaceAll('&', '&amp;').replaceAll('<', '&lt;');
+    window.__init = () => {
+      $('#title').textContent = window.__data.title;
+    };
+    window.__frame = (t) => {
+      const d = window.__data;
+      const rows = [];
+      if (t >= d.startAt) rows.push(`<div><span class="prompt">$</span> ${esc(d.command)}</div>`);
+      if (t >= d.startAt + 0.4) rows.push(`<div class="dim">${esc(d.note)}</div>`);
+      for (const l of d.lines) {
+        if (l.t > t) break;
+        const path = l.path.length > 46 ? `${l.path.slice(0, 45)}…` : l.path;
+        rows.push(
+          `<div class="ln"><span class="tm">${l.clock}</span>  <span class="m">${l.method.padEnd(4)}</span> <span class="p">${esc(path)}</span>  <span class="st">${l.status}</span></div>`,
+        );
+      }
+      $('#body').innerHTML = rows.slice(-MAX).join('');
+    };
+  </script>
+</body>
+</html>

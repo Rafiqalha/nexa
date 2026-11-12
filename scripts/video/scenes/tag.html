@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  html,
+  body {
+    background: transparent;
+  }
+  .tag {
+    position: absolute;
+    padding: 10px 16px;
+    background: #0c0f0d;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    font-size: 22px;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+  .tag b {
+    color: var(--accent);
+    font-weight: 500;
+  }
+</style>
+<body>
+  <div class="tag mono" id="tag"></div>
+  <script>
+    const { $ } = kit;
+    window.__init = () => {
+      const d = window.__data;
+      const el = $('#tag');
+      el.innerHTML = d.html;
+      Object.assign(el.style, d.pos);
+    };
+    window.__frame = () => {};
+  </script>
+</body>
+</html>

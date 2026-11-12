@@ -1,0 +1,630 @@
+{
+  "title": "NEXA: tutorial dan demo lengkap",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "chapters": [
+    {
+      "n": 1,
+      "title": "Masalah"
+    },
+    {
+      "n": 2,
+      "title": "Cara kerja"
+    },
+    {
+      "n": 3,
+      "title": "Memasang NEXA"
+    },
+    {
+      "n": 4,
+      "title": "Demo langsung"
+    },
+    {
+      "n": 5,
+      "title": "Hasil lab"
+    },
+    {
+      "n": 6,
+      "title": "Penutup"
+    }
+  ],
+  "segments": [
+    {
+      "id": "hook",
+      "chapter": 0,
+      "visual": {
+        "type": "footage",
+        "name": "dashboard-live",
+        "role": "hook"
+      },
+      "tts": "Yang Anda lihat ini adalah agen AI penyerang yang sedang terjebak. Setiap detik ia membakar token di labirin palsu, sementara aplikasi asli kami tidak tersentuh sama sekali.",
+      "sub": "Yang Anda lihat ini adalah agen AI penyerang yang sedang terjebak. Setiap detik ia membakar token di labirin palsu, sementara aplikasi asli kami tidak tersentuh sama sekali.",
+      "edit": {
+        "clip": "dashboard-live",
+        "realtime": true,
+        "mark": "attack",
+        "offset": 12.5,
+        "startRect": "Terjebak^2",
+        "startPad": 1.7,
+        "camera": [
+          {
+            "cue": "Setiap detik",
+            "anchor": "Token dibakar penyerang^1",
+            "pad": 1.3
+          },
+          {
+            "cue": "sementara aplikasi",
+            "full": true,
+            "d": 1.2
+          }
+        ],
+        "spots": [
+          {
+            "cue": "agen AI penyerang",
+            "until": "Setiap detik",
+            "anchor": "Terjebak^2",
+            "label": "Agen AI · status Terjebak"
+          },
+          {
+            "cue": "Setiap detik",
+            "until": "sementara aplikasi",
+            "anchor": "Token dibakar penyerang^1",
+            "label": "Token dibakar penyerang · naik live"
+          }
+        ]
+      }
+    },
+    {
+      "id": "title",
+      "chapter": 0,
+      "visual": {
+        "type": "scene",
+        "name": "intro"
+      },
+      "tts": "Inilah NEXA. Sugeng rawuh, Bapak dan Ibu dewan juri. Dalam beberapa menit ke depan, kami tunjukkan masalah yang kami selesaikan, cara kerja NEXA, cara memasangnya, dan demo lengkap dari serangan sampai aturan blokir.",
+      "sub": "Inilah NEXA. Sugeng rawuh, Bapak dan Ibu dewan juri. Dalam beberapa menit ke depan, kami tunjukkan masalah yang kami selesaikan, cara kerja NEXA, cara memasangnya, dan demo lengkap dari serangan sampai aturan blokir."
+    },
+    {
+      "id": "masalah",
+      "chapter": 1,
+      "visual": {
+        "type": "scene",
+        "name": "masalah"
+      },
+      "tts": "Serangan siber kini tidak lagi dijalankan manusia satu per satu. Agen AI yang dibekali tool bisa memindai situs, mencari kredensial, dan mencoba celah tanpa henti, dengan biaya yang sangat murah. Pertahanan statis seperti daftar blokir IP atau signature selalu tertinggal satu langkah, karena agen bisa berganti alamat dan pola dalam hitungan detik. Maka pertanyaannya: bagaimana kalau kecerdasan penyerang justru kita jadikan kelemahannya?",
+      "sub": "Serangan siber kini tidak lagi dijalankan manusia satu per satu. Agen AI yang dibekali tool bisa memindai situs, mencari kredensial, dan mencoba celah tanpa henti, dengan biaya yang sangat murah. Pertahanan statis seperti daftar blokir IP atau signature selalu tertinggal satu langkah, karena agen bisa berganti alamat dan pola dalam hitungan detik. Maka pertanyaannya: bagaimana kalau kecerdasan penyerang justru kita jadikan kelemahannya?"
+    },
+    {
+      "id": "arsitektur",
+      "chapter": 2,
+      "visual": {
+        "type": "scene",
+        "name": "arsitektur"
+      },
+      "tts": "NEXA adalah lapisan deception defensif yang berdiri di depan aplikasi web sebagai reverse proxy. Setiap permintaan dinilai dari empat sinyal: user agent otomasi, header browser yang hilang, ritme yang terlalu cepat, dan honeylink, yaitu tautan tersembunyi yang hanya diikuti mesin. Pengunjung sah diteruskan apa adanya ke aplikasi asli. Begitu skor sebuah sesi melewati ambang, klien itu dibelokkan ke labirin umpan. Labirin ini dibangkitkan secara prosedural dari seed, jadi tidak ada LLM di jalur request, dan NEXA tidak membakar satu token pun selama agen tertahan. Setiap halaman umpan berisi canary, yaitu kredensial dan dokumen palsu yang unik per sesi. Begitu canary dipakai, itu bukti bahwa agen menelan umpan. Setelah sesi berakhir, dosir disamarkan lebih dulu, lalu dirangkum oleh LLM dengan budget harian. Dari sana NEXA menyusun draf aturan Suricata yang divalidasi otomatis, tetapi tidak ada yang aktif tanpa persetujuan operator. NEXA hanya bertahan, tidak pernah menyerang balik.",
+      "sub": "NEXA adalah lapisan deception defensif yang berdiri di depan aplikasi web sebagai reverse proxy. Setiap permintaan dinilai dari 4 sinyal: user-agent otomasi, header browser yang hilang, ritme yang terlalu cepat, dan honeylink, yaitu tautan tersembunyi yang hanya diikuti mesin. Pengunjung sah diteruskan apa adanya ke aplikasi asli. Begitu skor sebuah sesi melewati ambang, klien itu dibelokkan ke labirin umpan. Labirin ini dibangkitkan secara prosedural dari seed, jadi tidak ada LLM di jalur request, dan NEXA tidak membakar satu token pun selama agen tertahan. Setiap halaman umpan berisi canary, yaitu kredensial dan dokumen palsu yang unik per sesi. Begitu canary dipakai, itu bukti bahwa agen menelan umpan. Setelah sesi berakhir, dosir disamarkan lebih dulu, lalu dirangkum oleh LLM dengan budget harian. Dari sana NEXA menyusun draf aturan Suricata yang divalidasi otomatis, tetapi tidak ada yang aktif tanpa persetujuan operator. NEXA hanya bertahan, tidak pernah menyerang balik."
+    },
+    {
+      "id": "pasang",
+      "chapter": 3,
+      "visual": {
+        "type": "scene",
+        "name": "terminal-install"
+      },
+      "tts": "Sekarang cara memasangnya. Yang dibutuhkan hanya Git, Node versi dua puluh ke atas, dan pnpm. Docker dan Suricata bersifat opsional. Clone repositorinya, jalankan pnpm install, lalu pnpm env init. Perintah ini membuat berkas env dengan rahasia acak yang tidak pernah dicetak ke layar. Nyalakan lab dengan pnpm lab up. NEXA memilih otomatis: Docker bila tersedia, atau proses lokal. Dashboard terbuka di port delapan ribu delapan puluh satu, dan akun pertama yang mendaftar menjadi pemilik. Untuk Windows, tersedia juga aplikasi desktop di halaman rilis GitHub.",
+      "sub": "Sekarang cara memasangnya. Yang dibutuhkan hanya Git, Node versi 20 ke atas, dan pnpm. Docker dan Suricata bersifat opsional. Clone repositorinya, jalankan pnpm install, lalu pnpm env:init. Perintah ini membuat berkas .env dengan rahasia acak yang tidak pernah dicetak ke layar. Nyalakan lab dengan pnpm lab:up. NEXA memilih otomatis: Docker bila tersedia, atau proses lokal. Dashboard terbuka di port 8081, dan akun pertama yang mendaftar menjadi pemilik. Untuk Windows, tersedia juga aplikasi desktop di halaman rilis GitHub."
+    },
+    {
+      "id": "portal",
+      "chapter": 4,
+      "visual": {
+        "type": "footage",
+        "name": "portal"
+      },
+      "tts": "Kita mulai dari sudut pandang pengunjung biasa. Ini portal fiktif BAYU tujuh yang kami lindungi di lab. Halamannya tampil normal, dan NEXA sama sekali tidak terlihat.",
+      "sub": "Kita mulai dari sudut pandang pengunjung biasa. Ini portal fiktif BAYU-7 yang kami lindungi di lab. Halamannya tampil normal, dan NEXA sama sekali tidak terlihat.",
+      "edit": {
+        "clip": "portal",
+        "beats": [
+          {
+            "beat": "beranda"
+          },
+          {
+            "beat": "pengumuman",
+            "cue": "Halamannya tampil",
+            "trans": 1.9,
+            "shift": -0.5
+          },
+          {
+            "beat": "dokumen",
+            "cue": "NEXA sama sekali",
+            "trans": 1.9
+          }
+        ],
+        "camera": [
+          {
+            "cue": "Ini portal",
+            "anchor": "css:body",
+            "beat": "beranda",
+            "pad": 1.05,
+            "minW": 1300
+          },
+          {
+            "cue": "NEXA sama sekali",
+            "full": true,
+            "d": 1.2
+          }
+        ],
+        "spots": [
+          {
+            "cue": "NEXA sama sekali",
+            "dur": 3.2,
+            "anchor": "css:main",
+            "beat": "dokumen",
+            "label": "Tanpa banner, tanpa CAPTCHA: NEXA tidak terlihat",
+            "dim": 0.3
+          }
+        ]
+      }
+    },
+    {
+      "id": "serang",
+      "chapter": 4,
+      "visual": {
+        "type": "footage",
+        "name": "dashboard-live",
+        "pip": "terminal"
+      },
+      "tts": "Sekarang kami lepaskan agen AI penyerang dengan perintah pnpm lab attack. Agen ini dijalankan model DeepSeek dengan tool HTTP, dan diberi misi mencari data sensitif. Panel di kanan bawah menampilkan setiap permintaannya, sesuai catatan sensor. Perhatikan dashboard. Dalam waktu kurang dari dua detik setelah permintaan pertamanya, agen terdeteksi dan statusnya menjadi terjebak. Angka token yang dibakar penyerang terus naik, karena setiap halaman umpan yang ia baca harus diproses modelnya. Ia mengira sedang menemukan arsip internal, padahal semua isinya palsu.",
+      "sub": "Sekarang kami lepaskan agen AI penyerang dengan perintah pnpm lab:attack. Agen ini dijalankan model DeepSeek dengan tool HTTP, dan diberi misi mencari data sensitif. Panel di kanan bawah menampilkan setiap permintaannya, sesuai catatan sensor. Perhatikan dashboard. Dalam waktu kurang dari 2 detik setelah permintaan pertamanya, agen terdeteksi dan statusnya menjadi terjebak. Angka token yang dibakar penyerang terus naik, karena setiap halaman umpan yang ia baca harus diproses modelnya. Ia mengira sedang menemukan arsip internal, padahal semua isinya palsu.",
+      "edit": {
+        "clip": "dashboard-live",
+        "realtime": true,
+        "mark": "attack",
+        "cue": "lepaskan",
+        "camera": [
+          {
+            "cue": "terdeteksi",
+            "anchor": "Terjebak^2",
+            "pad": 1.6
+          },
+          {
+            "cue": "Angka token",
+            "anchor": "Token dibakar penyerang^1",
+            "pad": 1.3
+          },
+          {
+            "cue": "Ia mengira",
+            "full": true,
+            "d": 1.2
+          }
+        ],
+        "spots": [
+          {
+            "cue": "terdeteksi",
+            "until": "Angka token",
+            "anchor": "Terjebak^2",
+            "label": "Terjebak · kurang dari 2 detik"
+          },
+          {
+            "cue": "Angka token",
+            "until": "Ia mengira",
+            "anchor": "Token dibakar penyerang^1",
+            "label": "Token dibakar penyerang (estimasi)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sesi",
+      "chapter": 4,
+      "visual": {
+        "type": "footage",
+        "name": "sesi"
+      },
+      "tts": "Buka menu Sesi untuk melihat semua klien yang terdeteksi. Di detail sesi, NEXA menunjukkan kenapa klien ini ditandai: skor satu koma nol, dengan sinyal user agent otomasi, header browser hilang, honeylink, dan ritme cepat. Lalu di bagian canary, terlihat kredensial dan dokumen palsu yang benar-benar dipakai agen.",
+      "sub": "Buka menu Sesi untuk melihat semua klien yang terdeteksi. Di detail sesi, NEXA menunjukkan kenapa klien ini ditandai: skor 1,0, dengan sinyal user-agent otomasi, header browser hilang, honeylink, dan ritme cepat. Lalu di bagian canary, terlihat kredensial dan dokumen palsu yang benar-benar dipakai agen.",
+      "edit": {
+        "clip": "sesi",
+        "beats": [
+          {
+            "beat": "list",
+            "play": 3.2
+          },
+          {
+            "beat": "detail",
+            "cue": "Di detail sesi",
+            "trans": 1.4
+          },
+          {
+            "beat": "canary",
+            "cue": "di bagian canary",
+            "trans": 2
+          }
+        ],
+        "camera": [
+          {
+            "cue": "Buka menu Sesi",
+            "anchor": "css:tbody tr",
+            "beat": "list",
+            "pad": 2.4
+          },
+          {
+            "cue": "Di detail sesi",
+            "anchor": "css:dl",
+            "beat": "detail",
+            "pad": 1.15
+          },
+          {
+            "cue": "dengan sinyal",
+            "anchor": "Sinyal deteksi^1",
+            "beat": "detail",
+            "pad": 1.9
+          },
+          {
+            "cue": "di bagian canary",
+            "anchor": "Canary dipakai —^1",
+            "beat": "canary",
+            "pad": 1.1
+          }
+        ],
+        "spots": [
+          {
+            "cue": "Buka menu Sesi",
+            "dur": 2.6,
+            "anchor": "css:tbody tr",
+            "beat": "list",
+            "label": "Sesi terbaru · Agen AI"
+          },
+          {
+            "cue": "skor satu",
+            "until": "dengan sinyal",
+            "anchor": "Klasifikasi^1",
+            "beat": "detail",
+            "label": "Agen AI · skor 1,00"
+          },
+          {
+            "cue": "dengan sinyal",
+            "until": "di bagian canary",
+            "anchor": "Sinyal deteksi^1",
+            "beat": "detail",
+            "label": "4 sinyal deteksi"
+          },
+          {
+            "cue": "di bagian canary",
+            "dur": 4,
+            "anchor": "Canary dipakai —^1",
+            "beat": "canary",
+            "label": "Canary dipakai = umpan ditelan"
+          }
+        ]
+      }
+    },
+    {
+      "id": "linimasa",
+      "chapter": 4,
+      "visual": {
+        "type": "footage",
+        "name": "sesi"
+      },
+      "tts": "Linimasa di dalam labirin mencatat setiap langkah agen. Ia membuka berkas robots, lalu langsung mengikuti honeylink ke arsip internal. Setelah itu ia menemukan server MCP umpan, dan berulang kali memanggil alat palsunya. Karena labirinnya deterministik per seed, setiap sesi bisa direproduksi untuk investigasi.",
+      "sub": "Linimasa di dalam labirin mencatat setiap langkah agen. Ia membuka robots.txt, lalu langsung mengikuti honeylink ke arsip internal. Setelah itu ia menemukan server MCP umpan, dan berulang kali memanggil alat palsunya. Karena labirinnya deterministik per seed, setiap sesi bisa direproduksi untuk investigasi.",
+      "edit": {
+        "clip": "sesi",
+        "beats": [
+          {
+            "beat": "linimasa"
+          },
+          {
+            "beat": "mcp",
+            "cue": "server MCP",
+            "trans": 2.5,
+            "shift": 0.4
+          }
+        ],
+        "camera": [
+          {
+            "cue": "berkas robots",
+            "anchor": "/robots.txt^2",
+            "beat": "linimasa",
+            "pad": 2.6
+          },
+          {
+            "cue": "honeylink",
+            "anchor": "/arsip-internal/^2",
+            "beat": "linimasa",
+            "pad": 2.6
+          },
+          {
+            "cue": "server MCP",
+            "anchor": "/arsip-internal/mcp^2",
+            "beat": "mcp",
+            "pad": 2.4
+          },
+          {
+            "cue": "Karena labirinnya",
+            "full": true,
+            "d": 1.2
+          }
+        ],
+        "spots": [
+          {
+            "cue": "berkas robots",
+            "until": "honeylink",
+            "anchor": "/robots.txt^2",
+            "beat": "linimasa",
+            "label": "GET /robots.txt"
+          },
+          {
+            "cue": "honeylink",
+            "until": "server MCP",
+            "anchor": "/arsip-internal/^2",
+            "beat": "linimasa",
+            "label": "Honeylink · /arsip-internal/"
+          },
+          {
+            "cue": "server MCP",
+            "dur": 3.6,
+            "anchor": "/arsip-internal/mcp^2",
+            "beat": "mcp",
+            "label": "Server MCP umpan"
+          }
+        ]
+      }
+    },
+    {
+      "id": "intel",
+      "chapter": 4,
+      "visual": {
+        "type": "footage",
+        "name": "intel"
+      },
+      "tts": "Setelah sesi ditutup, NEXA merangkum intelijennya di menu Intelijen: pola serangan, dugaan model atau framework, beserta tingkat keyakinannya. Data disamarkan dulu sebelum dikirim ke model, dan pemakaiannya dibatasi budget harian, yang terlihat di bagian atas halaman.",
+      "sub": "Setelah sesi ditutup, NEXA merangkum intelijennya di menu Intelijen: pola serangan, dugaan model atau framework, beserta tingkat keyakinannya. Data disamarkan dulu sebelum dikirim ke model, dan pemakaiannya dibatasi budget harian, yang terlihat di bagian atas halaman.",
+      "edit": {
+        "clip": "intel",
+        "beats": [
+          {
+            "beat": "top",
+            "play": 2.3
+          }
+        ],
+        "camera": [
+          {
+            "cue": "menu Intelijen",
+            "anchor": "css:article ul",
+            "beat": "top",
+            "pad": 1.25,
+            "shift": 0.1
+          },
+          {
+            "cue": "dugaan model",
+            "anchor": "Dugaan model / framework^2",
+            "beat": "top",
+            "pad": 1.25
+          },
+          {
+            "cue": "Data disamarkan",
+            "anchor": "css:article",
+            "beat": "top",
+            "pad": 1.05
+          },
+          {
+            "cue": "budget harian",
+            "anchor": "Budget LLM hari ini",
+            "beat": "top",
+            "pad": 1.7
+          }
+        ],
+        "spots": [
+          {
+            "cue": "menu Intelijen",
+            "until": "dugaan model",
+            "anchor": "css:article ul",
+            "beat": "top",
+            "label": "Pola serangan",
+            "shift": 0.45
+          },
+          {
+            "cue": "dugaan model",
+            "until": "Data disamarkan",
+            "anchor": "Dugaan model / framework^2",
+            "beat": "top",
+            "label": "Dugaan model + tingkat keyakinan"
+          },
+          {
+            "cue": "budget harian",
+            "dur": 3.6,
+            "anchor": "Budget LLM hari ini",
+            "beat": "top",
+            "label": "Budget LLM harian"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aturan",
+      "chapter": 4,
+      "visual": {
+        "type": "footage",
+        "name": "rules"
+      },
+      "tts": "Dari sesi itu lahir draf aturan Suricata di menu Aturan. Setiap draf sudah lolos validasi sintaks. Operator meninjau isinya, lalu menekan Setujui. Baru setelah itu aturan dikirim ke Suricata, dan riwayat keputusan mencatat siapa yang menyetujuinya dan kapan. Aturan aktif juga bisa diekspor sebagai berkas nexa rules.",
+      "sub": "Dari sesi itu lahir draf aturan Suricata di menu Aturan. Setiap draf sudah lolos validasi sintaks (suricata -T). Operator meninjau isinya, lalu menekan Setujui. Baru setelah itu aturan dikirim ke Suricata, dan riwayat keputusan mencatat siapa yang menyetujuinya dan kapan. Aturan aktif juga bisa diekspor sebagai berkas nexa.rules.",
+      "edit": {
+        "clip": "rules",
+        "beats": [
+          {
+            "beat": "top",
+            "play": 3.9
+          },
+          {
+            "beat": "approved",
+            "cue": "Setujui",
+            "shift": 1.66,
+            "src": 10.6,
+            "keepCamera": true
+          },
+          {
+            "beat": "riwayat",
+            "cue": "riwayat keputusan",
+            "shift": -0.2,
+            "play": 3.7
+          },
+          {
+            "beat": "ekspor",
+            "cue": "diekspor",
+            "shift": 0.4
+          }
+        ],
+        "camera": [
+          {
+            "cue": "draf aturan Suricata",
+            "anchor": "css:article",
+            "beat": "top",
+            "pad": 1.15
+          },
+          {
+            "cue": "lolos validasi",
+            "anchor": "Sintaks valid^1",
+            "beat": "top",
+            "pad": 2.1
+          },
+          {
+            "cue": "Operator meninjau",
+            "anchor": "Setujui^3",
+            "beat": "top",
+            "pad": 1.05
+          },
+          {
+            "cue": "riwayat keputusan",
+            "shift": -0.1,
+            "rect": [494, 192, 1469, 334],
+            "beat": "riwayat",
+            "pad": 1.1
+          },
+          {
+            "cue": "diekspor",
+            "anchor": "Ekspor nexa.rules",
+            "beat": "ekspor",
+            "pad": 3.4
+          }
+        ],
+        "spots": [
+          {
+            "cue": "lolos validasi",
+            "until": "Operator meninjau",
+            "anchor": "Sintaks valid^1",
+            "beat": "top",
+            "label": "Lolos suricata -T"
+          },
+          {
+            "cue": "Setujui",
+            "shift": -0.45,
+            "dur": 1.4,
+            "anchor": "Setujui",
+            "beat": "top",
+            "label": "Operator menekan Setujui",
+            "keep": true
+          },
+          {
+            "cue": "riwayat keputusan",
+            "shift": -0.05,
+            "until": "siapa",
+            "anchor": "Aktif di Suricata",
+            "beat": "riwayat",
+            "label": "Status · Aktif di Suricata"
+          },
+          {
+            "cue": "siapa",
+            "until": "Aturan aktif",
+            "rect": [1468, 490, 500, 36],
+            "beat": "riwayat",
+            "label": "Siapa dan kapan disetujui"
+          },
+          {
+            "cue": "diekspor",
+            "dur": 3.2,
+            "anchor": "Ekspor nexa.rules",
+            "beat": "ekspor",
+            "label": "Ekspor nexa.rules"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tim",
+      "chapter": 4,
+      "visual": {
+        "type": "footage",
+        "name": "admin"
+      },
+      "tts": "Untuk tim, menu Pengguna mengatur empat peran: Admin, Operator, Analis, dan Pemantau. Setiap keputusan penting tercatat di Log audit, jadi setiap aturan yang aktif bisa ditelusuri asal-usulnya.",
+      "sub": "Untuk tim, menu Pengguna mengatur 4 peran: Admin, Operator, Analis, dan Pemantau. Setiap keputusan penting tercatat di Log audit, jadi setiap aturan yang aktif bisa ditelusuri asal-usulnya.",
+      "edit": {
+        "clip": "admin",
+        "beats": [
+          {
+            "beat": "pengguna",
+            "play": 3.6
+          },
+          {
+            "beat": "audit",
+            "cue": "Log audit",
+            "trans": 1.8
+          }
+        ],
+        "camera": [
+          {
+            "cue": "empat peran",
+            "rect": [1880, 520, 520, 180],
+            "beat": "pengguna",
+            "pad": 1.6
+          },
+          {
+            "cue": "Log audit",
+            "anchor": "css:tbody tr",
+            "beat": "audit",
+            "pad": 1.7
+          }
+        ],
+        "spots": [
+          {
+            "cue": "empat peran",
+            "until": "Log audit",
+            "rect": [1900, 540, 480, 140],
+            "label": "Admin · Operator · Analis · Pemantau"
+          },
+          {
+            "cue": "Log audit",
+            "dur": 4.5,
+            "anchor": "css:tbody tr",
+            "beat": "audit",
+            "label": "Aturan disetujui · siapa · kapan · IP"
+          }
+        ]
+      }
+    },
+    {
+      "id": "hasil",
+      "chapter": 5,
+      "visual": {
+        "type": "scene",
+        "name": "hasil"
+      },
+      "tts": "Bagaimana hasilnya? Kami menguji NEXA di lab dengan sebelas run agen. Sebelas dari sebelas terdeteksi dan dijebak, dengan median satu koma delapan detik. Tanpa NEXA, seluruh lima puluh delapan permintaan agen sampai ke aplikasi asli. Dengan NEXA, hanya dua dari tiga puluh lima, sisanya tertahan di labirin. Agen membakar lebih dari dua ratus ribu token per run, sementara NEXA hanya memakai sekitar tiga ribu token untuk intel. Dari empat belas sesi pengunjung manusia simulasi, tidak satu pun yang ditandai. Kami juga mencoba menginterogasi agen lewat umpan. Fitur ini masih eksperimental: dua dari sebelas run berhasil dibelokkan, dan nol dari sebelas membocorkan system prompt penuh. Kami laporkan apa adanya.",
+      "sub": "Bagaimana hasilnya? Kami menguji NEXA di lab dengan 11 run agen. 11 dari 11 terdeteksi dan dijebak, dengan median 1,8 detik. Tanpa NEXA, seluruh 58 permintaan agen sampai ke aplikasi asli. Dengan NEXA, hanya 2 dari 35, sisanya tertahan di labirin. Agen membakar lebih dari 200 ribu token per run, sementara NEXA hanya memakai sekitar 3 ribu token untuk intel. Dari 14 sesi pengunjung manusia simulasi, tidak satu pun yang ditandai. Kami juga mencoba menginterogasi agen lewat umpan. Fitur ini masih eksperimental: 2 dari 11 run berhasil dibelokkan, dan 0 dari 11 membocorkan system prompt penuh. Kami laporkan apa adanya."
+    },
+    {
+      "id": "penutup",
+      "chapter": 6,
+      "visual": {
+        "type": "scene",
+        "name": "outro"
+      },
+      "tts": "NEXA mengubah kecerdasan agen penyerang menjadi biaya bagi dirinya sendiri, sementara keputusan tetap di tangan manusia. Semua yang tampil di video ini berasal dari run lab nyata. Dashboard live, kode sumber, dan aplikasi desktopnya bisa Bapak dan Ibu coba lewat tautan di layar. Matur nuwun.",
+      "sub": "NEXA mengubah kecerdasan agen penyerang menjadi biaya bagi dirinya sendiri, sementara keputusan tetap di tangan manusia. Semua yang tampil di video ini berasal dari run lab nyata. Dashboard live, kode sumber, dan aplikasi desktopnya bisa Bapak dan Ibu coba lewat tautan di layar. Matur nuwun."
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+<meta charset="utf-8" />
+<link rel="stylesheet" href="base.css" />
+<script src="kit.js"></script>
+<style>
+  /* Pita atas untuk footage berbingkai: bab di kiri, konteks layar di kanan. Transparan di luar teks. */
+  html,
+  body {
+    background: transparent;
+  }
+  .band {
+    position: absolute;
+    left: 120px;
+    right: 120px;
+    top: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 19px;
+    letter-spacing: 0.02em;
+  }
+  .ch {
+    color: var(--text-2);
+  }
+  .ch b {
+    color: var(--accent);
+    font-weight: 500;
+    margin-right: 12px;
+  }
+  .ctx {
+    color: var(--muted);
+  }
+</style>
+<body>
+  <div class="band mono">
+    <span class="ch" id="ch"></span>
+    <span class="ctx" id="ctx"></span>
+  </div>
+  <script>
+    const { $ } = kit;
+    window.__init = () => {
+      const d = window.__data;
+      $('#ch').innerHTML = `<b>${String(d.n).padStart(2, '0')}</b>${d.title}`;
+      $('#ctx').textContent = d.label ?? '';
+    };
+    window.__frame = () => {};
+  </script>
+</body>
+</html>
