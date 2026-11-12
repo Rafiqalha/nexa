@@ -889,9 +889,6 @@ code {
   line-height: 1.2;
   color: var(--text);
 }
-.rows .url.muted {
-  color: var(--text-muted);
-}
 .rows p {
   margin-top: 8px;
   font-size: 22px;
