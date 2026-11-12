@@ -1,6 +1,6 @@
 {
   "name": "desktop",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Aplikasi desktop NEXA Dashboard (Electron). Hanya memuat dashboard dari port admin sensor; tanpa akses DB, tanpa secret.",
   "type": "module",
