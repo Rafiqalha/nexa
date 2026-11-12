@@ -27,6 +27,8 @@ export function initRotator(el: HTMLElement): void {
       words.forEach((w, i) => {
         w.classList.toggle('is-on', i === index);
       });
+      // Robot hero kadang melirik judul saat kata berganti.
+      el.dispatchEvent(new CustomEvent('nx:swap'));
     }, SWAP_AT_MS);
   }, PERIOD_MS);
 }

@@ -45,6 +45,44 @@ Bukan satu referensi, tapi gabungan yang paling cocok dengan produk dan DESIGN.m
 | Hasil lab | Bagan satuan: satu sel = satu permintaan agen, terisi berurutan (sampai ke aplikasi vs ditahan di labirin) + angka menghitung naik (mono tabular) | Angka nyata, berlabel "Data simulasi lab" |
 | Wordmark loreng | Sel loreng menyala di bawah kursor lalu memudar | Identitas |
 
+## Putaran 2: tur produk dan maskot (12 November 2026)
+
+Permintaan: video showcase produk seperti situs startup (contoh plyxl.com), lebih banyak hal yang
+menghidupkan halaman, dan robot di hero yang bermain (duduk di atas tombol, berdiri, berjalan).
+Situs dibuka langsung di browser dan diperiksa DOM-nya.
+
+| Referensi | Yang ditemukan | Diambil untuk NEXA |
+|---|---|---|
+| [plyxl.com](https://plyxl.com) | "Video" produknya ternyata bukan `<video>` dan bukan canvas: UI produk berkode di dalam bingkai jendela, pil keterangan yang menarasikan tiap langkah, kursor palsu yang mengetik dan mengklik, lalu kamera memperbesar ke area aksi | Tur produk FIG. 02 dengan pola yang sama |
+| [PostHog hedgehog-mode](https://github.com/PostHog/hedgehog-mode) (MIT) | Maskot berjalan dan melompat di atas elemen DOM yang dijadikan pijakan; bisa dikendalikan | Elemen DOM sebagai pijakan robot. Paketnya tidak dipakai (PixiJS, berat). |
+| [oneko.js](https://github.com/adryd325/oneko.js) | Kucing piksel mengikuti kursor dan tidur saat dibiarkan (mesin keadaan Neko klasik) | Robot melirik kursor, melambai saat didekati, tertidur setelah 30 detik tanpa aktivitas |
+| [Screen Studio](https://screen.studio/guide/auto-zoom) | Rekaman demo dengan zoom otomatis ke titik klik dan kursor yang dihaluskan | Kamera tur produk memperbesar ke setiap klik |
+
+Keputusan:
+
+1. **Tur produk berkode, bukan file video.** Dashboard NEXA tiruan (`modules/reel-mock.ts`,
+   tata letak dan label mengikuti tangkapan layar dashboard asli) diputar menurut naskah
+   (`modules/reel-script.ts`): 5 bab, 14 keterangan, kamera, kursor, dan klik. Hasilnya tajam di
+   zoom berapa pun, ringan, bisa dijeda (WCAG 2.2.2), dan bisa lompat bab. Semua keadaan dihitung
+   murni dari detik T. Label "Ilustrasi · Data simulasi lab". Angka diambil dari median run
+   deepseek-flash, bobot dan ambang dari sensor; dijaga `modules/reel.test.ts`.
+2. **Robot "agen uji" di hero.** SVG flat buatan sendiri dengan warna token, tanpa Lottie, Rive,
+   atau PixiJS. Garis atas arena menjadi lantai, tombol CTA menjadi pijakan. Robot berjalan,
+   melompat, duduk mengayunkan kaki, memantul di tombol, menari, melambai, melirik judul saat kata
+   berganti, mengomentari tombol arena, tertidur saat halaman didiamkan, dan bisa diangkat lalu
+   dilempar. Tombol hanya dipakai sebagai pijakan bila ruang di atasnya cukup, jadi robot tidak
+   menutupi tombol lain di layar sempit. Ada tombol "Istirahatkan robot" yang diingat di
+   `localStorage`.
+3. **Penghidup lain.** Jendela tur "mendekat" mengikuti gulir lewat CSS `animation-timeline:
+   view()` (peningkatan progresif, tanpa membajak gulir), dan robot kedua tidur di puncak huruf A
+   wordmark footer (klik untuk menyapa).
+
+| Animasi | Mekanisme | Pesan produk |
+|---|---|---|
+| Tur produk | DOM + transform kamera, naskah berwaktu, kursor dan riak klik | Deteksi → jebak → canary → intelijen → persetujuan, di UI produk |
+| Robot hero | SVG + fisika gravitasi, pijakan dari tata letak DOM, mesin keadaan perilaku | Agen AI "sibuk bermain", pengunjung sah tidak terganggu |
+| Robot footer | Pose statis + "z" nx-z | Penutup yang ramah |
+
 ## Aturan gerak landing
 
 Landing mewarisi token, font, dan prinsip flat dari DESIGN.md. Bedanya hanya pada dosis gerak:
@@ -52,7 +90,11 @@ landing boleh punya animasi interaktif dan berulang di area konten (dashboard ti
 
 - Hanya `transform`, `opacity`, warna, `stroke-dashoffset`, dan piksel canvas berwarna token.
   Tanpa bayangan, gradien, glow, blur, glassmorphism, neon, scanline, atau hujan kode.
-- Keyframe berawalan `nx-`; easing tanpa overshoot.
+- Keyframe berawalan `nx-`; easing tanpa overshoot. Maskot memakai lompatan gravitasi, sedangkan
+  pemulihan squash dan antena memakai pegas teredam kritis yang tidak memantul (diuji di
+  `lib/bot-physics.test.ts`).
+- Gerak otomatis yang panjang bisa dihentikan pengguna: tombol jeda tur produk dan tombol
+  "Istirahatkan robot".
 - Gulir native: tanpa smooth-scroll yang membajak, tanpa pin yang memaksa.
 - Canvas berhenti saat keluar layar atau tab tersembunyi; DPR dibatasi 2.
 - `prefers-reduced-motion: reduce` → semua gerak berhenti, canvas menggambar satu frame statis,

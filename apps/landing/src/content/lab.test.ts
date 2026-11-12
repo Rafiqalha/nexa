@@ -20,6 +20,7 @@ interface NexaRun {
   labyrinthRequests: number;
   heldS: number;
   baitEstTokens: number;
+  nexaTokens: number;
 }
 interface Metrics {
   label: string;
@@ -53,6 +54,7 @@ describe('landing: hasil lab = docs/metrics.json', () => {
       withNexa: median(runs.map((r) => r.upstreamRequests)),
       heldRequests: Math.round(median(runs.map((r) => r.labyrinthRequests))),
       heldSeconds: Math.round(median(runs.map((r) => r.heldS))),
+      intelTokens: median(runs.map((r) => r.nexaTokens)),
     });
   });
 

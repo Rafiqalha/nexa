@@ -15,6 +15,20 @@ const WORD = 'NEXA';
 const ROWS = 9; // 7 baris huruf + 1 sel margin atas & bawah
 const COLS = 25; // 4 huruf × 5 + 3 sela + 1 sel margin kiri & kanan
 
+/** Ukuran sel, jumlah kolom, dan kolom awal huruf pertama untuk kanvas w × h (px CSS). */
+function grid(w: number, h: number): { cell: number; cols: number; x0: number } {
+  const cell = Math.max(4, Math.floor(Math.min(w / COLS, h / ROWS)));
+  const cols = Math.ceil(w / cell);
+  return { cell, cols, x0: Math.max(1, Math.floor((cols - (COLS - 2)) / 2)) };
+}
+
+/** Tengah puncak huruf terakhir (A: baris atas ".111.") dalam koordinat kanvas: tempat duduk robot footer. */
+export function wordmarkLedge(w: number, h: number): { x: number; y: number; cell: number } {
+  const { cell, x0 } = grid(w, h);
+  const ax = x0 + 6 * (WORD.length - 1);
+  return { x: (ax + 2.5) * cell, y: cell, cell };
+}
+
 /** Peta nada loreng per sel (indeks 0..2 → --camo-1..3), deterministik. */
 function camoMap(cols: number, rows: number): Uint8Array<ArrayBuffer> {
   const rnd = mulberry32(7);
@@ -60,10 +74,11 @@ export function initWordmark(canvas: HTMLCanvasElement): void {
   const ctx = fitCanvas(canvas, (cw, ch) => {
     w = cw;
     h = ch;
-    cell = Math.max(4, Math.floor(Math.min(w / COLS, h / ROWS)));
-    cols = Math.ceil(w / cell);
+    const g = grid(w, h);
+    cell = g.cell;
+    cols = g.cols;
     letter = new Uint8Array(cols * ROWS);
-    let x0 = Math.max(1, Math.floor((cols - (COLS - 2)) / 2));
+    let x0 = g.x0;
     for (const ch of WORD) {
       const glyph = GLYPHS[ch] ?? [];
       glyph.forEach((row, gy) => {

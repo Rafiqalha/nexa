@@ -38,6 +38,7 @@
           <span class="brand__word">NEXA</span>
         </a>
         <nav class="nav" aria-label="Navigasi utama">
+          <a href="#produk">Produk</a>
           <a href="#cara-kerja">Cara kerja</a>
           <a href="#labirin">Labirin</a>
           <a href="#hasil">Hasil lab</a>
@@ -53,7 +54,13 @@
       <!-- ============ HERO ============ -->
       <section class="hero" id="mulai" aria-labelledby="hero-title">
         <div class="wrap">
-          <p class="eyebrow" data-reveal>FIG. 00 · Deception defensif untuk agen AI</p>
+          <div class="hero__meta">
+            <p class="eyebrow" data-reveal>FIG. 00 · Deception defensif untuk agen AI</p>
+            <button type="button" class="bot-toggle" data-bot-toggle hidden>
+              <span data-icon="bot" data-size="14" data-stroke="2"></span>
+              <span data-bot-label>Istirahatkan robot</span>
+            </button>
+          </div>
           <h1 id="hero-title" class="hero__title">
             <span class="sr-only">Biarkan agen AI penyerang tersesat.</span>
             <span class="hero__line" aria-hidden="true" data-reveal="wipe">Biarkan agen AI penyerang</span>
@@ -105,6 +112,45 @@
             </figcaption>
           </figure>
         </div>
+        <div class="bot-layer" data-bot aria-hidden="true"></div>
+      </section>
+
+      <!-- ============ PRODUK (tur) ============ -->
+      <section class="section reel-section" id="produk" aria-labelledby="reel-title">
+        <div class="wrap">
+          <header class="section-head">
+            <p class="eyebrow" data-reveal>FIG. 02 · Produk</p>
+            <h2 id="reel-title" data-reveal="wipe">Lihat NEXA bekerja. <span class="muted">Satu sesi agen AI, dari permintaan pertama sampai aturan disetujui operator.</span></h2>
+          </header>
+          <figure class="reel" data-reel aria-labelledby="reel-cap">
+            <div class="reel__frame">
+              <div class="reel__bar">
+                <span class="reel__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="reel__title">NEXA Dashboard · tur produk</span>
+                <span class="reel__tag">Ilustrasi · Data simulasi lab</span>
+              </div>
+              <div class="reel__viewport">
+                <p class="reel__pill" aria-hidden="true"><span class="reel__mark">N</span><span data-reel-caption>Portal BAYU-7 melayani pengunjung seperti biasa.</span></p>
+                <div class="reel__stage" data-reel-stage aria-hidden="true"></div>
+              </div>
+            </div>
+            <div class="reel__controls">
+              <button type="button" class="reel__play" data-reel-play aria-label="Jeda tur produk" hidden>
+                <span data-icon="pause" data-size="16" data-stroke="2"></span>
+              </button>
+              <ol class="reel__chapters" aria-label="Bab tur produk">
+                <li><button type="button" class="reel__chap" data-chapter="0"><span class="num">01</span> Deteksi<span class="reel__prog" aria-hidden="true"></span></button></li>
+                <li><button type="button" class="reel__chap" data-chapter="1"><span class="num">02</span> Jebak<span class="reel__prog" aria-hidden="true"></span></button></li>
+                <li><button type="button" class="reel__chap" data-chapter="2"><span class="num">03</span> Canary<span class="reel__prog" aria-hidden="true"></span></button></li>
+                <li><button type="button" class="reel__chap" data-chapter="3"><span class="num">04</span> Intelijen<span class="reel__prog" aria-hidden="true"></span></button></li>
+                <li><button type="button" class="reel__chap" data-chapter="4"><span class="num">05</span> Aturan<span class="reel__prog" aria-hidden="true"></span></button></li>
+              </ol>
+            </div>
+            <figcaption id="reel-cap" class="caption">
+              Ilustrasi alur produk, bukan rekaman langsung: tampilan mengikuti dashboard NEXA, angka mengikuti median data simulasi lab (deepseek-flash). Agen terdeteksi dari sinyal, ditahan di labirin umpan, memakai canary, sesinya dirangkum setelah disamarkan, lalu draf aturan menunggu persetujuan operator.
+            </figcaption>
+          </figure>
+        </div>
       </section>
 
       <!-- ============ MANIFESTO ============ -->
@@ -125,7 +171,7 @@
       <section class="section story" id="cara-kerja" aria-labelledby="story-title">
         <div class="wrap">
           <header class="section-head">
-            <p class="eyebrow" data-reveal>FIG. 02–07 · Cara kerja</p>
+            <p class="eyebrow" data-reveal>FIG. 03–08 · Cara kerja</p>
             <h2 id="story-title" data-reveal="wipe">Satu sesi penyerang, <span class="muted">dari pintu masuk sampai keputusan operator.</span></h2>
           </header>
 
@@ -175,7 +221,7 @@
 
             <div class="story__stage" aria-hidden="true">
               <div class="stage" data-active="1">
-                <span class="stage__label fig" data-stage-label>FIG. 02 · Deteksi</span>
+                <span class="stage__label fig" data-stage-label>FIG. 03 · Deteksi</span>
 
                 <!-- 1. Deteksi -->
                 <div class="panel" data-panel="1">
@@ -279,7 +325,7 @@
       <section class="section play" id="labirin" aria-labelledby="play-title">
         <div class="wrap">
           <header class="section-head">
-            <p class="eyebrow" data-reveal>FIG. 08 · Labirin deterministik</p>
+            <p class="eyebrow" data-reveal>FIG. 09 · Labirin deterministik</p>
             <h2 id="play-title" data-reveal="wipe">Labirin dari seed Anda. <span class="muted">Seed yang sama selalu menghasilkan labirin yang sama.</span></h2>
           </header>
           <div class="play__grid">
@@ -314,7 +360,7 @@
       <section class="section results" id="hasil" aria-labelledby="results-title">
         <div class="wrap">
           <header class="section-head">
-            <p class="eyebrow" data-reveal>FIG. 09 · Hasil lab</p>
+            <p class="eyebrow" data-reveal>FIG. 10 · Hasil lab</p>
             <h2 id="results-title" data-reveal="wipe">Ke mana usaha agen pergi. <span class="muted">Dengan NEXA, hampir tidak ada yang sampai ke aplikasi asli.</span></h2>
             <p class="meta" data-reveal>Data simulasi lab · median per run · agen uji dibatasi 15 langkah dan 250 ribu token per run</p>
           </header>
@@ -334,7 +380,7 @@
       <section class="section bounds" id="batas" aria-labelledby="bounds-title">
         <div class="wrap">
           <header class="section-head">
-            <p class="eyebrow" data-reveal>FIG. 10 · Batas aman</p>
+            <p class="eyebrow" data-reveal>FIG. 11 · Batas aman</p>
             <h2 id="bounds-title" data-reveal="wipe">Batas yang tidak kami lewati. <span class="muted">Ditegakkan kode dan test regresi, bukan janji.</span></h2>
           </header>
           <ul class="bounds__grid">
@@ -386,7 +432,7 @@
       <section class="section start" id="coba" aria-labelledby="start-title">
         <div class="wrap">
           <header class="section-head">
-            <p class="eyebrow" data-reveal>FIG. 11 · Mulai</p>
+            <p class="eyebrow" data-reveal>FIG. 12 · Mulai</p>
             <h2 id="start-title" data-reveal="wipe">Mulai dalam satu menit. <span class="muted">Tanpa penyiapan.</span></h2>
           </header>
           <ol class="start__grid">

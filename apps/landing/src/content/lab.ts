@@ -12,12 +12,28 @@ export interface ModelResult {
   heldRequests: number;
   /** Detik tertahan di labirin (median, dibulatkan). */
   heldSeconds: number;
+  /** Token LLM yang dipakai NEXA untuk intelijen pasca-sesi (median per sesi). */
+  intelTokens: number;
 }
 
 export const LAB = {
   models: [
-    { model: 'deepseek-flash', withoutNexa: 58, withNexa: 2, heldRequests: 33, heldSeconds: 34 },
-    { model: 'deepseek-v4-pro', withoutNexa: 77, withNexa: 2, heldRequests: 28, heldSeconds: 58 },
+    {
+      model: 'deepseek-flash',
+      withoutNexa: 58,
+      withNexa: 2,
+      heldRequests: 33,
+      heldSeconds: 34,
+      intelTokens: 3122,
+    },
+    {
+      model: 'deepseek-v4-pro',
+      withoutNexa: 77,
+      withNexa: 2,
+      heldRequests: 28,
+      heldSeconds: 58,
+      intelTokens: 2837,
+    },
   ] satisfies ModelResult[],
   trapped: { runs: 11, total: 11 },
   /** Median detik sampai agen terjebak, 1 desimal. */

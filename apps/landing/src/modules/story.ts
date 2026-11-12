@@ -21,7 +21,8 @@ export function initStory(root: HTMLElement): void {
     active = n;
     stage.dataset.active = String(n);
     if (label)
-      label.textContent = `FIG. ${String(n + 1).padStart(2, '0')} · ${TITLES[n - 1] ?? ''}`;
+      // Langkah 1 = FIG. 03 (FIG. 02 dipakai tur produk).
+      label.textContent = `FIG. ${String(n + 2).padStart(2, '0')} · ${TITLES[n - 1] ?? ''}`;
     for (const s of steps) s.classList.toggle('is-active', Number(s.dataset.step) === n);
     for (const a of links) a.classList.toggle('is-active', Number(a.dataset.index) === n);
     for (const p of panels) p.classList.toggle('is-active', Number(p.dataset.panel) === n);
